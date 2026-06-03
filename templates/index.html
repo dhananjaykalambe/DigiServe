@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Home - DigiServe eSeva{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center py-5 rounded">
+    <h1 class="display-4">Welcome to DigiServe eSeva</h1>
+    <p class="lead">Your One-Stop Digital Service Platform for Scholarships, Exams, Bill Payments & Government Services</p>
+    {% if 'user_id' not in session %}
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-mobile-alt"></i> Login / Register
+        </a>
+    {% else %}
+        <a href="{{ url_for('services_dashboard') }}" class="btn btn-success btn-lg">
+            <i class="fas fa-th-large"></i> Go to Dashboard
+        </a>
+    {% endif %}
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h3 class="text-center mb-4">Our Popular Services</h3>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('scholarship')" style="cursor: pointer;">
+                    <i class="fas fa-graduation-cap fa-3x text-primary mb-3"></i>
+                    <h5>Scholarship Services</h5>
+                    <p class="small">PMSSS, Post Matric, Pre Matric, Merit cum Means, National Scholarship</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('exams')" style="cursor: pointer;">
+                    <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                    <h5>Exam Form Filling</h5>
+                    <p class="small">MHT-CET, JEE, NEET, GATE, CAT, UPSC, MPSC, Banking Exams</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('bill_payment')" style="cursor: pointer;">
+                    <i class="fas fa-money-bill-wave fa-3x text-primary mb-3"></i>
+                    <h5>Bill Payments</h5>
+                    <p class="small">Electricity, Water, Gas, Broadband, Property Tax, Municipal Tax</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('eseva')" style="cursor: pointer;">
+                    <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                    <h5>eSeva Services</h5>
+                    <p class="small">Birth/Death Certificate, Income/Caste Certificate, Driving License, PAN Card</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('document')" style="cursor: pointer;">
+                    <i class="fas fa-id-card fa-3x text-primary mb-3"></i>
+                    <h5>Document Services</h5>
+                    <p class="small">Passport, Voter ID, Ration Card, Certificate Attestation</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card text-center p-4 h-100 shadow-sm rounded" onclick="redirectToService('education')" style="cursor: pointer;">
+                    <i class="fas fa-university fa-3x text-primary mb-3"></i>
+                    <h5>Education Services</h5>
+                    <p class="small">MHT-CET, DTE, CET Cell, College Admission Forms</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 bg-light py-4 rounded">
+    <div class="col-md-4 text-center">
+        <i class="fas fa-users fa-3x text-success"></i>
+        <h4 class="mt-2">10,000+</h4>
+        <p>Happy Customers</p>
+    </div>
+    <div class="col-md-4 text-center">
+        <i class="fas fa-check-circle fa-3x text-success"></i>
+        <h4 class="mt-2">50,000+</h4>
+        <p>Forms Submitted</p>
+    </div>
+    <div class="col-md-4 text-center">
+        <i class="fas fa-clock fa-3x text-success"></i>
+        <h4 class="mt-2">24/7</h4>
+        <p>Online Service</p>
+    </div>
+</div>
+
+<script>
+function redirectToService(category) {
+    {% if 'user_id' not in session %}
+        sessionStorage.setItem('redirectCategory', category);
+        window.location.href = "{{ url_for('login') }}";
+    {% else %}
+        window.location.href = "{{ url_for('services_dashboard') }}";
+    {% endif %}
+}
+
+{% if 'user_id' in session %}
+    const redirectCategory = sessionStorage.getItem('redirectCategory');
+    if (redirectCategory) {
+        sessionStorage.removeItem('redirectCategory');
+        setTimeout(() => {
+            const element = document.getElementById(redirectCategory);
+            if (element) element.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+    }
+{% endif %}
+</script>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.service-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: var(--card-bg, white);
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

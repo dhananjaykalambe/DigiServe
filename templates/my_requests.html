@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}My Applications - DigiServe eSeva{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2><i class="fas fa-history"></i> My Applications</h2>
+    <a href="{{ url_for('services_dashboard') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Application
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="requestsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Reference No.</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Documents</th>
+                        <th>Submitted Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="loader"></div>
+                            <p class="mt-3">Loading your applications...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.loader {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 20px;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    z-index: 2;
+}
+
+.timeline-icon.completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.timeline-icon.pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.timeline-icon.current {
+    background-color: #007bff;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.timeline-content {
+    background: var(--bg-secondary, #f8f9fa);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: var(--border-color, #dee2e6);
+}
+</style>
+
+<script>
+async function loadRequests() {
+    try {
+        const response = await fetch('/api/my-requests');
+        const requests = await response.json();
+        
+        const tbody = document.querySelector('#requestsTable tbody');
+        
+        if (requests.error) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <p>Please login to view your applications.</p>
+                        <a href="/login" class="btn btn-primary">Login Now</a>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        if (requests.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p>No applications found.</p>
+                        <a href="/services-dashboard" class="btn btn-primary">Apply for Services</a>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        requests.forEach(req => {
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(req.status) {
+                case 'pending':
+                    statusClass = 'bg-warning text-dark';
+                    statusText = 'Pending';
+                    break;
+                case 'in_progress':
+                    statusClass = 'bg-info text-white';
+                    statusText = 'In Progress';
+                    break;
+                case 'completed':
+                    statusClass = 'bg-success text-white';
+                    statusText = 'Completed';
+                    break;
+                case 'rejected':
+                    statusClass = 'bg-danger text-white';
+                    statusText = 'Rejected';
+                    break;
+                default:
+                    statusClass = 'bg-secondary text-white';
+                    statusText = req.status;
+            }
+            
+            let paymentClass = req.payment_status === 'completed' ? 'bg-success' : 'bg-warning text-dark';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong><code>${req.reference}</code></strong></td>
+                <td>${req.service_name}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td><span class="badge ${paymentClass}">${req.payment_status}</span></td>
+                <td>₹${req.amount}</td>
+                <td><span class="badge bg-info">${req.documents_count} files</span></td>
+                <td><small>${req.submitted_at}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetails('${req.id}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading requests:', error);
+        const tbody = document.querySelector('#requestsTable tbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <p>Error loading applications. Please try again.</p>
+                        <button class="btn btn-primary" onclick="loadRequests()">Retry</button>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+async function viewRequestDetails(requestId) {
+    try {
+        const response = await fetch(`/request-details/${requestId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        const request = data.request;
+        const documents = data.documents;
+        
+        let statusClass = '';
+        let statusText = '';
+        switch(request.status) {
+            case 'pending':
+                statusClass = 'warning';
+                statusText = 'Pending';
+                break;
+            case 'in_progress':
+                statusClass = 'info';
+                statusText = 'In Progress';
+                break;
+            case 'completed':
+                statusClass = 'success';
+                statusText = 'Completed';
+                break;
+            case 'rejected':
+                statusClass = 'danger';
+                statusText = 'Rejected';
+                break;
+            default:
+                statusClass = 'secondary';
+                statusText = request.status;
+        }
+        
+        // Build timeline HTML
+        let timelineHtml = '';
+        if (request.timeline && request.timeline.length > 0) {
+            timelineHtml = '<h6>Application Timeline</h6><div class="timeline">';
+            request.timeline.forEach((item, idx) => {
+                const isCurrent = idx === request.timeline.length - 1 && request.status !== 'completed';
+                timelineHtml += `
+                    <div class="timeline-item">
+                        <div class="timeline-icon ${item.completed ? 'completed' : (isCurrent ? 'current' : 'pending')}">
+                            <i class="fas ${item.completed ? 'fa-check' : (isCurrent ? 'fa-spinner fa-pulse' : 'fa-clock')}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h6>${escapeHtml(item.title)}</h6>
+                            <p class="small mb-1">${escapeHtml(item.description)}</p>
+                            <small class="text-muted">${item.timestamp}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            timelineHtml += '</div>';
+        }
+        
+        // Build details HTML
+        let detailsHtml = '';
+        
+        if (request.applicant_name || request.applicant_dob) {
+            detailsHtml += `
+                <div class="application-details-card">
+                    <h6><i class="fas fa-user-circle"></i> Applicant Information</h6>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Full Name</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_name) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Date of Birth</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_dob) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Gender</div>
+                            <div class="detail-value">${request.applicant_gender ? request.applicant_gender.charAt(0).toUpperCase() + request.applicant_gender.slice(1) : 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Category</div>
+                            <div class="detail-value">${request.applicant_category ? request.applicant_category.toUpperCase() : 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_email) || 'Not provided'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (request.applicant_address) {
+            detailsHtml += `
+                <div class="application-details-card">
+                    <h6><i class="fas fa-map-marker-alt"></i> Address Information</h6>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Address</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_address)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">City</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_city) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">State</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_state) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Pincode</div>
+                            <div class="detail-value">${escapeHtml(request.applicant_pincode) || 'Not provided'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (request.qualification || request.institute_name) {
+            detailsHtml += `
+                <div class="application-details-card">
+                    <h6><i class="fas fa-graduation-cap"></i> Educational Information</h6>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Highest Qualification</div>
+                            <div class="detail-value">${escapeHtml(request.qualification) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Institute/College</div>
+                            <div class="detail-value">${escapeHtml(request.institute_name) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Course/Exam</div>
+                            <div class="detail-value">${escapeHtml(request.course_name) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Passing Year</div>
+                            <div class="detail-value">${escapeHtml(request.passing_year) || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Percentage/CGPA</div>
+                            <div class="detail-value">${escapeHtml(request.percentage) || 'Not provided'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Documents HTML
+        let documentsHtml = '<h6><i class="fas fa-paperclip"></i> Uploaded Documents</h6><div class="details-grid">';
+        if (documents && documents.length > 0) {
+            documents.forEach(doc => {
+                documentsHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">${escapeHtml(doc.original_filename)}</div>
+                        <div class="detail-value small">
+                            <i class="far fa-calendar-alt"></i> ${doc.uploaded_at}<br>
+                            <i class="fas fa-database"></i> ${(doc.file_size/1024).toFixed(2)} KB
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            documentsHtml += '<div class="detail-item"><div class="detail-value text-muted">No documents uploaded</div></div>';
+        }
+        documentsHtml += '</div>';
+        
+        const modalHtml = `
+            <div class="modal fade" id="requestDetailsModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-file-alt"></i> Application Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="application-details-card">
+                                <h6><i class="fas fa-info-circle"></i> Application Overview</h6>
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Reference Number</div>
+                                        <div class="detail-value"><code>${escapeHtml(request.reference_number)}</code></div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Service Name</div>
+                                        <div class="detail-value">${escapeHtml(request.service_name)}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value"><span class="badge bg-${statusClass} status-badge">${statusText}</span></div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Payment Status</div>
+                                        <div class="detail-value"><span class="badge bg-${request.payment_status === 'completed' ? 'success' : 'warning'} status-badge">${request.payment_status.toUpperCase()}</span></div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Amount</div>
+                                        <div class="detail-value">₹${request.amount}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Submitted On</div>
+                                        <div class="detail-value">${escapeHtml(request.submitted_at)}</div>
+                                    </div>
+                                    ${request.processed_at ? `
+                                    <div class="detail-item">
+                                        <div class="detail-label">Processed On</div>
+                                        <div class="detail-value">${escapeHtml(request.processed_at)}</div>
+                                    </div>
+                                    ` : ''}
+                                    ${request.admin_remarks ? `
+                                    <div class="detail-item">
+                                        <div class="detail-label">Admin Remarks</div>
+                                        <div class="detail-value">${escapeHtml(request.admin_remarks)}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            ${detailsHtml}
+                            
+                            ${timelineHtml}
+                            
+                            <div class="application-details-card">
+                                ${documentsHtml}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const existingModal = document.getElementById('requestDetailsModal');
+        if (existingModal) existingModal.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+        modal.show();
+        
+        document.getElementById('requestDetailsModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Error fetching request details:', error);
+        alert('Error loading application details. Please try again.');
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load requests on page load
+document.addEventListener('DOMContentLoaded', loadRequests);
+</script>
+{% endblock %}

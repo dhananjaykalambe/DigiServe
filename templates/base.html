@@ -1,1 +1,994 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiServe - {% block title %}Your Digital Service Portal{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Dark Mode CSS Variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --navbar-bg: #0d6efd;
+            --navbar-text: #ffffff;
+            --footer-bg: #212529;
+            --footer-text: #ffffff;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e4e6eb;
+            --text-secondary: #a0a0a0;
+            --border-color: #2d3561;
+            --card-bg: #0f3460;
+            --navbar-bg: #0f3460;
+            --navbar-text: #e4e6eb;
+            --footer-bg: #0f3460;
+            --footer-text: #e4e6eb;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar {
+            background-color: var(--navbar-bg) !important;
+        }
+        
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--navbar-text);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        .card-header {
+            background-color: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+        }
+        
+        .bg-light {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        .border {
+            border-color: var(--border-color) !important;
+        }
+        
+        .table {
+            color: var(--text-primary);
+        }
+        
+        .table-light {
+            background-color: var(--bg-secondary);
+        }
+        
+        footer {
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            margin-top: auto;
+        }
+        
+        footer a {
+            color: var(--footer-text);
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        /* Dark mode toggle button */
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            color: var(--navbar-text);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .dark-mode-toggle:hover {
+            transform: rotate(15deg);
+        }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+        }
+        
+        .notification-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: normal !important;
+            word-wrap: break-word;
+        }
+        
+        .notification-item:hover {
+            background-color: var(--bg-secondary);
+        }
+        
+        .notification-item.bg-light {
+            background-color: #e7f3ff !important;
+        }
+        
+        .dropdown-menu {
+            max-height: 450px;
+            overflow-y: auto;
+            min-width: 320px;
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        .dropdown-item {
+            color: var(--text-primary);
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--bg-secondary);
+        }
+        
+        .dropdown-header {
+            background-color: var(--bg-secondary);
+            padding: 10px 15px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        /* Application Timeline Styles */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 25px;
+        }
+        
+        .timeline-icon {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 2;
+        }
+        
+        .timeline-icon.completed {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .timeline-icon.pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .timeline-icon.current {
+            background-color: #007bff;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .timeline-content {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .timeline-content h6 {
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+        
+        .timeline-content small {
+            color: var(--text-secondary);
+        }
+        
+        .timeline:before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: var(--border-color);
+        }
+        
+        /* Checklist Styles */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .checklist-item.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .checklist-item.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .checklist-icon {
+            width: 30px;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        
+        /* Fee Calculator Styles */
+        .fee-calculator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+        }
+        
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .fee-row.total {
+            font-size: 1.2em;
+            font-weight: bold;
+            border-bottom: none;
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        /* Toast Notifications */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        /* ID Validation Styles */
+        .valid-id {
+            border-color: #28a745 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+            padding-right: calc(1.5em + 0.75rem);
+        }
+        
+        .invalid-id {
+            border-color: #dc3545 !important;
+        }
+        
+        .validation-message {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .validation-message.valid {
+            color: #28a745;
+        }
+        
+        .validation-message.invalid {
+            color: #dc3545;
+        }
+        
+        /* Loading Spinner */
+        .loader-small {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .timeline-item {
+                padding-left: 30px;
+            }
+            .timeline-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 10px;
+            }
+            .timeline:before {
+                left: 11px;
+            }
+        }
+        
+        /* File Upload Styling */
+        .document-upload-item {
+            transition: all 0.3s ease;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        
+        .document-upload-item:hover {
+            background-color: var(--bg-secondary);
+        }
+        
+        .file-item {
+            background: var(--bg-secondary);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .remove-file-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        
+        /* Application Details Card */
+        .application-details-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-handshake"></i> DigiServe
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    {% if 'user_id' in session %}
+                        {% if session.user_role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin_panel') }}">
+                                    <i class="fas fa-user-shield"></i> Admin Panel
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('services_dashboard') }}">
+                                    <i class="fas fa-th-large"></i> Services
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('my_requests_page') }}">
+                                    <i class="fas fa-history"></i> My Applications
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Dark Mode Toggle -->
+                        <li class="nav-item">
+                            <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle Dark Mode">
+                                <i class="fas fa-moon"></i>
+                            </button>
+                        </li>
+                        
+                        <!-- Notification Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <span class="badge bg-danger notification-badge" id="notificationBadge" style="display: none;">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <strong><i class="fas fa-bell"></i> Notifications</strong>
+                                    <button class="btn btn-sm btn-link p-0" onclick="markAllNotificationsRead()" style="text-decoration: none;">
+                                        <i class="fas fa-check-double"></i> Mark all read
+                                    </button>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div id="notificationList">
+                                    <div class="dropdown-item text-center text-muted">
+                                        <div class="loader-small"></div> Loading...
+                                    </div>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item text-center">
+                                    <a href="#" onclick="loadNotifications(); return false;" class="text-primary">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> {{ session.user_name }}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModalFromBase">
+                                    <i class="fas fa-id-card"></i> My Profile
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-mobile-alt"></i> Login / Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 text-center text-md-start">
+                    <h5><i class="fas fa-handshake"></i> DigiServe</h5>
+                    <p class="small">Your Trusted Digital Service Partner</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                        {% if 'user_id' in session %}
+                            <li><a href="{{ url_for('services_dashboard') }}" class="text-decoration-none">Services</a></li>
+                            <li><a href="{{ url_for('my_requests_page') }}" class="text-decoration-none">My Applications</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('login') }}" class="text-decoration-none">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-4 text-center text-md-end">
+                    <h6>Contact</h6>
+                    <p class="small mb-1">
+                        <i class="fas fa-phone-alt"></i> <strong>Phone:</strong> 
+                        <a href="tel:9421456959" class="text-decoration-none">9421456959</a>
+                    </p>
+                    <p class="small mb-1">
+                        <i class="fab fa-whatsapp text-success"></i> <strong>WhatsApp:</strong> 
+                        <a href="https://wa.me/919421456959" target="_blank" class="text-decoration-none">9421456959</a>
+                    </p>
+                    <p class="small">
+                        <i class="fas fa-envelope"></i> <strong>Email:</strong> 
+                        <a href="mailto:support@digiserve.com" class="text-decoration-none">support@digiserve.com</a>
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <small>&copy; 2026 DigiSoft. All Rights Reserved by DK.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profileModalFromBase" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-edit"></i> My Profile</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="profileModalBody">
+                    <div class="text-center py-4">
+                        <div class="loader-small"></div> Loading profile...
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="updateProfileFromModal()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Dark Mode Toggle
+        function initDarkMode() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateDarkModeIcon(savedTheme);
+        }
+        
+        function updateDarkModeIcon(theme) {
+            const toggleBtn = document.getElementById('darkModeToggle');
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            }
+        }
+        
+        function toggleDarkMode() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateDarkModeIcon(newTheme);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            const toggleBtn = document.getElementById('darkModeToggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleDarkMode);
+            }
+        });
+        
+        // Global notification functions
+        let lastNotificationCount = 0;
+        let notificationCheckInterval = null;
+        let currentUserProfile = null;
+        
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+            return date.toLocaleDateString();
+        }
+        
+        async function loadNotifications() {
+            const notificationList = document.getElementById('notificationList');
+            if (!notificationList) return;
+            
+            try {
+                const response = await fetch('/notifications');
+                const notifications = await response.json();
+                
+                if (notifications.length === 0) {
+                    notificationList.innerHTML = '<div class="dropdown-item text-center text-muted">No notifications</div>';
+                    updateNotificationBadge(0);
+                    return;
+                }
+                
+                const unreadNotifications = notifications.filter(n => !n.is_read);
+                if (unreadNotifications.length > lastNotificationCount && lastNotificationCount > 0) {
+                    showNotificationToast(`${unreadNotifications.length} new notification(s) received`);
+                }
+                lastNotificationCount = unreadNotifications.length;
+                
+                notificationList.innerHTML = notifications.slice(0, 20).map(notif => `
+                    <div class="dropdown-item notification-item ${!notif.is_read ? 'bg-light' : ''}" onclick="viewNotificationFromBase('${notif.id}', ${notif.request_id || 'null'})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="notification-time">
+                                    <i class="far fa-clock"></i> ${formatTimeAgo(notif.created_at)}
+                                </div>
+                                <div class="notification-title">
+                                    ${notif.type === 'success' ? '<i class="fas fa-check-circle text-success"></i>' : 
+                                      notif.type === 'info' ? '<i class="fas fa-info-circle text-info"></i>' :
+                                      notif.type === 'warning' ? '<i class="fas fa-exclamation-triangle text-warning"></i>' :
+                                      '<i class="fas fa-bell text-primary"></i>'}
+                                    ${notif.title}
+                                </div>
+                                <div class="notification-message">
+                                    ${notif.message.length > 100 ? notif.message.substring(0, 100) + '...' : notif.message}
+                                </div>
+                            </div>
+                            ${!notif.is_read ? '<span class="badge bg-primary ms-2">New</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                updateNotificationBadge(unreadNotifications.length);
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = '<div class="dropdown-item text-center text-danger">Error loading notifications</div>';
+            }
+        }
+        
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+        
+        async function markNotificationRead(notificationId) {
+            try {
+                await fetch(`/notifications/mark-read/${notificationId}`, { method: 'POST' });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function markAllNotificationsRead() {
+            try {
+                await fetch('/notifications/mark-all-read', { method: 'POST' });
+                loadNotifications();
+                showTemporaryMessage('All notifications marked as read', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function viewNotificationFromBase(notificationId, requestId) {
+            await markNotificationRead(notificationId);
+            
+            if (requestId) {
+                try {
+                    const response = await fetch(`/request-details/${requestId}`);
+                    const data = await response.json();
+                    if (!data.error) {
+                        showRequestDetailsModal(data);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            loadNotifications();
+        }
+        
+        function showRequestDetailsModal(data) {
+            const request = data.request;
+            const documents = data.documents;
+            
+            let statusClass = '';
+            switch(request.status) {
+                case 'pending': statusClass = 'warning'; break;
+                case 'in_progress': statusClass = 'info'; break;
+                case 'completed': statusClass = 'success'; break;
+                case 'rejected': statusClass = 'danger'; break;
+                default: statusClass = 'secondary';
+            }
+            
+            let timelineHtml = '';
+            if (request.timeline && request.timeline.length > 0) {
+                timelineHtml = '<div class="timeline"><h6>Application Timeline</h6>';
+                request.timeline.forEach((item, idx) => {
+                    timelineHtml += `
+                        <div class="timeline-item">
+                            <div class="timeline-icon completed">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6>${item.title}</h6>
+                                <p class="small mb-1">${item.description}</p>
+                                <small class="text-muted">${item.timestamp}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                timelineHtml += '</div>';
+            }
+            
+            const modalHtml = `
+                <div class="modal fade" id="requestModalBase" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">Application Details: ${request.reference_number}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Service:</strong> ${request.service_name}</p>
+                                        <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${request.status.toUpperCase()}</span></p>
+                                        <p><strong>Payment Status:</strong> <span class="badge bg-${request.payment_status === 'completed' ? 'success' : 'warning'}">${request.payment_status.toUpperCase()}</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Amount:</strong> ₹${request.amount}</p>
+                                        <p><strong>Submitted:</strong> ${request.submitted_at}</p>
+                                        ${request.processed_at ? `<p><strong>Processed:</strong> ${request.processed_at}</p>` : ''}
+                                    </div>
+                                </div>
+                                <hr>
+                                <h6>Applicant Information</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4"><strong>Name:</strong> ${request.applicant_name || 'N/A'}</div>
+                                    <div class="col-md-4"><strong>DOB:</strong> ${request.applicant_dob || 'N/A'}</div>
+                                    <div class="col-md-4"><strong>Gender:</strong> ${request.applicant_gender || 'N/A'}</div>
+                                </div>
+                                ${timelineHtml}
+                                ${request.admin_remarks ? `<div class="alert alert-info mt-3"><strong>Admin Remarks:</strong> ${request.admin_remarks}</div>` : ''}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const existingModal = document.getElementById('requestModalBase');
+            if (existingModal) existingModal.remove();
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('requestModalBase'));
+            modal.show();
+        }
+        
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/user-profile');
+                const user = await response.json();
+                currentUserProfile = user;
+                
+                const modalBody = document.getElementById('profileModalBody');
+                if (modalBody) {
+                    modalBody.innerHTML = `
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" value="${user.name}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mobile Number</label>
+                            <input type="text" class="form-control" value="${user.phone}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <input type="email" class="form-control" id="profileEmailBase" value="${user.email || ''}" placeholder="Enter your email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address</label>
+                            <textarea class="form-control" id="profileAddressBase" rows="2" placeholder="Enter your address">${user.address || ''}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">City</label>
+                                <input type="text" class="form-control" id="profileCityBase" value="${user.city || ''}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">State</label>
+                                <input type="text" class="form-control" id="profileStateBase" value="${user.state || ''}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Pincode</label>
+                            <input type="text" class="form-control" id="profilePincodeBase" value="${user.pincode || ''}" maxlength="6">
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+        
+        async function updateProfileFromModal() {
+            const profileData = {
+                email: document.getElementById('profileEmailBase')?.value,
+                address: document.getElementById('profileAddressBase')?.value,
+                city: document.getElementById('profileCityBase')?.value,
+                state: document.getElementById('profileStateBase')?.value,
+                pincode: document.getElementById('profilePincodeBase')?.value
+            };
+            
+            try {
+                const response = await fetch('/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profileData)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showTemporaryMessage('Profile updated successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('profileModalFromBase')).hide();
+                } else {
+                    showTemporaryMessage('Failed to update profile', 'danger');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showTemporaryMessage('Error updating profile', 'danger');
+            }
+        }
+        
+        function showTemporaryMessage(message, type = 'info') {
+            const toastHtml = `
+                <div class="toast-notification alert alert-${type} shadow-lg">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            setTimeout(() => {
+                const toast = document.querySelector('.toast-notification');
+                if (toast) {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 3000);
+        }
+        
+        function showNotificationToast(message) {
+            const toastHtml = `
+                <div class="toast-notification alert alert-info shadow-lg">
+                    <i class="fas fa-bell me-2"></i>
+                    ${message}
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            setTimeout(() => {
+                const toast = document.querySelector('.toast-notification');
+                if (toast) {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            {% if 'user_id' in session %}
+                loadNotifications();
+                if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+                notificationCheckInterval = setInterval(loadNotifications, 30000);
+                
+                const profileModal = document.getElementById('profileModalFromBase');
+                if (profileModal) {
+                    profileModal.addEventListener('show.bs.modal', loadUserProfile);
+                }
+            {% endif %}
+        });
+        
+        window.addEventListener('beforeunload', () => {
+            if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

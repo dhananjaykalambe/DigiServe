@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Registration - DigiServe eSeva{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 rounded-lg mt-3">
+            <div class="card-header bg-success text-white text-center py-3">
+                <h3 class="mb-0"><i class="fas fa-user-check"></i> Complete Registration</h3>
+                <p class="mb-0 mt-2 small">Welcome! Please provide your details to get started.</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-bell"></i> <strong>In-App Notifications Enabled!</strong><br>
+                    You will receive all updates and notifications in your dashboard.
+                </div>
+                
+                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+                    <input type="hidden" name="phone" value="{{ phone }}">
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Enter your full name" required>
+                        </div>
+                        <div class="invalid-feedback">Please enter your full name.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address <span class="text-muted">(Optional)</span></label>
+                        <textarea class="form-control" id="address" name="address" rows="2" 
+                                  placeholder="Enter your address"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">City <span class="text-muted">(Optional)</span></label>
+                            <input type="text" class="form-control" id="city" name="city" placeholder="City">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="state" class="form-label">State <span class="text-muted">(Optional)</span></label>
+                            <input type="text" class="form-control" id="state" name="state" placeholder="State">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pincode" class="form-label">Pincode <span class="text-muted">(Optional)</span></label>
+                        <input type="text" class="form-control" id="pincode" name="pincode" 
+                               placeholder="Pincode" maxlength="6">
+                    </div>
+                    
+                    <div class="alert alert-success small">
+                        <i class="fas fa-bell"></i> <strong>In-App Updates:</strong> You will receive:
+                        <ul class="mb-0 mt-2">
+                            <li>Application submission confirmation</li>
+                            <li>Payment status updates</li>
+                            <li>Application approval/rejection alerts</li>
+                            <li>Daily/Weekly summaries (for admin)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the Terms and Conditions
+                        </label>
+                        <div class="invalid-feedback">You must agree to the terms.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-check-circle"></i> Complete Registration
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <div class="small">
+                    Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+    
+    const nameInput = document.getElementById('name');
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[0-9]/g, '');
+        });
+    }
+    
+    const pincodeInput = document.getElementById('pincode');
+    if (pincodeInput) {
+        pincodeInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+    }
+</script>
+{% endblock %}

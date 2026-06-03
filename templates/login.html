@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Login - DigiServe eSeva{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h3 class="mb-0"><i class="fas fa-mobile-alt"></i> Login / Register</h3>
+                <p class="mb-0 mt-2 small">No password or OTP required! Just enter your mobile number.</p>
+            </div>
+            <div class="card-body p-5">
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-4">
+                        <label for="phone" class="form-label">Mobile Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                                   placeholder="Enter 10-digit mobile number" 
+                                   pattern="[0-9]{10}" maxlength="10" required>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            New users will be redirected to registration. Existing users will be logged in directly.
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <div class="small text-muted">
+                    <i class="fas fa-shield-alt"></i> Secure & Password-less Authentication
+                </div>
+                <hr class="my-2">
+                <div class="small">
+                    <strong>📱 Demo Admin:</strong> Mobile: 9999999999
+                </div>
+                <div class="small text-muted mt-2">
+                    <i class="fas fa-bell"></i> Get real-time updates via in-app notifications
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        });
+    }
+</script>
+{% endblock %}
