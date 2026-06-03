@@ -8,8 +8,6 @@ import os
 import json
 import random
 import re
-import qrcode
-from io import BytesIO
 import base64
 import csv
 from functools import wraps
@@ -54,15 +52,6 @@ def validate_aadhar(number):
 
 def validate_pan(number):
     return bool(re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$', number))
-
-def generate_qr_code(data):
-    qr = qrcode.QRCode(box_size=8, border=2)
-    qr.add_data(data)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buffer = BytesIO()
-    img.save(buffer, format='PNG')
-    return base64.b64encode(buffer.getvalue()).decode()
 
 def calculate_fees(service_charge, convenience_fee_percent=2, gst_percent=18):
     convenience_fee = (service_charge * convenience_fee_percent) / 100
@@ -174,7 +163,6 @@ def init_db():
     if not check_mongodb_connection():
         print("❌ MongoDB Atlas connection failed!")
         print("Please check your network access settings in MongoDB Atlas")
-        print("Go to Network Access → Add IP Address → 0.0.0.0/0")
         return False
     
     print("✅ MongoDB Atlas connected successfully!")
@@ -214,9 +202,9 @@ def init_db():
                 'name': 'PMSSS Scholarship Application',
                 'slug': 'pmsss-scholarship',
                 'description': 'Prime Minister\'s Special Scholarship Scheme for Jammu and Kashmir students.',
-                'eligibility': 'Students who have passed 10+2 examination from J&K board. Family income less than 8 LPA.',
-                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate, Bank Account Details, Passport Size Photo',
-                'instructions': 'Fill all details carefully. Upload clear scanned copies of documents.',
+                'eligibility': 'Students who have passed 10+2 examination from J&K board.',
+                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate',
+                'instructions': 'Fill all details carefully.',
                 'processing_time': '15-20 working days',
                 'service_charge': 0,
                 'convenience_fee_percent': 2,
@@ -229,10 +217,10 @@ def init_db():
                 'category': 'education',
                 'name': 'MHT-CET Application Form',
                 'slug': 'mht-cet-application',
-                'description': 'Maharashtra Common Entrance Test for admission to Engineering, Pharmacy courses.',
-                'eligibility': 'Indian citizen, passed 10+2 with Physics, Chemistry, and Mathematics/Biology.',
-                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Caste Certificate, Passport Photo, Signature',
-                'instructions': 'Fill the form carefully. Double-check your personal details.',
+                'description': 'Maharashtra Common Entrance Test.',
+                'eligibility': 'Indian citizen, passed 10+2 with PCM/PCB',
+                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate',
+                'instructions': 'Fill the form carefully.',
                 'processing_time': 'Same day processing',
                 'service_charge': 800,
                 'convenience_fee_percent': 2,
@@ -247,8 +235,8 @@ def init_db():
                 'slug': 'pan-card-application',
                 'description': 'Apply for new PAN card.',
                 'eligibility': 'Indian citizen with valid address proof.',
-                'documents_required': 'Aadhar Card, Voter ID, Address Proof, Photo, Signature',
-                'instructions': 'Use clear photograph and signature.',
+                'documents_required': 'Aadhar Card, Address Proof, Photo',
+                'instructions': 'Use clear photograph.',
                 'processing_time': '15-20 working days',
                 'service_charge': 150,
                 'convenience_fee_percent': 2,
@@ -258,28 +246,12 @@ def init_db():
                 'created_at': datetime.now(timezone.utc)
             },
             {
-                'category': 'document',
-                'name': 'Passport Application',
-                'slug': 'passport-application',
-                'description': 'Apply for fresh passport or passport renewal.',
-                'eligibility': 'Indian citizen with valid address and identity proof.',
-                'documents_required': 'Proof of Date of Birth, Address Proof, Identity Proof',
-                'instructions': 'Fill all details exactly as per your documents.',
-                'processing_time': '2-3 working days',
-                'service_charge': 200,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-passport',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
                 'category': 'bill_payment',
                 'name': 'Electricity Bill Payment',
                 'slug': 'electricity-bill-payment',
-                'description': 'Pay your electricity bill online instantly.',
+                'description': 'Pay your electricity bill online.',
                 'eligibility': 'Valid electricity consumer number.',
-                'documents_required': 'Consumer Number, Previous bill copy',
+                'documents_required': 'Consumer Number',
                 'instructions': 'Enter correct consumer number.',
                 'processing_time': 'Instant',
                 'service_charge': 0,
@@ -293,9 +265,9 @@ def init_db():
                 'category': 'exams',
                 'name': 'UPSC Civil Services Form',
                 'slug': 'upsc-civil-services',
-                'description': 'UPSC Civil Services Examination for IAS, IPS, IFS.',
-                'eligibility': 'Graduate in any discipline. Age 21-32 years.',
-                'documents_required': 'Graduation Certificate, DOB Proof, Category Certificate, Photo, Signature',
+                'description': 'UPSC Civil Services Examination.',
+                'eligibility': 'Graduate in any discipline.',
+                'documents_required': 'Graduation Certificate, DOB Proof, Photo',
                 'instructions': 'Fill DAF carefully.',
                 'processing_time': '2-3 working days',
                 'service_charge': 500,
@@ -420,7 +392,7 @@ def register():
                 result.inserted_id,
                 None,
                 'Welcome to DigiServe!',
-                f'Welcome {name}! Thank you for registering with DigiServe. Start exploring our services today.',
+                f'Welcome {name}! Thank you for registering.',
                 'success'
             )
             
@@ -442,7 +414,7 @@ def logout():
 @app.route('/services-dashboard')
 def services_dashboard():
     if 'user_id' not in session:
-        flash('Please login first to access services', 'warning')
+        flash('Please login first', 'warning')
         return redirect(url_for('login'))
     
     try:
@@ -465,7 +437,7 @@ def services_dashboard():
                              unread_count=unread_count)
     except Exception as e:
         print(f"Error: {e}")
-        flash('Unable to load services dashboard.', 'danger')
+        flash('Unable to load services.', 'danger')
         return redirect(url_for('index'))
 
 @app.route('/service/<slug>')
@@ -535,16 +507,6 @@ def submit_service_request():
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
-        # Validate Aadhaar if provided
-        aadhar_number = request.form.get('aadhar_number', '')
-        if aadhar_number and not validate_aadhar(aadhar_number):
-            return jsonify({'success': False, 'message': 'Invalid Aadhaar number. Please enter a valid 12-digit Aadhaar number.'}), 400
-        
-        # Validate PAN if provided
-        pan_number = request.form.get('pan_number', '')
-        if pan_number and not validate_pan(pan_number):
-            return jsonify({'success': False, 'message': 'Invalid PAN card number. Format: ABCDE1234F'}), 400
-        
         full_name = request.form.get('full_name', '')
         dob = request.form.get('dob', '')
         gender = request.form.get('gender', '')
@@ -570,8 +532,6 @@ def submit_service_request():
             'state': state,
             'pincode': pincode,
             'additional_details': additional_details,
-            'aadhar_number': aadhar_number,
-            'pan_number': pan_number,
             'fee_details': fee_details,
             'submitted_by': user['name'],
             'submitted_phone': user['phone'],
@@ -580,7 +540,6 @@ def submit_service_request():
         
         details = json.dumps(details_json, indent=2)
         ref_number = generate_reference_number()
-        qr_code = generate_qr_code(f"https://digiserve.com/track/{ref_number}")
         
         request_data = {
             'user_id': ObjectId(session['user_id']),
@@ -593,7 +552,6 @@ def submit_service_request():
             'payment_status': 'pending',
             'status': 'pending',
             'reference_number': ref_number,
-            'qr_code': qr_code,
             'submitted_at': datetime.now(timezone.utc),
             'processed_at': None,
             'admin_remarks': None,
@@ -605,10 +563,7 @@ def submit_service_request():
             'applicant_city': city,
             'applicant_state': state,
             'applicant_pincode': pincode,
-            'additional_details': additional_details,
-            'aadhar_number': aadhar_number,
-            'pan_number': pan_number,
-            'uploaded_documents': []
+            'additional_details': additional_details
         }
         
         result = db.service_requests.insert_one(request_data)
@@ -638,16 +593,11 @@ def submit_service_request():
                     db.request_documents.insert_one(doc)
                     uploaded_docs.append(original_filename)
         
-        db.service_requests.update_one(
-            {'_id': request_id},
-            {'$set': {'uploaded_documents': uploaded_docs}}
-        )
-        
         create_notification(
             ObjectId(session['user_id']),
             request_id,
-            '✅ Application Submitted Successfully!',
-            f'Your application for {service["name"]} has been submitted.\n\n📋 Reference: {ref_number}\n💰 Total Amount: ₹{fee_details["total"]:.2f}\n\nWe will notify you once your application is processed.',
+            '✅ Application Submitted!',
+            f'Your application for {service["name"]} has been submitted. Reference: {ref_number}',
             'success'
         )
         
@@ -656,14 +606,14 @@ def submit_service_request():
             create_notification(
                 admin['_id'],
                 request_id,
-                '🆕 New Application Received',
-                f'New application from {full_name} ({user["phone"]}) for {service["name"]}.\nReference: {ref_number}',
+                '🆕 New Application',
+                f'New application from {full_name} for {service["name"]}',
                 'info'
             )
         
         return jsonify({
             'success': True,
-            'message': 'Service request submitted successfully',
+            'message': 'Application submitted successfully',
             'reference_number': ref_number,
             'amount': fee_details['total'],
             'fee_details': fee_details,
@@ -721,52 +671,6 @@ def api_my_requests():
         print(f"Error: {e}")
         return jsonify({'error': 'Unable to fetch requests'}), 500
 
-@app.route('/request-details/<request_id>')
-def request_details(request_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Please login'}), 401
-    
-    try:
-        try:
-            req_obj_id = ObjectId(request_id)
-            service_request = db.service_requests.find_one({
-                '_id': req_obj_id, 
-                'user_id': ObjectId(session['user_id'])
-            })
-        except:
-            service_request = db.service_requests.find_one({
-                'reference_number': request_id,
-                'user_id': ObjectId(session['user_id'])
-            })
-        
-        if not service_request:
-            return jsonify({'error': 'Request not found'}), 404
-        
-        documents = list(db.request_documents.find({'request_id': service_request['_id']}))
-        
-        service_request['_id'] = str(service_request['_id'])
-        service_request['user_id'] = str(service_request['user_id'])
-        service_request['service_id'] = str(service_request['service_id'])
-        
-        if isinstance(service_request.get('submitted_at'), datetime):
-            service_request['submitted_at'] = service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S')
-        if isinstance(service_request.get('processed_at'), datetime):
-            service_request['processed_at'] = service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        try:
-            details_data = json.loads(service_request.get('details', '{}')) if service_request.get('details') else {}
-        except:
-            details_data = {}
-        
-        return jsonify({
-            'request': service_request,
-            'documents': documents,
-            'details_data': details_data
-        })
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': 'Unable to fetch request details'}), 500
-
 @app.route('/initiate-payment/<ref_number>', methods=['POST'])
 def initiate_payment(ref_number):
     if 'user_id' not in session:
@@ -794,7 +698,6 @@ def initiate_payment(ref_number):
         }
         
         db.payment_transactions.insert_one(payment)
-        
         db.service_requests.update_one(
             {'_id': service_request['_id']},
             {'$set': {
@@ -807,7 +710,7 @@ def initiate_payment(ref_number):
             ObjectId(session['user_id']),
             service_request['_id'],
             '💰 Payment Successful!',
-            f'Payment of ₹{service_request["amount"]:.2f} for application {ref_number} has been completed.\nTransaction ID: {transaction_id}',
+            f'Payment of ₹{service_request["amount"]} completed.',
             'success'
         )
         
@@ -818,55 +721,7 @@ def initiate_payment(ref_number):
         })
     except Exception as e:
         print(f"Error: {e}")
-        return jsonify({'success': False, 'message': 'Payment failed. Please try again.'}), 500
-
-@app.route('/user-profile')
-def user_profile():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Please login'}), 401
-    
-    try:
-        user = get_user_by_id(session['user_id'])
-        if user:
-            user['_id'] = str(user['_id'])
-            if isinstance(user.get('created_at'), datetime):
-                user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-            if isinstance(user.get('last_login'), datetime):
-                user['last_login'] = user['last_login'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        return jsonify(user)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': 'Unable to fetch profile'}), 500
-
-@app.route('/update-profile', methods=['POST'])
-def update_profile():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login'}), 401
-    
-    try:
-        data = request.get_json()
-        update_fields = {}
-        
-        if 'address' in data:
-            update_fields['address'] = data['address']
-        if 'city' in data:
-            update_fields['city'] = data['city']
-        if 'state' in data:
-            update_fields['state'] = data['state']
-        if 'pincode' in data:
-            update_fields['pincode'] = data['pincode']
-        
-        if update_fields:
-            db.users.update_one(
-                {'_id': ObjectId(session['user_id'])},
-                {'$set': update_fields}
-            )
-        
-        return jsonify({'success': True, 'message': 'Profile updated successfully'})
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'success': False, 'message': 'Unable to update profile'}), 500
+        return jsonify({'success': False, 'message': 'Payment failed.'}), 500
 
 @app.route('/notifications')
 def get_notifications():
@@ -887,7 +742,7 @@ def get_notifications():
                 'type': n['type'],
                 'is_read': n['is_read'],
                 'request_id': str(n['request_id']) if n.get('request_id') else None,
-                'created_at': n['created_at'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(n['created_at'], datetime) else str(n['created_at']),
+                'created_at': n['created_at'].strftime('%Y-%m-%d %H:%M:%S'),
                 'time_ago': format_time_ago(n.get('created_at'))
             })
         
@@ -962,7 +817,6 @@ def admin_panel():
         total_requests = db.service_requests.count_documents({})
         pending_requests = db.service_requests.count_documents({'status': 'pending'})
         completed_requests = db.service_requests.count_documents({'status': 'completed'})
-        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
         total_users = db.users.count_documents({'role': 'user'})
         
         revenue_pipeline = [
@@ -985,7 +839,6 @@ def admin_panel():
             'total_requests': total_requests,
             'pending_requests': pending_requests,
             'completed_requests': completed_requests,
-            'in_progress_requests': in_progress_requests,
             'total_users': total_users,
             'total_revenue': total_revenue
         }
@@ -1026,18 +879,18 @@ def update_status(request_id):
         )
         
         status_messages = {
-            'in_progress': 'Your application is now being processed by our team.',
+            'in_progress': 'Your application is now being processed.',
             'completed': 'Your application has been completed successfully!',
-            'rejected': 'Your application has been reviewed. Please check admin remarks for details.'
+            'rejected': 'Your application has been reviewed.'
         }
         
-        message = status_messages.get(status, f'Your application status has been updated to {status}')
+        message = status_messages.get(status, f'Status updated to {status}')
         
         create_notification(
             service_request['user_id'],
             ObjectId(request_id),
-            f'📋 Application Status Updated: {status.upper()}',
-            f'{message}\n\nReference: {service_request["reference_number"]}\nRemarks: {remarks if remarks else "No additional remarks"}',
+            f'Status Updated: {status.upper()}',
+            f'{message}\nReference: {service_request["reference_number"]}',
             'success' if status == 'completed' else 'info'
         )
         
@@ -1060,11 +913,9 @@ def admin_request_details(request_id):
         service_request['_id'] = str(service_request['_id'])
         if isinstance(service_request.get('submitted_at'), datetime):
             service_request['submitted_at'] = service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S')
-        if isinstance(service_request.get('processed_at'), datetime):
-            service_request['processed_at'] = service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S')
         
         try:
-            details_data = json.loads(service_request.get('details', '{}')) if service_request.get('details') else {}
+            details_data = json.loads(service_request.get('details', '{}'))
         except:
             details_data = {}
         
@@ -1112,7 +963,7 @@ def add_service():
                 user['_id'],
                 None,
                 '🆕 New Service Added!',
-                f'A new service "{data.get("name")}" has been added. Check it out in the services dashboard!',
+                f'A new service "{data.get("name")}" has been added.',
                 'info'
             )
         
@@ -1129,7 +980,7 @@ def get_pending_count():
     except:
         return jsonify({'count': 0})
 
-# ============== Export Routes (CSV instead of Excel) ==============
+# ============== Export Routes ==============
 
 @app.route('/export/applications/csv')
 @admin_required
