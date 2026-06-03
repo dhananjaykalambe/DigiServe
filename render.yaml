@@ -2,14 +2,14 @@ services:
   - type: web
     name: digiserve
     runtime: python
-    repo: https://github.com/YOUR_USERNAME/digiserve
+    repo: https://github.com/dhananjaykalambe/DigiServe
     plan: free
     region: singapore
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: MONGO_URI
-        sync: false
+        value: mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
