@@ -4,4 +4,4 @@ flask-pymongo==2.3.0
 Werkzeug==2.3.7
 python-dotenv==1.0.0
 qrcode==7.4.2
-gunicorn==21.2.0
+gunicorn==21.2.0    
