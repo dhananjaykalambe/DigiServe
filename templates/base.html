@@ -3,167 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DigiServe - {% block title %}Your Digital Service Portal{% endblock %}</title>
+    <meta name="description" content="DigiServe eSeva - Your One-Stop Digital Service Portal for Scholarships, Exams, Bill Payments & Government Services">
+    <meta name="keywords" content="DigiServe, eSeva, Scholarship, Exam Form, Bill Payment, Government Services">
+    <meta name="author" content="DigiSoft">
+    <title>DigiServe eSeva - {% block title %}Your Digital Service Portal{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
     <style>
-        /* Dark Mode CSS Variables */
+        /* CSS Variables for Theme Support */
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
             --text-primary: #212529;
             --text-secondary: #6c757d;
+            --text-muted: #6c757d;
             --border-color: #dee2e6;
             --card-bg: #ffffff;
-            --navbar-bg: #0d6efd;
+            --navbar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --navbar-text: #ffffff;
-            --footer-bg: #212529;
+            --footer-bg: #1a1a2e;
             --footer-text: #ffffff;
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
         }
         
         [data-theme="dark"] {
             --bg-primary: #1a1a2e;
             --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
             --text-primary: #e4e6eb;
             --text-secondary: #a0a0a0;
+            --text-muted: #888888;
             --border-color: #2d3561;
             --card-bg: #0f3460;
-            --navbar-bg: #0f3460;
+            --navbar-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             --navbar-text: #e4e6eb;
             --footer-bg: #0f3460;
             --footer-text: #e4e6eb;
         }
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: var(--transition);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Navbar Styles */
         .navbar {
-            background-color: var(--navbar-bg) !important;
+            background: var(--navbar-bg) !important;
+            box-shadow: var(--shadow-md);
+            padding: 0.8rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .navbar-brand i {
+            margin-right: 8px;
         }
         
         .navbar-dark .navbar-nav .nav-link {
             color: var(--navbar-text);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: var(--transition);
+            border-radius: 8px;
         }
         
+        .navbar-dark .navbar-nav .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Card Styles */
         .card {
             background-color: var(--card-bg);
-            border-color: var(--border-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-md);
         }
         
         .card-header {
             background-color: var(--bg-secondary);
-            border-bottom-color: var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
         }
         
-        .bg-light {
-            background-color: var(--bg-secondary) !important;
+        /* Button Styles */
+        .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            transition: var(--transition);
         }
         
-        .text-muted {
-            color: var(--text-secondary) !important;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
         }
         
-        .border {
-            border-color: var(--border-color) !important;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
         
+        .btn-outline-primary {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        /* Table Styles */
         .table {
             color: var(--text-primary);
+            margin-bottom: 0;
         }
         
         .table-light {
             background-color: var(--bg-secondary);
         }
         
+        .table-hover tbody tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Form Styles */
+        .form-control, .form-select {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        /* Badge Styles */
+        .badge {
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        /* Alert Styles */
+        .alert {
+            border-radius: 12px;
+            border: none;
+        }
+        
+        /* Footer Styles */
         footer {
             background-color: var(--footer-bg);
             color: var(--footer-text);
             margin-top: auto;
+            padding: 2rem 0 1rem;
         }
         
         footer a {
             color: var(--footer-text);
+            text-decoration: none;
+            transition: var(--transition);
         }
         
+        footer a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        /* Dashboard Header */
         .dashboard-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2rem;
             color: white;
         }
         
-        /* Dark mode toggle button */
-        .dark-mode-toggle {
-            background: none;
+        /* Theme Toggle */
+        .theme-toggle {
+            background: rgba(255,255,255,0.2);
             border: none;
             color: var(--navbar-text);
             cursor: pointer;
             font-size: 1.2rem;
             padding: 0.5rem;
-            transition: transform 0.3s;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
         }
         
-        .dark-mode-toggle:hover {
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
             transform: rotate(15deg);
         }
         
-        /* Notification Badge */
+        /* Notification Styles */
         .notification-badge {
             position: absolute;
-            top: 0;
-            right: 0;
+            top: -5px;
+            right: -8px;
             font-size: 10px;
-            padding: 2px 5px;
+            padding: 2px 6px;
             border-radius: 50%;
-            transform: translate(50%, -50%);
+        }
+        
+        .notification-dropdown {
+            min-width: 350px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 0;
         }
         
         .notification-item {
             cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: normal !important;
-            word-wrap: break-word;
+            transition: var(--transition);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
         }
         
         .notification-item:hover {
             background-color: var(--bg-secondary);
         }
         
-        .notification-item.bg-light {
-            background-color: #e7f3ff !important;
+        .notification-item.unread {
+            background-color: rgba(102, 126, 234, 0.1);
         }
         
-        .dropdown-menu {
-            max-height: 450px;
-            overflow-y: auto;
-            min-width: 320px;
-            background-color: var(--card-bg);
-            border-color: var(--border-color);
-        }
-        
-        .dropdown-item {
-            color: var(--text-primary);
-        }
-        
-        .dropdown-item:hover {
-            background-color: var(--bg-secondary);
-        }
-        
-        .dropdown-header {
-            background-color: var(--bg-secondary);
-            padding: 10px 15px;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-        
-        /* Application Timeline Styles */
+        /* Timeline Styles */
         .timeline {
             position: relative;
             padding: 20px 0;
@@ -171,7 +307,7 @@
         
         .timeline-item {
             position: relative;
-            padding-left: 40px;
+            padding-left: 45px;
             margin-bottom: 25px;
         }
         
@@ -179,8 +315,8 @@
             position: absolute;
             left: 0;
             top: 0;
-            width: 32px;
-            height: 32px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -190,17 +326,17 @@
         }
         
         .timeline-icon.completed {
-            background-color: #28a745;
+            background-color: var(--success);
             color: white;
         }
         
         .timeline-icon.pending {
-            background-color: #ffc107;
+            background-color: var(--warning);
             color: #000;
         }
         
         .timeline-icon.current {
-            background-color: #007bff;
+            background-color: var(--primary);
             color: white;
             animation: pulse 2s infinite;
         }
@@ -214,149 +350,42 @@
         .timeline-content {
             background: var(--bg-secondary);
             padding: 12px 16px;
-            border-radius: 8px;
-            border-left: 3px solid #007bff;
-        }
-        
-        .timeline-content h6 {
-            margin-bottom: 5px;
-            color: var(--text-primary);
-        }
-        
-        .timeline-content small {
-            color: var(--text-secondary);
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
         }
         
         .timeline:before {
             content: '';
             position: absolute;
-            left: 15px;
+            left: 17px;
             top: 10px;
             bottom: 10px;
             width: 2px;
             background: var(--border-color);
         }
         
-        /* Checklist Styles */
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        
-        .checklist-item.completed {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .checklist-item.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .checklist-icon {
-            width: 30px;
-            font-size: 18px;
-            margin-right: 10px;
-        }
-        
-        /* Fee Calculator Styles */
-        .fee-calculator {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            padding: 20px;
-            color: white;
-        }
-        
-        .fee-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .fee-row.total {
-            font-size: 1.2em;
-            font-weight: bold;
-            border-bottom: none;
-            padding-top: 12px;
-            margin-top: 8px;
-            border-top: 2px solid rgba(255,255,255,0.3);
-        }
-        
-        /* Toast Notifications */
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 300px;
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-        
-        /* ID Validation Styles */
-        .valid-id {
-            border-color: #28a745 !important;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right calc(0.375em + 0.1875rem) center;
-            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
-            padding-right: calc(1.5em + 0.75rem);
-        }
-        
-        .invalid-id {
-            border-color: #dc3545 !important;
-        }
-        
-        .validation-message {
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .validation-message.valid {
-            color: #28a745;
-        }
-        
-        .validation-message.invalid {
-            color: #dc3545;
-        }
-        
         /* Loading Spinner */
-        .loader-small {
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
             animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
         }
         
         @keyframes spin {
@@ -364,104 +393,109 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Toast Notifications */
+        .toast-notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease-out;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            
+            .dashboard-header {
+                padding: 1.5rem;
+            }
+            
+            .notification-dropdown {
+                min-width: 300px;
+                position: absolute;
+                right: -50px;
+            }
+            
             .timeline-item {
-                padding-left: 30px;
+                padding-left: 35px;
             }
+            
             .timeline-icon {
-                width: 24px;
-                height: 24px;
-                font-size: 10px;
+                width: 28px;
+                height: 28px;
+                font-size: 11px;
             }
+            
             .timeline:before {
-                left: 11px;
+                left: 13px;
             }
         }
         
-        /* File Upload Styling */
-        .document-upload-item {
-            transition: all 0.3s ease;
-            padding: 5px;
-            border-radius: 5px;
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
         
-        .document-upload-item:hover {
-            background-color: var(--bg-secondary);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .file-item {
-            background: var(--bg-secondary);
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            border-left: 3px solid #28a745;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .remove-file-btn {
-            background: none;
-            border: none;
-            color: #dc3545;
+        /* Utility Classes */
+        .cursor-pointer {
             cursor: pointer;
-            padding: 0 8px;
         }
         
-        /* Application Details Card */
-        .application-details-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        
-        .detail-item {
-            background: var(--card-bg);
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        
-        .detail-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        
-        .detail-value {
-            font-size: 14px;
-            font-weight: 500;
-            word-break: break-word;
-        }
-        
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
     </style>
+    
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-handshake"></i> DigiServe
+                <i class="fas fa-handshake"></i> DigiServe<span class="fw-light">eSeva</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
                             <i class="fas fa-home"></i> Home
@@ -471,7 +505,7 @@
                         {% if session.user_role == 'admin' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('admin_panel') }}">
-                                    <i class="fas fa-user-shield"></i> Admin Panel
+                                    <i class="fas fa-user-shield"></i> Admin
                                 </a>
                             </li>
                         {% else %}
@@ -482,52 +516,53 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('my_requests_page') }}">
-                                    <i class="fas fa-history"></i> My Applications
+                                    <i class="fas fa-history"></i> My Apps
                                 </a>
                             </li>
                         {% endif %}
                         
-                        <!-- Dark Mode Toggle -->
+                        <!-- Theme Toggle -->
                         <li class="nav-item">
-                            <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle Dark Mode">
+                            <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
                                 <i class="fas fa-moon"></i>
                             </button>
                         </li>
                         
-                        <!-- Notification Dropdown -->
+                        <!-- Notifications Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-bell"></i>
                                 <span class="badge bg-danger notification-badge" id="notificationBadge" style="display: none;">0</span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
-                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                            <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
+                                <div class="dropdown-header d-flex justify-content-between align-items-center bg-primary text-white rounded-top">
                                     <strong><i class="fas fa-bell"></i> Notifications</strong>
-                                    <button class="btn btn-sm btn-link p-0" onclick="markAllNotificationsRead()" style="text-decoration: none;">
+                                    <button class="btn btn-sm btn-link text-white p-0" onclick="markAllNotificationsRead()">
                                         <i class="fas fa-check-double"></i> Mark all read
                                     </button>
                                 </div>
-                                <div class="dropdown-divider"></div>
-                                <div id="notificationList">
-                                    <div class="dropdown-item text-center text-muted">
-                                        <div class="loader-small"></div> Loading...
+                                <div id="notificationList" class="notification-list">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <p class="mt-2 text-muted small">Loading...</p>
                                     </div>
                                 </div>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-item text-center">
-                                    <a href="#" onclick="loadNotifications(); return false;" class="text-primary">
+                                <div class="dropdown-footer text-center py-2 border-top">
+                                    <a href="#" onclick="loadNotifications(); return false;" class="text-primary small">
                                         <i class="fas fa-sync-alt"></i> Refresh
                                     </a>
                                 </div>
                             </div>
                         </li>
                         
+                        <!-- User Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle"></i> {{ session.user_name }}
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle fa-lg"></i>
+                                <span>{{ session.user_name.split()[0] }}</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModalFromBase">
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
                                     <i class="fas fa-id-card"></i> My Profile
                                 </a>
                                 <div class="dropdown-divider"></div>
@@ -538,7 +573,7 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">
+                            <a class="nav-link btn btn-light text-primary px-3 rounded-pill" href="{{ url_for('login') }}">
                                 <i class="fas fa-mobile-alt"></i> Login / Register
                             </a>
                         </li>
@@ -548,67 +583,90 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        {% block content %}{% endblock %}
-    </div>
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 
-    <footer class="mt-5 py-4">
+    <!-- Footer -->
+    <footer>
         <div class="container">
             <div class="row">
-                <div class="col-md-4 text-center text-md-start">
-                    <h5><i class="fas fa-handshake"></i> DigiServe</h5>
-                    <p class="small">Your Trusted Digital Service Partner</p>
+                <div class="col-md-4 mb-4 text-center text-md-start">
+                    <h5><i class="fas fa-handshake"></i> DigiServe eSeva</h5>
+                    <p class="small text-muted">Your Trusted Digital Service Partner since 2024. We provide seamless online services for all your needs.</p>
+                    <div class="mt-3">
+                        <a href="#" class="text-white-50 me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white-50 me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white-50 me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
                 </div>
-                <div class="col-md-4 text-center">
+                <div class="col-md-2 mb-4 text-center text-md-start">
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                        <li><a href="{{ url_for('index') }}" class="text-white-50">Home</a></li>
                         {% if 'user_id' in session %}
-                            <li><a href="{{ url_for('services_dashboard') }}" class="text-decoration-none">Services</a></li>
-                            <li><a href="{{ url_for('my_requests_page') }}" class="text-decoration-none">My Applications</a></li>
+                            <li><a href="{{ url_for('services_dashboard') }}" class="text-white-50">Services</a></li>
+                            <li><a href="{{ url_for('my_requests_page') }}" class="text-white-50">My Applications</a></li>
                         {% else %}
-                            <li><a href="{{ url_for('login') }}" class="text-decoration-none">Login</a></li>
+                            <li><a href="{{ url_for('login') }}" class="text-white-50">Login</a></li>
                         {% endif %}
                     </ul>
                 </div>
-                <div class="col-md-4 text-center text-md-end">
-                    <h6>Contact</h6>
-                    <p class="small mb-1">
-                        <i class="fas fa-phone-alt"></i> <strong>Phone:</strong> 
-                        <a href="tel:9421456959" class="text-decoration-none">9421456959</a>
+                <div class="col-md-3 mb-4 text-center text-md-start">
+                    <h6>Services</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-white-50">Scholarship Services</a></li>
+                        <li><a href="#" class="text-white-50">Exam Form Filling</a></li>
+                        <li><a href="#" class="text-white-50">Bill Payments</a></li>
+                        <li><a href="#" class="text-white-50">Document Services</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4 text-center text-md-start">
+                    <h6>Contact Us</h6>
+                    <p class="small mb-2 text-white-50">
+                        <i class="fas fa-phone-alt me-2"></i> 
+                        <a href="tel:9421456959" class="text-white-50">+91 94214 56959</a>
                     </p>
-                    <p class="small mb-1">
-                        <i class="fab fa-whatsapp text-success"></i> <strong>WhatsApp:</strong> 
-                        <a href="https://wa.me/919421456959" target="_blank" class="text-decoration-none">9421456959</a>
+                    <p class="small mb-2 text-white-50">
+                        <i class="fab fa-whatsapp me-2 text-success"></i> 
+                        <a href="https://wa.me/919421456959" target="_blank" class="text-white-50">WhatsApp Support</a>
                     </p>
-                    <p class="small">
-                        <i class="fas fa-envelope"></i> <strong>Email:</strong> 
-                        <a href="mailto:support@digiserve.com" class="text-decoration-none">support@digiserve.com</a>
+                    <p class="small mb-2 text-white-50">
+                        <i class="fas fa-envelope me-2"></i> 
+                        <a href="mailto:support@digiserve.com" class="text-white-50">support@digiserve.com</a>
+                    </p>
+                    <p class="small text-white-50">
+                        <i class="fas fa-clock me-2"></i> Mon-Sat: 9AM - 7PM
                     </p>
                 </div>
             </div>
-            <hr>
+            <hr class="bg-white-50">
             <div class="text-center">
-                <small>&copy; 2026 DigiSoft. All Rights Reserved by DK.</small>
+                <small>&copy; 2026 DigiSoft. All Rights Reserved by DK. | <a href="#" class="text-white-50">Privacy Policy</a> | <a href="#" class="text-white-50">Terms of Service</a></small>
             </div>
         </div>
     </footer>
 
     <!-- Profile Modal -->
-    <div class="modal fade" id="profileModalFromBase" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title"><i class="fas fa-user-edit"></i> My Profile</h5>
@@ -616,74 +674,64 @@
                 </div>
                 <div class="modal-body" id="profileModalBody">
                     <div class="text-center py-4">
-                        <div class="loader-small"></div> Loading profile...
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Loading profile...</p>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="updateProfileFromModal()">Save Changes</button>
+                    <button type="button" class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
     <script>
-        // Dark Mode Toggle
-        function initDarkMode() {
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+        
+        // Theme Management
+        function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
-            updateDarkModeIcon(savedTheme);
+            updateThemeIcon(savedTheme);
         }
         
-        function updateDarkModeIcon(theme) {
-            const toggleBtn = document.getElementById('darkModeToggle');
+        function updateThemeIcon(theme) {
+            const toggleBtn = document.getElementById('themeToggle');
             if (toggleBtn) {
                 const icon = toggleBtn.querySelector('i');
-                if (theme === 'dark') {
-                    icon.className = 'fas fa-sun';
-                } else {
-                    icon.className = 'fas fa-moon';
-                }
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
         
-        function toggleDarkMode() {
+        function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            updateDarkModeIcon(newTheme);
+            updateThemeIcon(newTheme);
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            initDarkMode();
-            const toggleBtn = document.getElementById('darkModeToggle');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', toggleDarkMode);
+            initTheme();
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
             }
         });
         
-        // Global notification functions
-        let lastNotificationCount = 0;
-        let notificationCheckInterval = null;
-        let currentUserProfile = null;
+        // Global Variables
+        let notificationInterval = null;
         
-        function formatTimeAgo(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const seconds = Math.floor((now - date) / 1000);
-            
-            if (seconds < 60) return 'Just now';
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            const days = Math.floor(hours / 24);
-            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-            return date.toLocaleDateString();
-        }
-        
+        // Notification Functions
         async function loadNotifications() {
             const notificationList = document.getElementById('notificationList');
             if (!notificationList) return;
@@ -693,44 +741,47 @@
                 const notifications = await response.json();
                 
                 if (notifications.length === 0) {
-                    notificationList.innerHTML = '<div class="dropdown-item text-center text-muted">No notifications</div>';
+                    notificationList.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-bell-slash fa-2x text-muted"></i>
+                            <p class="mt-2 text-muted small">No notifications</p>
+                        </div>
+                    `;
                     updateNotificationBadge(0);
                     return;
                 }
                 
-                const unreadNotifications = notifications.filter(n => !n.is_read);
-                if (unreadNotifications.length > lastNotificationCount && lastNotificationCount > 0) {
-                    showNotificationToast(`${unreadNotifications.length} new notification(s) received`);
-                }
-                lastNotificationCount = unreadNotifications.length;
+                const unreadCount = notifications.filter(n => !n.is_read).length;
+                updateNotificationBadge(unreadCount);
                 
                 notificationList.innerHTML = notifications.slice(0, 20).map(notif => `
-                    <div class="dropdown-item notification-item ${!notif.is_read ? 'bg-light' : ''}" onclick="viewNotificationFromBase('${notif.id}', ${notif.request_id || 'null'})">
-                        <div class="d-flex justify-content-between align-items-start">
+                    <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="handleNotificationClick('${notif.id}', '${notif.request_id || ''}')">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="flex-shrink-0">
+                                ${notif.type === 'success' ? '<i class="fas fa-check-circle text-success fs-5"></i>' : 
+                                  notif.type === 'info' ? '<i class="fas fa-info-circle text-info fs-5"></i>' :
+                                  notif.type === 'warning' ? '<i class="fas fa-exclamation-triangle text-warning fs-5"></i>' :
+                                  '<i class="fas fa-bell text-primary fs-5"></i>'}
+                            </div>
                             <div class="flex-grow-1">
-                                <div class="notification-time">
-                                    <i class="far fa-clock"></i> ${formatTimeAgo(notif.created_at)}
-                                </div>
-                                <div class="notification-title">
-                                    ${notif.type === 'success' ? '<i class="fas fa-check-circle text-success"></i>' : 
-                                      notif.type === 'info' ? '<i class="fas fa-info-circle text-info"></i>' :
-                                      notif.type === 'warning' ? '<i class="fas fa-exclamation-triangle text-warning"></i>' :
-                                      '<i class="fas fa-bell text-primary"></i>'}
-                                    ${notif.title}
-                                </div>
-                                <div class="notification-message">
-                                    ${notif.message.length > 100 ? notif.message.substring(0, 100) + '...' : notif.message}
+                                <div class="fw-semibold small">${escapeHtml(notif.title)}</div>
+                                <div class="small text-muted">${escapeHtml(notif.message.substring(0, 80))}${notif.message.length > 80 ? '...' : ''}</div>
+                                <div class="small text-muted mt-1">
+                                    <i class="far fa-clock"></i> ${notif.time_ago}
                                 </div>
                             </div>
-                            ${!notif.is_read ? '<span class="badge bg-primary ms-2">New</span>' : ''}
+                            ${!notif.is_read ? '<span class="badge bg-primary rounded-pill">New</span>' : ''}
                         </div>
                     </div>
                 `).join('');
-                
-                updateNotificationBadge(unreadNotifications.length);
             } catch (error) {
                 console.error('Error loading notifications:', error);
-                notificationList.innerHTML = '<div class="dropdown-item text-center text-danger">Error loading notifications</div>';
+                notificationList.innerHTML = `
+                    <div class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                        <p class="mt-2 small">Error loading notifications</p>
+                    </div>
+                `;
             }
         }
         
@@ -750,7 +801,7 @@
             try {
                 await fetch(`/notifications/mark-read/${notificationId}`, { method: 'POST' });
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error marking notification read:', error);
             }
         }
         
@@ -758,162 +809,86 @@
             try {
                 await fetch('/notifications/mark-all-read', { method: 'POST' });
                 loadNotifications();
-                showTemporaryMessage('All notifications marked as read', 'success');
+                showToast('All notifications marked as read', 'success');
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error marking all read:', error);
             }
         }
         
-        async function viewNotificationFromBase(notificationId, requestId) {
+        async function handleNotificationClick(notificationId, requestId) {
             await markNotificationRead(notificationId);
             
             if (requestId) {
-                try {
-                    const response = await fetch(`/request-details/${requestId}`);
-                    const data = await response.json();
-                    if (!data.error) {
-                        showRequestDetailsModal(data);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
+                window.location.href = `/my-requests`;
             }
             loadNotifications();
         }
         
-        function showRequestDetailsModal(data) {
-            const request = data.request;
-            const documents = data.documents;
-            
-            let statusClass = '';
-            switch(request.status) {
-                case 'pending': statusClass = 'warning'; break;
-                case 'in_progress': statusClass = 'info'; break;
-                case 'completed': statusClass = 'success'; break;
-                case 'rejected': statusClass = 'danger'; break;
-                default: statusClass = 'secondary';
-            }
-            
-            let timelineHtml = '';
-            if (request.timeline && request.timeline.length > 0) {
-                timelineHtml = '<div class="timeline"><h6>Application Timeline</h6>';
-                request.timeline.forEach((item, idx) => {
-                    timelineHtml += `
-                        <div class="timeline-item">
-                            <div class="timeline-icon completed">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div class="timeline-content">
-                                <h6>${item.title}</h6>
-                                <p class="small mb-1">${item.description}</p>
-                                <small class="text-muted">${item.timestamp}</small>
-                            </div>
-                        </div>
-                    `;
-                });
-                timelineHtml += '</div>';
-            }
-            
-            const modalHtml = `
-                <div class="modal fade" id="requestModalBase" tabindex="-1">
-                    <div class="modal-dialog modal-xl">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title">Application Details: ${request.reference_number}</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><strong>Service:</strong> ${request.service_name}</p>
-                                        <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${request.status.toUpperCase()}</span></p>
-                                        <p><strong>Payment Status:</strong> <span class="badge bg-${request.payment_status === 'completed' ? 'success' : 'warning'}">${request.payment_status.toUpperCase()}</span></p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><strong>Amount:</strong> ₹${request.amount}</p>
-                                        <p><strong>Submitted:</strong> ${request.submitted_at}</p>
-                                        ${request.processed_at ? `<p><strong>Processed:</strong> ${request.processed_at}</p>` : ''}
-                                    </div>
-                                </div>
-                                <hr>
-                                <h6>Applicant Information</h6>
-                                <div class="row mb-3">
-                                    <div class="col-md-4"><strong>Name:</strong> ${request.applicant_name || 'N/A'}</div>
-                                    <div class="col-md-4"><strong>DOB:</strong> ${request.applicant_dob || 'N/A'}</div>
-                                    <div class="col-md-4"><strong>Gender:</strong> ${request.applicant_gender || 'N/A'}</div>
-                                </div>
-                                ${timelineHtml}
-                                ${request.admin_remarks ? `<div class="alert alert-info mt-3"><strong>Admin Remarks:</strong> ${request.admin_remarks}</div>` : ''}
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const existingModal = document.getElementById('requestModalBase');
-            if (existingModal) existingModal.remove();
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = new bootstrap.Modal(document.getElementById('requestModalBase'));
-            modal.show();
-        }
-        
-        async function loadUserProfile() {
+        // Profile Functions
+        async function loadProfile() {
             try {
                 const response = await fetch('/user-profile');
                 const user = await response.json();
-                currentUserProfile = user;
                 
                 const modalBody = document.getElementById('profileModalBody');
                 if (modalBody) {
                     modalBody.innerHTML = `
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Full Name</label>
-                            <input type="text" class="form-control" value="${user.name}" disabled>
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <input type="text" class="form-control" value="${escapeHtml(user.name)}" disabled>
+                            <small class="text-muted">Contact support for name changes</small>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Mobile Number</label>
-                            <input type="text" class="form-control" value="${user.phone}" disabled>
+                            <label class="form-label fw-semibold">Mobile Number</label>
+                            <input type="text" class="form-control" value="${escapeHtml(user.phone)}" disabled>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Email Address</label>
-                            <input type="email" class="form-control" id="profileEmailBase" value="${user.email || ''}" placeholder="Enter your email">
+                            <label class="form-label fw-semibold">Email Address</label>
+                            <input type="email" class="form-control" id="profileEmail" value="${escapeHtml(user.email || '')}" placeholder="Enter your email">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Address</label>
-                            <textarea class="form-control" id="profileAddressBase" rows="2" placeholder="Enter your address">${user.address || ''}</textarea>
+                            <label class="form-label fw-semibold">Address</label>
+                            <textarea class="form-control" id="profileAddress" rows="2" placeholder="Enter your address">${escapeHtml(user.address || '')}</textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">City</label>
-                                <input type="text" class="form-control" id="profileCityBase" value="${user.city || ''}">
+                                <label class="form-label fw-semibold">City</label>
+                                <input type="text" class="form-control" id="profileCity" value="${escapeHtml(user.city || '')}">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">State</label>
-                                <input type="text" class="form-control" id="profileStateBase" value="${user.state || ''}">
+                                <label class="form-label fw-semibold">State</label>
+                                <input type="text" class="form-control" id="profileState" value="${escapeHtml(user.state || '')}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Pincode</label>
-                            <input type="text" class="form-control" id="profilePincodeBase" value="${user.pincode || ''}" maxlength="6">
+                            <label class="form-label fw-semibold">Pincode</label>
+                            <input type="text" class="form-control" id="profilePincode" value="${escapeHtml(user.pincode || '')}" maxlength="6" pattern="[0-9]{6}">
+                        </div>
+                        <div class="alert alert-info small mb-0">
+                            <i class="fas fa-info-circle"></i> Your profile information helps us serve you better.
                         </div>
                     `;
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
+                const modalBody = document.getElementById('profileModalBody');
+                if (modalBody) {
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Error loading profile. Please try again.
+                        </div>
+                    `;
+                }
             }
         }
         
-        async function updateProfileFromModal() {
+        async function updateProfile() {
             const profileData = {
-                email: document.getElementById('profileEmailBase')?.value,
-                address: document.getElementById('profileAddressBase')?.value,
-                city: document.getElementById('profileCityBase')?.value,
-                state: document.getElementById('profileStateBase')?.value,
-                pincode: document.getElementById('profilePincodeBase')?.value
+                email: document.getElementById('profileEmail')?.value,
+                address: document.getElementById('profileAddress')?.value,
+                city: document.getElementById('profileCity')?.value,
+                state: document.getElementById('profileState')?.value,
+                pincode: document.getElementById('profilePincode')?.value
             };
             
             try {
@@ -925,67 +900,60 @@
                 
                 const result = await response.json();
                 if (result.success) {
-                    showTemporaryMessage('Profile updated successfully!', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('profileModalFromBase')).hide();
+                    showToast('Profile updated successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
                 } else {
-                    showTemporaryMessage('Failed to update profile', 'danger');
+                    showToast(result.message || 'Failed to update profile', 'danger');
                 }
             } catch (error) {
                 console.error('Error updating profile:', error);
-                showTemporaryMessage('Error updating profile', 'danger');
+                showToast('Error updating profile', 'danger');
             }
         }
         
-        function showTemporaryMessage(message, type = 'info') {
+        // Toast Notification
+        function showToast(message, type = 'info') {
             const toastHtml = `
                 <div class="toast-notification alert alert-${type} shadow-lg">
                     <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
-                    ${message}
+                    ${escapeHtml(message)}
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', toastHtml);
             setTimeout(() => {
-                const toast = document.querySelector('.toast-notification');
+                const toast = document.querySelector('.toast-notification:last-child');
                 if (toast) {
-                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    toast.style.animation = 'slideOutRight 0.3s ease-out';
                     setTimeout(() => toast.remove(), 300);
                 }
-            }, 3000);
+            }, 4000);
         }
         
-        function showNotificationToast(message) {
-            const toastHtml = `
-                <div class="toast-notification alert alert-info shadow-lg">
-                    <i class="fas fa-bell me-2"></i>
-                    ${message}
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', toastHtml);
-            setTimeout(() => {
-                const toast = document.querySelector('.toast-notification');
-                if (toast) {
-                    toast.style.animation = 'slideOut 0.3s ease-out';
-                    setTimeout(() => toast.remove(), 300);
-                }
-            }, 5000);
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
-        // Initialize
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             {% if 'user_id' in session %}
                 loadNotifications();
-                if (notificationCheckInterval) clearInterval(notificationCheckInterval);
-                notificationCheckInterval = setInterval(loadNotifications, 30000);
+                if (notificationInterval) clearInterval(notificationInterval);
+                notificationInterval = setInterval(loadNotifications, 30000);
                 
-                const profileModal = document.getElementById('profileModalFromBase');
+                const profileModal = document.getElementById('profileModal');
                 if (profileModal) {
-                    profileModal.addEventListener('show.bs.modal', loadUserProfile);
+                    profileModal.addEventListener('show.bs.modal', loadProfile);
                 }
             {% endif %}
         });
         
+        // Cleanup interval on page unload
         window.addEventListener('beforeunload', () => {
-            if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+            if (notificationInterval) clearInterval(notificationInterval);
         });
     </script>
     

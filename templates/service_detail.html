@@ -1,57 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}{{ service.name }} - DigiServe eSeva{% endblock %}
+{% block title %}{{ service.name }} - Apply Online | DigiServe eSeva{% endblock %}
 
 {% block content %}
 <div class="mb-4">
-    <a href="{{ url_for('services_dashboard') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Services
+    <a href="{{ url_for('services_dashboard') }}" class="btn btn-outline-secondary rounded-pill">
+        <i class="fas fa-arrow-left me-2"></i> Back to Services
     </a>
 </div>
 
 <div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0"><i class="{{ service.icon }}"></i> {{ service.name }}</h3>
+    <div class="col-lg-8">
+        <div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up">
+            <div class="card-header bg-primary text-white rounded-top-4 border-0 py-3">
+                <h3 class="mb-0 fs-4"><i class="{{ service.icon }} me-2"></i> {{ service.name }}</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
+                <!-- Description -->
                 <div class="mb-4">
-                    <h5><i class="fas fa-info-circle text-primary"></i> Service Description</h5>
-                    <p>{{ service.description }}</p>
+                    <h5 class="fw-semibold"><i class="fas fa-info-circle text-primary me-2"></i> Service Description</h5>
+                    <p class="text-muted">{{ service.description }}</p>
                 </div>
                 
+                <!-- Eligibility -->
                 <div class="mb-4">
-                    <h5><i class="fas fa-check-circle text-success"></i> Eligibility Criteria</h5>
-                    <div class="bg-light p-3 rounded">
+                    <h5 class="fw-semibold"><i class="fas fa-check-circle text-success me-2"></i> Eligibility Criteria</h5>
+                    <div class="bg-light p-3 rounded-3">
                         {{ service.eligibility|replace('\n', '<br>')|safe if service.eligibility else 'No specific eligibility criteria mentioned.' }}
                     </div>
                 </div>
                 
+                <!-- Documents Required -->
                 <div class="mb-4">
-                    <h5><i class="fas fa-file-alt text-info"></i> Documents Required</h5>
-                    <div class="bg-light p-3 rounded" id="documentsRequired">
+                    <h5 class="fw-semibold"><i class="fas fa-file-alt text-info me-2"></i> Documents Required</h5>
+                    <div class="bg-light p-3 rounded-3" id="documentsRequired">
                         {{ service.documents_required|replace('\n', '<br>')|safe if service.documents_required else 'No specific documents required.' }}
                     </div>
                 </div>
                 
+                <!-- Instructions -->
                 <div class="mb-4">
-                    <h5><i class="fas fa-clipboard-list text-warning"></i> Instructions</h5>
-                    <div class="bg-light p-3 rounded">
+                    <h5 class="fw-semibold"><i class="fas fa-clipboard-list text-warning me-2"></i> Instructions</h5>
+                    <div class="bg-light p-3 rounded-3">
                         {{ service.instructions|replace('\n', '<br>')|safe if service.instructions else 'Fill the application form carefully. Upload clear copies of all documents.' }}
                     </div>
                 </div>
                 
+                <!-- Processing Time -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="alert alert-info">
-                            <i class="fas fa-clock"></i> <strong>Processing Time:</strong><br>
+                        <div class="alert alert-info rounded-3 mb-3">
+                            <i class="fas fa-clock me-2"></i> 
+                            <strong>Processing Time:</strong><br>
                             {{ service.processing_time or '7-10 working days' }}
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="alert alert-success" id="serviceChargeDisplay">
-                            <i class="fas fa-rupee-sign"></i> <strong>Service Charge:</strong><br>
+                        <div class="alert alert-success rounded-3 mb-3" id="serviceChargeDisplay">
+                            <i class="fas fa-rupee-sign me-2"></i> 
+                            <strong>Service Charge:</strong><br>
                             {% if service.service_charge > 0 %}
                                 ₹{{ "%.2f"|format(service.service_charge) }}
                             {% else %}
@@ -64,19 +71,19 @@
         </div>
     </div>
     
-    <div class="col-md-4">
-        <!-- Fee Calculator Card -->
-        <div class="card shadow-sm mb-4" id="feeCalculatorCard" style="display: {% if service.service_charge > 0 %}block{% else %}none{% endif %};">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-calculator"></i> Fee Calculator</h5>
+    <div class="col-lg-4">
+        <!-- Fee Calculator -->
+        <div class="card shadow-sm rounded-4 mb-4" id="feeCalculatorCard" style="display: {% if service.service_charge > 0 %}block{% else %}none{% endif %};" data-aos="fade-up" data-aos-delay="100">
+            <div class="card-header bg-gradient text-white rounded-top-4 border-0 py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i> Fee Calculator</h5>
             </div>
-            <div class="card-body fee-calculator">
+            <div class="card-body p-4">
                 <div class="fee-row">
                     <span>Service Charge:</span>
                     <span>₹<span id="calcServiceCharge">{{ "%.2f"|format(service.service_charge) }}</span></span>
                 </div>
                 <div class="fee-row">
-                    <span>Convenience Fee (2%):</span>
+                    <span>Convenience Fee ({{ service.get('convenience_fee_percent', 2) }}%):</span>
                     <span>₹<span id="calcConvenienceFee">0.00</span></span>
                 </div>
                 <div class="fee-row">
@@ -84,7 +91,7 @@
                     <span>₹<span id="calcSubtotal">0.00</span></span>
                 </div>
                 <div class="fee-row">
-                    <span>GST (18%):</span>
+                    <span>GST ({{ service.get('gst_percent', 18) }}%):</span>
                     <span>₹<span id="calcGST">0.00</span></span>
                 </div>
                 <div class="fee-row total">
@@ -94,23 +101,21 @@
             </div>
         </div>
         
-        <!-- Application Form Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-paper-plane"></i> Apply for this Service</h5>
+        <!-- Application Form -->
+        <div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-header bg-success text-white rounded-top-4 border-0 py-3">
+                <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i> Apply for this Service</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form id="applicationForm" enctype="multipart/form-data">
                     <input type="hidden" name="service_id" value="{{ service.id }}">
                     <input type="hidden" id="serviceCharge" value="{{ service.service_charge }}">
                     <input type="hidden" id="convenienceFeePercent" value="{{ service.get('convenience_fee_percent', 2) }}">
                     <input type="hidden" id="gstPercent" value="{{ service.get('gst_percent', 18) }}">
                     
-                    <!-- Required Information Section -->
+                    <!-- Personal Information -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-star-of-life text-danger"></i> Required Information
-                        </label>
+                        <label class="form-label fw-semibold">Personal Information</label>
                         
                         <div class="mb-3">
                             <label class="form-label">Full Name <span class="text-danger">*</span></label>
@@ -118,63 +123,60 @@
                                    value="{{ user.name }}" required placeholder="Enter your full name as per documents">
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="dob" id="dob" required>
-                            <small class="text-muted">As per birth certificate / 10th marksheet</small>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="dob" id="dob" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gender <span class="text-danger">*</span></label>
+                                <select class="form-select" name="gender" id="gender" required>
+                                    <option value="">Select</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Gender <span class="text-danger">*</span></label>
-                            <select class="form-select" name="gender" id="gender" required>
-                                <option value="">Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category <span class="text-danger">*</span></label>
+                                <select class="form-select" name="category" id="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="general">General</option>
+                                    <option value="obc">OBC</option>
+                                    <option value="sc">SC</option>
+                                    <option value="st">ST</option>
+                                    <option value="ews">EWS</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" name="email" id="email" 
+                                       value="{{ user.email or '' }}" placeholder="your@email.com">
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Category <span class="text-danger">*</span></label>
-                            <select class="form-select" name="category" id="category" required>
-                                <option value="">Select Category</option>
-                                <option value="general">General</option>
-                                <option value="obc">OBC</option>
-                                <option value="sc">SC</option>
-                                <option value="st">ST</option>
-                                <option value="ews">EWS</option>
-                            </select>
-                        </div>
-                        
-                        <!-- ID Proof Validation -->
-                        <div class="mb-3">
-                            <label class="form-label">Aadhaar Number</label>
-                            <input type="text" class="form-control" name="aadhar_number" id="aadharNumber" 
-                                   maxlength="12" placeholder="Enter 12-digit Aadhaar number">
-                            <div id="aadharValidation" class="validation-message"></div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">PAN Card Number</label>
-                            <input type="text" class="form-control" name="pan_number" id="panNumber" 
-                                   maxlength="10" placeholder="Enter PAN number (e.g., ABCDE1234F)">
-                            <div id="panValidation" class="validation-message"></div>
-                        </div>
+                    </div>
+                    
+                    <!-- Address Information -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Address Information</label>
                         
                         <div class="mb-3">
                             <label class="form-label">Address <span class="text-danger">*</span></label>
                             <textarea class="form-control" name="address" id="address" rows="2" 
-                                      placeholder="Enter your complete address" required></textarea>
+                                      placeholder="House No., Street, Area" required></textarea>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">City <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="city" id="city" required placeholder="City">
+                                <input type="text" class="form-control" name="city" id="city" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">State <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="state" id="state" required placeholder="State">
+                                <input type="text" class="form-control" name="state" id="state" required>
                             </div>
                         </div>
                         
@@ -190,19 +192,30 @@
                                 <small class="text-muted">Registered mobile number</small>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- ID Proofs -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">ID Proofs <span class="text-muted">(Optional)</span></label>
                         
                         <div class="mb-3">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" class="form-control" name="email" id="email" 
-                                   value="{{ user.email or '' }}" placeholder="Enter your email address">
+                            <label class="form-label">Aadhaar Number</label>
+                            <input type="text" class="form-control" name="aadhar_number" id="aadharNumber" 
+                                   maxlength="12" placeholder="12-digit Aadhaar number">
+                            <div id="aadharValidation" class="validation-message small"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">PAN Card Number</label>
+                            <input type="text" class="form-control" name="pan_number" id="panNumber" 
+                                   maxlength="10" placeholder="ABCDE1234F">
+                            <div id="panValidation" class="validation-message small"></div>
                         </div>
                     </div>
                     
                     <!-- Educational Information -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-graduation-cap"></i> Educational Information
-                        </label>
+                        <label class="form-label fw-semibold">Educational Information <span class="text-muted">(Optional)</span></label>
                         
                         <div class="mb-3">
                             <label class="form-label">Highest Qualification</label>
@@ -213,85 +226,76 @@
                                 <option value="diploma">Diploma</option>
                                 <option value="graduate">Graduate</option>
                                 <option value="post_graduate">Post Graduate</option>
-                                <option value="phd">PhD</option>
                             </select>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Institute/College Name</label>
-                            <input type="text" class="form-control" name="institute_name" id="instituteName" 
-                                   placeholder="Enter your institute/college name">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Course/Exam Name</label>
-                            <input type="text" class="form-control" name="course_name" id="courseName" 
-                                   placeholder="Enter course or exam name">
+                            <input type="text" class="form-control" name="institute_name" id="instituteName">
                         </div>
                         
                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Course/Exam Name</label>
+                                <input type="text" class="form-control" name="course_name" id="courseName">
+                            </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Passing Year</label>
                                 <input type="number" class="form-control" name="passing_year" id="passingYear" 
                                        min="2000" max="2030" placeholder="YYYY">
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Percentage/CGPA</label>
-                                <input type="text" class="form-control" name="percentage" id="percentage" 
-                                       placeholder="e.g., 85% or 8.5 CGPA">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Percentage/CGPA</label>
+                            <input type="text" class="form-control" name="percentage" id="percentage" 
+                                   placeholder="e.g., 85% or 8.5 CGPA">
+                        </div>
+                    </div>
+                    
+                    <!-- Document Upload -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Upload Documents</label>
+                        
+                        <div id="documentChecklist" class="mb-3">
+                            <div id="checklistContainer" class="small"></div>
+                        </div>
+                        
+                        <div id="documentUploadsContainer">
+                            <div class="document-upload-item mb-2" id="doc_0">
+                                <div class="input-group">
+                                    <input type="file" class="form-control document-file" name="documents" 
+                                           accept=".pdf,.jpg,.jpeg,.png" data-index="0">
+                                    <button type="button" class="btn btn-outline-danger remove-document-btn" onclick="removeDocument(0)" style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill mt-2" onclick="addMoreDocuments()">
+                            <i class="fas fa-plus-circle me-1"></i> Add More Documents
+                        </button>
+                        
+                        <div id="fileListContainer" class="mt-3">
+                            <div id="fileList" class="small text-muted"></div>
                         </div>
                     </div>
                     
                     <!-- Additional Details -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-comment-dots"></i> Additional Details
-                        </label>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Additional Details <span class="text-muted">(Optional)</span></label>
                         <textarea class="form-control" name="additional_details" rows="3" 
                                   placeholder="Any additional information you want to provide..."></textarea>
                     </div>
                     
-                    <!-- Document Upload Section with Checklist -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-cloud-upload-alt"></i> Upload Required Documents
-                        </label>
-                        
-                        <!-- Document Checklist -->
-                        <div class="mb-3" id="documentChecklist">
-                            <h6>Required Documents Checklist:</h6>
-                            <div id="checklistContainer"></div>
-                        </div>
-                        
-                        <div id="documentUploadsContainer">
-                            <div class="document-upload-item mb-3" id="doc_0">
-                                <div class="input-group">
-                                    <input type="file" class="form-control document-file" name="documents" 
-                                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" data-index="0">
-                                    <button type="button" class="btn btn-danger remove-document-btn" onclick="removeDocument(0)" style="display: none;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <small class="text-muted">Upload PDF, JPG, PNG, DOC (Max 10MB per file)</small>
-                            </div>
-                        </div>
-                        
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addMoreDocuments()">
-                            <i class="fas fa-plus-circle"></i> Add More Documents
-                        </button>
-                        
-                        <div id="fileListContainer" class="mt-3">
-                            <div id="fileList" class="small"></div>
-                        </div>
+                    <div class="alert alert-warning small rounded-3">
+                        <i class="fas fa-shield-alt me-2"></i> 
+                        By submitting this application, you confirm that all information provided is accurate and complete.
                     </div>
                     
-                    <div class="alert alert-warning small">
-                        <i class="fas fa-shield-alt"></i> By submitting this application, you confirm that all information provided is accurate and complete.
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success btn-lg w-100" id="submitBtn">
-                        <i class="fas fa-paper-plane"></i> Submit Application
+                    <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill" id="submitBtn">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Application
                     </button>
                 </form>
                 <div id="result" class="mt-3"></div>
@@ -299,6 +303,112 @@
         </div>
     </div>
 </div>
+
+<style>
+.fee-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.fee-row.total {
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-top: 2px solid rgba(0,0,0,0.1);
+    border-bottom: none;
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.valid-id {
+    border-color: #28a745 !important;
+}
+
+.invalid-id {
+    border-color: #dc3545 !important;
+}
+
+.validation-message.valid {
+    color: #28a745;
+}
+
+.validation-message.invalid {
+    color: #dc3545;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.checklist-item.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.checklist-item.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.checklist-icon {
+    width: 24px;
+    margin-right: 8px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.remove-file-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+}
+
+.upload-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: white;
+}
+
+.upload-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 
 <script>
 let documentCounter = 1;
@@ -321,7 +431,7 @@ function calculateFees() {
     document.getElementById('calcTotal').innerText = total.toFixed(2);
 }
 
-// ID Validation Functions
+// ID Validation
 function validateAadhar(number) {
     return /^[2-9]{1}[0-9]{3}[0-9]{4}[0-9]{4}$/.test(number);
 }
@@ -330,6 +440,7 @@ function validatePAN(number) {
     return /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(number);
 }
 
+// Initialize validators
 document.getElementById('aadharNumber')?.addEventListener('input', function() {
     let value = this.value.replace(/[^0-9]/g, '').slice(0, 12);
     this.value = value;
@@ -337,14 +448,14 @@ document.getElementById('aadharNumber')?.addEventListener('input', function() {
     const validationDiv = document.getElementById('aadharValidation');
     if (value.length === 12) {
         if (validateAadhar(value)) {
-            this.classList.remove('invalid-id');
             this.classList.add('valid-id');
-            validationDiv.innerHTML = '<i class="fas fa-check-circle"></i> Valid Aadhaar number';
+            this.classList.remove('invalid-id');
+            validationDiv.innerHTML = '✓ Valid Aadhaar number';
             validationDiv.className = 'validation-message valid';
         } else {
-            this.classList.remove('valid-id');
             this.classList.add('invalid-id');
-            validationDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Invalid Aadhaar number. Must start with 2-9 and be 12 digits.';
+            this.classList.remove('valid-id');
+            validationDiv.innerHTML = '✗ Invalid Aadhaar number';
             validationDiv.className = 'validation-message invalid';
         }
     } else {
@@ -360,14 +471,14 @@ document.getElementById('panNumber')?.addEventListener('input', function() {
     const validationDiv = document.getElementById('panValidation');
     if (value.length === 10) {
         if (validatePAN(value)) {
-            this.classList.remove('invalid-id');
             this.classList.add('valid-id');
-            validationDiv.innerHTML = '<i class="fas fa-check-circle"></i> Valid PAN card number';
+            this.classList.remove('invalid-id');
+            validationDiv.innerHTML = '✓ Valid PAN number';
             validationDiv.className = 'validation-message valid';
         } else {
-            this.classList.remove('valid-id');
             this.classList.add('invalid-id');
-            validationDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Invalid PAN number. Format: ABCDE1234F';
+            this.classList.remove('valid-id');
+            validationDiv.innerHTML = '✗ Invalid PAN number';
             validationDiv.className = 'validation-message invalid';
         }
     } else {
@@ -383,26 +494,23 @@ function initDocumentChecklist() {
     
     if (docsRequiredDiv && checklistContainer) {
         const docText = docsRequiredDiv.innerText;
-        const documents = docText.split(',').map(d => d.trim()).filter(d => d && d !== 'No specific documents required.');
+        let documents = docText.split(',').map(d => d.trim()).filter(d => d && d !== 'No specific documents required.');
         
-        if (documents.length > 0 && documents[0] !== 'No specific documents required.') {
-            let checklistHtml = '<div class="bg-light p-3 rounded">';
-            documents.forEach(doc => {
-                checklistHtml += `
-                    <div class="checklist-item pending" data-doc="${doc}">
-                        <div class="checklist-icon">
-                            <i class="far fa-circle"></i>
-                        </div>
-                        <div class="flex-grow-1">${doc}</div>
-                        <div class="checklist-status text-muted">Pending</div>
-                    </div>
-                `;
-            });
-            checklistHtml += '</div>';
-            checklistContainer.innerHTML = checklistHtml;
-        } else {
-            checklistContainer.innerHTML = '<div class="text-muted">No specific documents required for this service.</div>';
+        if (documents.length === 0 || documents[0] === 'No specific documents required.') {
+            documents = ['Photo', 'Signature', 'Address Proof'];
         }
+        
+        let checklistHtml = '';
+        documents.forEach(doc => {
+            checklistHtml += `
+                <div class="checklist-item pending" data-doc="${doc.replace(/[^a-zA-Z0-9]/g, '')}">
+                    <div class="checklist-icon"><i class="far fa-circle"></i></div>
+                    <div class="flex-grow-1">${doc}</div>
+                    <div class="checklist-status text-muted small">Pending</div>
+                </div>
+            `;
+        });
+        checklistContainer.innerHTML = checklistHtml;
     }
 }
 
@@ -412,7 +520,7 @@ function updateChecklist(filename) {
     
     checklistItems.forEach(item => {
         const docName = item.getAttribute('data-doc');
-        if (docName && filename.toLowerCase().includes(docName.toLowerCase().substring(0, 15))) {
+        if (docName && filename.toLowerCase().includes(docName.toLowerCase())) {
             item.classList.remove('pending');
             item.classList.add('completed');
             item.querySelector('.checklist-icon').innerHTML = '<i class="fas fa-check-circle text-success"></i>';
@@ -424,22 +532,22 @@ function updateChecklist(filename) {
     return matched;
 }
 
+// Document Management
 function addMoreDocuments() {
     const container = document.getElementById('documentUploadsContainer');
     const newIndex = documentCounter;
     
     const newDiv = document.createElement('div');
-    newDiv.className = 'document-upload-item mb-3';
+    newDiv.className = 'document-upload-item mb-2';
     newDiv.id = `doc_${newIndex}`;
     newDiv.innerHTML = `
         <div class="input-group">
             <input type="file" class="form-control document-file" name="documents" 
-                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" data-index="${newIndex}">
-            <button type="button" class="btn btn-danger remove-document-btn" onclick="removeDocument(${newIndex})">
+                   accept=".pdf,.jpg,.jpeg,.png" data-index="${newIndex}">
+            <button type="button" class="btn btn-outline-danger remove-document-btn" onclick="removeDocument(${newIndex})">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
-        <small class="text-muted">Upload PDF, JPG, PNG, DOC (Max 10MB per file)</small>
     `;
     
     container.appendChild(newDiv);
@@ -466,14 +574,19 @@ function handleFileSelection(event) {
     const files = Array.from(fileInput.files);
     const maxSize = 10 * 1024 * 1024;
     
+    // Show remove button
+    const removeBtn = fileInput.closest('.input-group')?.querySelector('.remove-document-btn');
+    if (removeBtn && files.length > 0) {
+        removeBtn.style.display = 'block';
+    }
+    
     for (const file of files) {
         if (file.size > maxSize) {
             alert(`File "${file.name}" exceeds 10MB limit.`);
             continue;
         }
         
-        const fileExists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
-        if (!fileExists) {
+        if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
             selectedFiles.push(file);
             updateChecklist(file.name);
         }
@@ -487,30 +600,27 @@ function updateFileList() {
     if (!fileListContainer) return;
     
     if (selectedFiles.length === 0) {
-        fileListContainer.innerHTML = '<div class="text-muted small"><i class="fas fa-info-circle"></i> No documents selected</div>';
+        fileListContainer.innerHTML = '<i class="fas fa-info-circle"></i> No documents selected';
         return;
     }
     
-    let html = '<div class="fw-bold mb-2"><i class="fas fa-paperclip"></i> Selected Documents:</div>';
-    html += '<div class="list-group">';
-    
+    let html = '<strong>Selected Documents:</strong><div class="mt-2">';
     selectedFiles.forEach((file, index) => {
         const fileSizeKB = (file.size / 1024).toFixed(2);
         const fileSize = file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : fileSizeKB + ' KB';
         
         html += `
             <div class="file-item">
-                <div class="file-name">
-                    <i class="fas fa-file-alt"></i> ${file.name}
-                    <span class="file-size">(${fileSize})</span>
+                <div>
+                    <i class="fas fa-file-alt me-2"></i> ${file.name}
+                    <span class="text-muted ms-2">(${fileSize})</span>
                 </div>
-                <button type="button" class="remove-file-btn" onclick="removeFileFromList(${index})" title="Remove file">
+                <button type="button" class="remove-file-btn" onclick="removeFileFromList(${index})" title="Remove">
                     <i class="fas fa-times-circle"></i>
                 </button>
             </div>
         `;
     });
-    
     html += '</div>';
     fileListContainer.innerHTML = html;
 }
@@ -518,48 +628,18 @@ function updateFileList() {
 function removeFileFromList(index) {
     selectedFiles.splice(index, 1);
     updateFileList();
-    
-    const fileInputs = document.querySelectorAll('.document-file');
-    let fileIndex = 0;
-    for (const input of fileInputs) {
-        if (input.files.length > 0) {
-            for (let i = 0; i < input.files.length; i++) {
-                if (fileIndex === index) {
-                    input.value = '';
-                    break;
-                }
-                fileIndex++;
-            }
-        }
-    }
 }
 
-function showUploadProgress() {
-    const progressDiv = document.createElement('div');
-    progressDiv.id = 'uploadProgress';
-    progressDiv.className = 'upload-progress';
-    progressDiv.innerHTML = `
-        <div class="upload-spinner"></div>
-        <div class="text-white mt-3">Submitting application...</div>
-        <div class="text-white-50 small mt-2">Please wait</div>
-    `;
-    document.body.appendChild(progressDiv);
-}
-
-function hideUploadProgress() {
-    const progressDiv = document.getElementById('uploadProgress');
-    if (progressDiv) progressDiv.remove();
-}
-
+// Form Validation
 function validateForm() {
-    const requiredFields = ['fullName', 'dob', 'gender', 'category', 'address', 'city', 'state', 'pincode'];
+    const required = ['fullName', 'dob', 'gender', 'category', 'address', 'city', 'state', 'pincode'];
     let isValid = true;
-    let errorMessage = '';
+    let errors = [];
     
-    for (const field of requiredFields) {
+    for (const field of required) {
         const element = document.getElementById(field);
         if (!element || !element.value.trim()) {
-            errorMessage += `• ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required\n`;
+            errors.push(`• ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
             isValid = false;
             if (element) element.classList.add('is-invalid');
         } else if (element) {
@@ -569,30 +649,48 @@ function validateForm() {
     
     const pincode = document.getElementById('pincode').value;
     if (pincode && !/^\d{6}$/.test(pincode)) {
-        errorMessage += '• Pincode must be 6 digits\n';
-        isValid = false;
-    }
-    
-    const aadhar = document.getElementById('aadharNumber').value;
-    if (aadhar && aadhar.length === 12 && !validateAadhar(aadhar)) {
-        errorMessage += '• Invalid Aadhaar number\n';
-        isValid = false;
-    }
-    
-    const pan = document.getElementById('panNumber').value;
-    if (pan && pan.length === 10 && !validatePAN(pan)) {
-        errorMessage += '• Invalid PAN number\n';
+        errors.push('• Pincode must be 6 digits');
         isValid = false;
     }
     
     if (!isValid) {
-        alert('Please fix the following errors:\n' + errorMessage);
+        alert('Please fix the following:\n' + errors.join('\n'));
     }
     
     return isValid;
 }
 
-function collectFormData() {
+function showUploadProgress() {
+    const progressDiv = document.createElement('div');
+    progressDiv.id = 'uploadProgress';
+    progressDiv.className = 'upload-progress';
+    progressDiv.innerHTML = `
+        <div class="upload-spinner"></div>
+        <div class="mt-3 fw-bold">Submitting Application...</div>
+        <div class="small text-muted mt-2">Please wait</div>
+    `;
+    document.body.appendChild(progressDiv);
+}
+
+function hideUploadProgress() {
+    const progressDiv = document.getElementById('uploadProgress');
+    if (progressDiv) progressDiv.remove();
+}
+
+// Form Submission
+document.getElementById('applicationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    if (!confirm('Please verify all information. Submit application?')) return;
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Submitting...';
+    showUploadProgress();
+    
     const formData = new FormData();
     formData.append('service_id', document.querySelector('input[name="service_id"]').value);
     formData.append('full_name', document.getElementById('fullName').value);
@@ -617,32 +715,8 @@ function collectFormData() {
         formData.append('documents', file);
     }
     
-    return formData;
-}
-
-// Form Submission
-document.getElementById('applicationForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    const confirmSubmit = confirm('Please verify all information before submitting. Are you sure you want to submit this application?');
-    if (!confirmSubmit) return;
-    
-    const submitBtn = document.getElementById('submitBtn');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-    showUploadProgress();
-    
-    const formData = collectFormData();
-    
     try {
-        const response = await fetch('/submit-service-request', {
-            method: 'POST',
-            body: formData
-        });
-        
+        const response = await fetch('/submit-service-request', { method: 'POST', body: formData });
         const result = await response.json();
         hideUploadProgress();
         
@@ -650,24 +724,22 @@ document.getElementById('applicationForm').addEventListener('submit', async (e) 
             let paymentHtml = '';
             if (result.requires_payment && result.amount > 0) {
                 paymentHtml = `
-                    <div class="mt-3">
-                        <hr>
-                        <div class="alert alert-info">
-                            <strong>Fee Breakdown:</strong><br>
-                            Service Charge: ₹${result.fee_details.service_charge}<br>
-                            Convenience Fee: ₹${result.fee_details.convenience_fee}<br>
-                            GST: ₹${result.fee_details.gst}<br>
-                            <strong>Total: ₹${result.amount}</strong>
-                        </div>
-                        <button onclick="processPayment('${result.reference_number}')" class="btn btn-success w-100">
-                            <i class="fas fa-rupee-sign"></i> Pay Now
+                    <div class="mt-3 p-3 bg-light rounded-3">
+                        <div class="fw-bold mb-2">Fee Breakdown:</div>
+                        <div class="small">Service Charge: ₹${result.fee_details.service_charge}</div>
+                        <div class="small">Convenience Fee: ₹${result.fee_details.convenience_fee}</div>
+                        <div class="small">GST: ₹${result.fee_details.gst}</div>
+                        <hr class="my-2">
+                        <div class="fw-bold">Total: ₹${result.amount}</div>
+                        <button onclick="processPayment('${result.reference_number}')" class="btn btn-success w-100 mt-3 rounded-pill">
+                            <i class="fas fa-rupee-sign me-2"></i> Pay Now
                         </button>
                     </div>
                 `;
             }
             
             document.getElementById('result').innerHTML = `
-                <div class="alert alert-success mt-3">
+                <div class="alert alert-success rounded-3">
                     <i class="fas fa-check-circle fa-2x float-end"></i>
                     <strong>✓ Application Submitted Successfully!</strong><br><br>
                     <strong>Reference Number:</strong> ${result.reference_number}<br>
@@ -675,9 +747,9 @@ document.getElementById('applicationForm').addEventListener('submit', async (e) 
                     ${paymentHtml}
                     <hr>
                     <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ url_for('services_dashboard') }}" class="btn btn-primary btn-sm">Apply for More Services</a>
-                        <a href="{{ url_for('my_requests_page') }}" class="btn btn-info btn-sm">View My Applications</a>
-                        <button class="btn btn-secondary btn-sm" onclick="location.reload()">Submit Another</button>
+                        <a href="{{ url_for('services_dashboard') }}" class="btn btn-primary btn-sm rounded-pill">More Services</a>
+                        <a href="{{ url_for('my_requests_page') }}" class="btn btn-info btn-sm rounded-pill text-white">View Applications</a>
+                        <button class="btn btn-secondary btn-sm rounded-pill" onclick="location.reload()">New Application</button>
                     </div>
                 </div>
             `;
@@ -685,37 +757,20 @@ document.getElementById('applicationForm').addEventListener('submit', async (e) 
             // Reset form
             document.getElementById('applicationForm').reset();
             selectedFiles = [];
-            documentCounter = 1;
-            const container = document.getElementById('documentUploadsContainer');
-            container.innerHTML = `
-                <div class="document-upload-item mb-3" id="doc_0">
-                    <div class="input-group">
-                        <input type="file" class="form-control document-file" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" data-index="0">
-                        <button type="button" class="btn btn-danger remove-document-btn" onclick="removeDocument(0)" style="display: none;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <small class="text-muted">Upload PDF, JPG, PNG, DOC (Max 10MB per file)</small>
-                </div>
-            `;
             updateFileList();
-            
-            const fileInput = document.querySelector('.document-file');
-            if (fileInput) fileInput.addEventListener('change', handleFileSelection);
-            
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         } else {
             document.getElementById('result').innerHTML = `
-                <div class="alert alert-danger mt-3">
-                    <i class="fas fa-exclamation-triangle"></i> ${result.message}
+                <div class="alert alert-danger rounded-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i> ${result.message}
                 </div>
             `;
         }
     } catch (error) {
         hideUploadProgress();
         document.getElementById('result').innerHTML = `
-            <div class="alert alert-danger mt-3">
-                <i class="fas fa-exclamation-triangle"></i> Network error. Please try again.
+            <div class="alert alert-danger rounded-3">
+                <i class="fas fa-exclamation-triangle me-2"></i> Network error. Please try again.
             </div>
         `;
     } finally {
@@ -736,7 +791,6 @@ async function processPayment(refNumber) {
             alert('Payment failed. Please try again.');
         }
     } catch (error) {
-        console.error('Payment error:', error);
         alert('Payment processing error.');
     }
 }
@@ -753,13 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateFileList();
     
-    const inputs = document.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        input.addEventListener('input', function() {
-            this.classList.remove('is-invalid');
-        });
-    });
-    
+    // Set default DOB (18 years ago)
     const defaultDob = new Date();
     defaultDob.setFullYear(defaultDob.getFullYear() - 18);
     const dobInput = document.getElementById('dob');
@@ -768,116 +816,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (dobInput) dobInput.max = new Date().toISOString().split('T')[0];
     
-    const pincodeInput = document.getElementById('pincode');
-    if (pincodeInput) {
-        pincodeInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
-        });
-    }
-    
-    const passingYearInput = document.getElementById('passingYear');
-    if (passingYearInput) {
-        const currentYear = new Date().getFullYear();
-        passingYearInput.min = currentYear - 50;
-        passingYearInput.max = currentYear + 5;
-    }
+    // Pincode validation
+    document.getElementById('pincode')?.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+    });
 });
 </script>
-
-<style>
-.upload-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.upload-spinner {
-    width: 60px;
-    height: 60px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-.valid-id {
-    border-color: #28a745 !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right calc(0.375em + 0.1875rem) center;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
-    padding-right: calc(1.5em + 0.75rem);
-}
-
-.invalid-id {
-    border-color: #dc3545 !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right calc(0.375em + 0.1875rem) center;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
-    padding-right: calc(1.5em + 0.75rem);
-}
-
-.checklist-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    background: white;
-    border-radius: 8px;
-    transition: all 0.3s;
-}
-
-.checklist-item.completed {
-    background: #d4edda;
-}
-
-.checklist-item.pending {
-    background: #fff3cd;
-}
-
-.checklist-icon {
-    width: 30px;
-    margin-right: 10px;
-}
-
-.fee-calculator {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.fee-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    color: white;
-}
-
-.fee-row.total {
-    font-size: 1.2em;
-    font-weight: bold;
-    border-bottom: none;
-    padding-top: 12px;
-    border-top: 2px solid rgba(255,255,255,0.3);
-}
-</style>
 {% endblock %}

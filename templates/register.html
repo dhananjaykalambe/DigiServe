@@ -4,25 +4,29 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-lg border-0 rounded-lg mt-3">
-            <div class="card-header bg-success text-white text-center py-3">
-                <h3 class="mb-0"><i class="fas fa-user-check"></i> Complete Registration</h3>
-                <p class="mb-0 mt-2 small">Welcome! Please provide your details to get started.</p>
+    <div class="col-md-8 col-lg-6" data-aos="fade-up">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-success text-white text-center py-4 border-0">
+                <i class="fas fa-user-check fa-3x mb-2"></i>
+                <h3 class="mb-0 fw-bold">Complete Registration</h3>
+                <p class="mb-0 mt-2 small opacity-75">Welcome! Please provide your details to get started.</p>
             </div>
-            <div class="card-body p-4">
-                <div class="alert alert-info">
-                    <i class="fas fa-bell"></i> <strong>In-App Notifications Enabled!</strong><br>
-                    You will receive all updates and notifications in your dashboard.
+            <div class="card-body p-4 p-lg-5">
+                <div class="alert alert-info small rounded-3">
+                    <i class="fas fa-bell me-2"></i> 
+                    <strong>In-App Notifications Enabled!</strong>
+                    <p class="mb-0 mt-1">You will receive all updates and notifications in your dashboard.</p>
                 </div>
                 
-                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate id="registerForm">
                     <input type="hidden" name="phone" value="{{ phone }}">
                     
                     <div class="mb-3">
-                        <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <label for="name" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-user text-primary"></i>
+                            </span>
                             <input type="text" class="form-control" id="name" name="name" 
                                    placeholder="Enter your full name" required>
                         </div>
@@ -30,56 +34,57 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="address" class="form-label">Address <span class="text-muted">(Optional)</span></label>
+                        <label for="address" class="form-label fw-semibold">Address <span class="text-muted">(Optional)</span></label>
                         <textarea class="form-control" id="address" name="address" rows="2" 
                                   placeholder="Enter your address"></textarea>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="city" class="form-label">City <span class="text-muted">(Optional)</span></label>
+                            <label for="city" class="form-label fw-semibold">City <span class="text-muted">(Optional)</span></label>
                             <input type="text" class="form-control" id="city" name="city" placeholder="City">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="state" class="form-label">State <span class="text-muted">(Optional)</span></label>
+                            <label for="state" class="form-label fw-semibold">State <span class="text-muted">(Optional)</span></label>
                             <input type="text" class="form-control" id="state" name="state" placeholder="State">
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="pincode" class="form-label">Pincode <span class="text-muted">(Optional)</span></label>
+                        <label for="pincode" class="form-label fw-semibold">Pincode <span class="text-muted">(Optional)</span></label>
                         <input type="text" class="form-control" id="pincode" name="pincode" 
-                               placeholder="Pincode" maxlength="6">
+                               placeholder="6-digit pincode" maxlength="6">
+                        <div class="invalid-feedback">Pincode must be 6 digits.</div>
                     </div>
                     
-                    <div class="alert alert-success small">
-                        <i class="fas fa-bell"></i> <strong>In-App Updates:</strong> You will receive:
+                    <div class="alert alert-success small rounded-3">
+                        <i class="fas fa-bell me-2"></i> <strong>You will receive:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Application submission confirmation</li>
                             <li>Payment status updates</li>
                             <li>Application approval/rejection alerts</li>
-                            <li>Daily/Weekly summaries (for admin)</li>
+                            <li>New service notifications</li>
                         </ul>
                     </div>
                     
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="terms" required>
                         <label class="form-check-label" for="terms">
-                            I agree to the Terms and Conditions
+                            I agree to the <a href="#" class="text-primary">Terms and Conditions</a> and <a href="#" class="text-primary">Privacy Policy</a>
                         </label>
                         <div class="invalid-feedback">You must agree to the terms.</div>
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg">
-                            <i class="fas fa-check-circle"></i> Complete Registration
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill">
+                            <i class="fas fa-check-circle me-2"></i> Complete Registration
                         </button>
                     </div>
                 </form>
             </div>
-            <div class="card-footer text-center py-3">
+            <div class="card-footer text-center py-3 bg-light">
                 <div class="small">
-                    Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+                    Already have an account? <a href="{{ url_for('login') }}" class="text-primary fw-semibold">Login here</a>
                 </div>
             </div>
         </div>
@@ -101,18 +106,25 @@
         })
     })()
     
+    // Name validation (only letters and spaces)
     const nameInput = document.getElementById('name');
     if (nameInput) {
         nameInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[0-9]/g, '');
+            this.value = this.value.replace(/[0-9]/g, '').replace(/[^a-zA-Z\s]/g, '');
         });
     }
     
+    // Pincode validation
     const pincodeInput = document.getElementById('pincode');
     if (pincodeInput) {
         pincodeInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
         });
+    }
+    
+    // Auto-focus on name field if phone is present
+    if (document.getElementById('name')) {
+        document.getElementById('name').focus();
     }
 </script>
 {% endblock %}

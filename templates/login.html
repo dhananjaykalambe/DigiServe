@@ -3,51 +3,76 @@
 {% block title %}Login - DigiServe eSeva{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-lg border-0 rounded-lg mt-5">
-            <div class="card-header bg-primary text-white text-center py-4">
-                <h3 class="mb-0"><i class="fas fa-mobile-alt"></i> Login / Register</h3>
-                <p class="mb-0 mt-2 small">No password or OTP required! Just enter your mobile number.</p>
+<div class="row justify-content-center min-vh-75 align-items-center">
+    <div class="col-md-6 col-lg-5" data-aos="fade-up">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white text-center py-4 border-0">
+                <i class="fas fa-mobile-alt fa-3x mb-2"></i>
+                <h3 class="mb-0 fw-bold">Welcome Back!</h3>
+                <p class="mb-0 mt-2 small opacity-75">No password or OTP required! Just enter your mobile number.</p>
             </div>
-            <div class="card-body p-5">
-                <form method="POST" action="{{ url_for('login') }}">
+            <div class="card-body p-4 p-lg-5">
+                <form method="POST" action="{{ url_for('login') }}" id="loginForm">
                     <div class="mb-4">
-                        <label for="phone" class="form-label">Mobile Number</label>
+                        <label for="phone" class="form-label fw-semibold">Mobile Number</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                            <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-phone text-primary"></i>
+                            </span>
+                            <input type="tel" class="form-control form-control-lg border-start-0" 
+                                   id="phone" name="phone" 
                                    placeholder="Enter 10-digit mobile number" 
-                                   pattern="[0-9]{10}" maxlength="10" required>
+                                   pattern="[6-9][0-9]{9}" maxlength="10" required>
                         </div>
-                        <small class="text-muted">
+                        <div class="form-text">
                             <i class="fas fa-info-circle"></i> 
-                            New users will be redirected to registration. Existing users will be logged in directly.
-                        </small>
+                            New users will be redirected to registration.
+                        </div>
                     </div>
                     
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right"></i> Continue
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                            <i class="fas fa-arrow-right me-2"></i> Continue
                         </button>
                     </div>
                 </form>
-            </div>
-            <div class="card-footer text-center py-3">
-                <div class="small text-muted">
-                    <i class="fas fa-shield-alt"></i> Secure & Password-less Authentication
-                </div>
-                <hr class="my-2">
-                <div class="small">
-                    <strong>📱 Demo Admin:</strong> Mobile: 9999999999
-                </div>
-                <div class="small text-muted mt-2">
-                    <i class="fas fa-bell"></i> Get real-time updates via in-app notifications
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <div class="small text-muted mb-3">
+                        <i class="fas fa-shield-alt me-1"></i> Secure & Password-less Authentication
+                    </div>
+                    <div class="alert alert-light small mb-0">
+                        <strong>📱 Demo Admin Access:</strong><br>
+                        Mobile: <code>9999999999</code>
+                    </div>
                 </div>
             </div>
         </div>
+        
+        <div class="text-center mt-4">
+            <p class="small text-muted">
+                <i class="fas fa-bell"></i> Get real-time updates via in-app notifications
+            </p>
+        </div>
     </div>
 </div>
+
+<style>
+.min-vh-75 {
+    min-height: 75vh;
+}
+
+.input-group-text {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+.form-control {
+    border-color: var(--border-color);
+}
+</style>
 
 <script>
     const phoneInput = document.getElementById('phone');
@@ -55,6 +80,18 @@
         phoneInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
+        
+        // Auto focus on phone input
+        phoneInput.focus();
     }
+    
+    // Form validation
+    document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+        const phone = document.getElementById('phone').value;
+        if (!phone || phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
+            e.preventDefault();
+            alert('Please enter a valid 10-digit mobile number starting with 6,7,8, or 9');
+        }
+    });
 </script>
 {% endblock %}

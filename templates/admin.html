@@ -1,90 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Panel - DigiServe eSeva{% endblock %}
+{% block title %}Admin Dashboard - DigiServe eSeva{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
-    <div>
-        <span class="badge bg-primary">Total Users: {{ stats.total_users }}</span>
-        <span class="badge bg-success">Total Applications: {{ stats.total_requests }}</span>
-        <span class="badge bg-info">Total Services: {{ services|length }}</span>
-        <span class="badge bg-warning text-dark">Pending: {{ stats.pending_requests }}</span>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up">
+    <h2 class="fw-bold"><i class="fas fa-user-shield text-primary me-2"></i> Admin Dashboard</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <span class="badge bg-primary rounded-pill px-3 py-2">Total Users: {{ stats.total_users }}</span>
+        <span class="badge bg-success rounded-pill px-3 py-2">Applications: {{ stats.total_requests }}</span>
+        <span class="badge bg-info rounded-pill px-3 py-2">Services: {{ stats.total_services }}</span>
+        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Pending: {{ stats.pending_requests }}</span>
     </div>
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Applications</h6>
-                        <h2 class="mb-0">{{ stats.total_requests }}</h2>
-                    </div>
-                    <i class="fas fa-file-alt fa-2x"></i>
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="stat-card bg-primary text-white rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="opacity-75">Total Applications</small>
+                    <h2 class="mb-0 fw-bold">{{ stats.total_requests }}</h2>
                 </div>
+                <i class="fas fa-file-alt fa-3x opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Pending Applications</h6>
-                        <h2 class="mb-0">{{ stats.pending_requests }}</h2>
-                    </div>
-                    <i class="fas fa-clock fa-2x"></i>
+    <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="150">
+        <div class="stat-card bg-warning text-dark rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="opacity-75">Pending</small>
+                    <h2 class="mb-0 fw-bold">{{ stats.pending_requests }}</h2>
                 </div>
+                <i class="fas fa-clock fa-3x opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Users</h6>
-                        <h2 class="mb-0">{{ stats.total_users }}</h2>
-                    </div>
-                    <i class="fas fa-users fa-2x"></i>
+    <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="stat-card bg-success text-white rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="opacity-75">Completed</small>
+                    <h2 class="mb-0 fw-bold">{{ stats.completed_requests }}</h2>
                 </div>
+                <i class="fas fa-check-circle fa-3x opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Revenue</h6>
-                        <h2 class="mb-0">₹{{ "%.0f"|format(stats.total_revenue) }}</h2>
-                    </div>
-                    <i class="fas fa-rupee-sign fa-2x"></i>
+    <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="250">
+        <div class="stat-card bg-info text-white rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="opacity-75">Total Revenue</small>
+                    <h2 class="mb-0 fw-bold">₹{{ "%.0f"|format(stats.total_revenue) }}</h2>
                 </div>
+                <i class="fas fa-rupee-sign fa-3x opacity-50"></i>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Charts Row -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Monthly Application Trends</h6>
+<div class="row g-4 mb-4">
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-line text-primary me-2"></i> Monthly Application Trends</h6>
             </div>
             <div class="card-body">
                 <canvas id="monthlyTrendsChart" height="200"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Service Distribution</h6>
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="350">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-pie text-success me-2"></i> Service Distribution</h6>
             </div>
             <div class="card-body">
                 <canvas id="serviceDistributionChart" height="200"></canvas>
@@ -93,36 +85,44 @@
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Status Distribution</h6>
+<div class="row g-4 mb-4">
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="400">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-pie text-warning me-2"></i> Status Distribution</h6>
             </div>
             <div class="card-body">
                 <canvas id="statusDistributionChart" height="200"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h6 class="mb-0"><i class="fas fa-download"></i> Export Reports</h6>
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="450">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-download me-2"></i> Export Reports</h6>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-success" onclick="exportApplications()">
-                        <i class="fas fa-file-excel"></i> Export Applications to Excel
-                    </button>
-                    <button class="btn btn-info" onclick="exportRevenue()">
-                        <i class="fas fa-chart-line"></i> Export Revenue Report
-                    </button>
-                    <button class="btn btn-primary" onclick="exportUsers()">
-                        <i class="fas fa-users"></i> Export Users to Excel
-                    </button>
-                    <button class="btn btn-secondary" onclick="sendSummaryNow()">
-                        <i class="fas fa-envelope"></i> Send Daily Summary Email
-                    </button>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <button class="btn btn-success w-100 rounded-pill" onclick="exportApplications()">
+                            <i class="fas fa-file-excel me-2"></i> Export Applications
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-info w-100 rounded-pill text-white" onclick="exportRevenue()">
+                            <i class="fas fa-chart-line me-2"></i> Export Revenue Report
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100 rounded-pill" onclick="exportUsers()">
+                            <i class="fas fa-users me-2"></i> Export Users
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-secondary w-100 rounded-pill" onclick="sendSummaryNow()">
+                            <i class="fas fa-envelope me-2"></i> Send Daily Summary
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,15 +130,14 @@
 </div>
 
 <!-- Advanced Filters -->
-<div class="card mb-4">
-    <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="fas fa-filter"></i> Advanced Filters</h6>
+<div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up" data-aos-delay="500">
+    <div class="card-header bg-white rounded-top-4 border-0 py-3">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-filter me-2"></i> Advanced Filters</h6>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin_panel') }}" id="filterForm">
-            <div class="row">
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Status</label>
+            <div class="row g-3">
+                <div class="col-md-2">
                     <select name="status" class="form-select form-select-sm">
                         <option value="all" {% if filters.status == 'all' or not filters.status %}selected{% endif %}>All Status</option>
                         <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending</option>
@@ -147,8 +146,7 @@
                         <option value="rejected" {% if filters.status == 'rejected' %}selected{% endif %}>Rejected</option>
                     </select>
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Service Type</label>
+                <div class="col-md-2">
                     <select name="service" class="form-select form-select-sm">
                         <option value="all" {% if filters.service == 'all' or not filters.service %}selected{% endif %}>All Services</option>
                         {% for service_name in service_names %}
@@ -156,29 +154,18 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Date From</label>
-                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}">
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}" placeholder="Date From">
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Date To</label>
-                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}">
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}" placeholder="Date To">
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Amount Min (₹)</label>
-                    <input type="number" name="amount_min" class="form-control form-control-sm" value="{{ filters.amount_min }}" placeholder="Min Amount">
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label small">Amount Max (₹)</label>
-                    <input type="number" name="amount_max" class="form-control form-control-sm" value="{{ filters.amount_max }}" placeholder="Max Amount">
-                </div>
-                <div class="col-md-4 mb-2">
-                    <label class="form-label small">Search (Ref/Name/Phone)</label>
+                <div class="col-md-2">
                     <input type="text" name="search" class="form-control form-control-sm" value="{{ filters.search }}" placeholder="Search...">
                 </div>
-                <div class="col-md-2 mb-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="fas fa-search"></i> Apply Filters
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill">
+                        <i class="fas fa-search me-1"></i> Apply
                     </button>
                 </div>
             </div>
@@ -186,49 +173,51 @@
     </div>
 </div>
 
+<!-- Tabs -->
 <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#applications" type="button">
-            <i class="fas fa-file-alt"></i> Applications 
+            <i class="fas fa-file-alt me-2"></i> Applications 
             {% if stats.pending_requests > 0 %}
-            <span class="badge bg-danger">{{ stats.pending_requests }}</span>
+            <span class="badge bg-danger ms-1">{{ stats.pending_requests }}</span>
             {% endif %}
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notifications" type="button">
-            <i class="fas fa-bell"></i> Notifications
+            <i class="fas fa-bell me-2"></i> Notifications
             {% if unread_count > 0 %}
-            <span class="badge bg-danger">{{ unread_count }}</span>
+            <span class="badge bg-danger ms-1">{{ unread_count }}</span>
             {% endif %}
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#services" type="button">
-            <i class="fas fa-cogs"></i> Services
+            <i class="fas fa-cogs me-2"></i> Services
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#users" type="button">
-            <i class="fas fa-users"></i> Users
+            <i class="fas fa-users me-2"></i> Users
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#payments" type="button">
-            <i class="fas fa-money-bill"></i> Payments
+            <i class="fas fa-money-bill-wave me-2"></i> Payments
         </button>
     </li>
 </ul>
 
 <div class="tab-content">
+    <!-- Applications Tab -->
     <div class="tab-pane fade show active" id="applications">
-        <div class="card">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Reference</th>
                                 <th>Applicant</th>
                                 <th>Phone</th>
@@ -244,18 +233,18 @@
                             {% for req in requests %}
                             <tr>
                                 <td>{{ loop.index }}</td>
-                                <td><small><code>{{ req.reference_number }}</code></small></td>
+                                <td><code>{{ req.reference_number }}</code></td>
                                 <td>{{ req.applicant_name or req.user.name if req.user else 'N/A' }}</td>
                                 <td>{{ req.user.phone if req.user else 'N/A' }}</td>
-                                <td>{{ req.service_name[:30] }}{% if req.service_name|length > 30 %}...{% endif %}</td>
+                                <td>{{ req.service_name[:35] }}{% if req.service_name|length > 35 %}...{% endif %}</td>
                                 <td>₹{{ "%.2f"|format(req.amount) }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 'success' if req.payment_status == 'completed' else 'warning' }}">
+                                    <span class="badge {% if req.payment_status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill">
                                         {{ req.payment_status }}
                                     </span>
-                                </td>
+                                 </td>
                                 <td>
-                                    <select class="form-select form-select-sm status-select" data-id="{{ req._id }}" style="width: 120px;">
+                                    <select class="form-select form-select-sm status-select" data-id="{{ req.id }}" style="width: 120px;">
                                         <option value="pending" {% if req.status == 'pending' %}selected{% endif %}>Pending</option>
                                         <option value="in_progress" {% if req.status == 'in_progress' %}selected{% endif %}>In Progress</option>
                                         <option value="completed" {% if req.status == 'completed' %}selected{% endif %}>Completed</option>
@@ -264,14 +253,14 @@
                                  </td>
                                 <td><small>{{ req.submitted_at.strftime('%Y-%m-%d') if req.submitted_at else 'N/A' }}</small></td>
                                 <td>
-                                    <button class="btn btn-sm btn-info" onclick="viewApplication('{{ req._id }}')">
+                                    <button class="btn btn-sm btn-outline-info rounded-pill" onclick="viewApplication('{{ req.id }}')">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                  </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="10" class="text-center py-5">
                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                     <p>No applications found</p>
                                 </td>
@@ -284,63 +273,69 @@
         </div>
     </div>
     
+    <!-- Notifications Tab -->
     <div class="tab-pane fade" id="notifications">
-        <div class="card">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-bell"></i> Recent Notifications</h5>
-                <button class="btn btn-sm btn-primary" onclick="markAllRead()">
-                    <i class="fas fa-check-double"></i> Mark All Read
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-bell me-2"></i> Recent Notifications</h6>
+                <button class="btn btn-sm btn-primary rounded-pill" onclick="markAllRead()">
+                    <i class="fas fa-check-double me-1"></i> Mark All Read
                 </button>
             </div>
-            <div class="card-body">
-                <div id="notificationsList">
+            <div class="card-body p-0">
+                <div id="adminNotificationsList">
                     {% for notification in notifications %}
-                    <div class="notification-item mb-3 p-3 border rounded {% if not notification.is_read %}bg-light border-primary{% endif %}" data-id="{{ notification.id }}">
+                    <div class="notification-item p-3 border-bottom {% if not notification.is_read %}bg-light{% endif %}" data-id="{{ notification.id }}">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">
                                     {% if notification.type == 'success' %}
-                                        <i class="fas fa-check-circle text-success"></i>
+                                        <i class="fas fa-check-circle text-success me-2"></i>
                                     {% elif notification.type == 'info' %}
-                                        <i class="fas fa-info-circle text-info"></i>
+                                        <i class="fas fa-info-circle text-info me-2"></i>
                                     {% elif notification.type == 'warning' %}
-                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                     {% else %}
-                                        <i class="fas fa-bell text-primary"></i>
+                                        <i class="fas fa-bell text-primary me-2"></i>
                                     {% endif %}
                                     {{ notification.title }}
-                                </h6>
-                                <p class="mb-1 small">{{ notification.message }}</p>
-                                <small class="text-muted">{{ notification.created_at }}</small>
+                                </div>
+                                <p class="small text-muted mb-1">{{ notification.message }}</p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i> {{ notification.created_at.strftime('%Y-%m-%d %H:%M') if notification.created_at else 'Just now' }}</small>
                             </div>
                             {% if not notification.is_read %}
-                            <button class="btn btn-sm btn-outline-primary" onclick="markRead('{{ notification.id }}')">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="markRead('{{ notification.id }}')">
                                 Mark Read
                             </button>
                             {% endif %}
                         </div>
                     </div>
                     {% else %}
-                    <p class="text-center text-muted">No notifications yet</p>
+                    <div class="text-center py-5">
+                        <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                        <p>No notifications yet</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Services Tab -->
     <div class="tab-pane fade" id="services">
-        <div class="card">
-            <div class="card-header bg-white">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-                    <i class="fas fa-plus"></i> Add New Service
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-white rounded-top-4 border-0 d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-cogs me-2"></i> Manage Services</h6>
+                <button class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                    <i class="fas fa-plus me-1"></i> Add Service
                 </button>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Service Name</th>
                                 <th>Category</th>
                                 <th>Service Charge</th>
@@ -354,16 +349,16 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>{{ service.name }}</td>
-                                <td>{{ service.category }}</td>
+                                <td>{{ service.category|replace('_', ' ')|title }}</td>
                                 <td>₹{{ "%.2f"|format(service.service_charge) }}</td>
                                 <td>{{ service.get('convenience_fee_percent', 2) }}%</td>
                                 <td>{{ service.get('gst_percent', 18) }}%</td>
                                 <td>
-                                    <span class="badge bg-{{ 'success' if service.is_active else 'danger' }}">
+                                    <span class="badge {% if service.is_active %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
                                         {{ 'Active' if service.is_active else 'Inactive' }}
                                     </span>
                                  </td>
-                             </tr>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -372,21 +367,22 @@
         </div>
     </div>
     
+    <!-- Users Tab -->
     <div class="tab-pane fade" id="users">
-        <div class="card">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Name</th>
                                 <th>Phone</th>
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Applications</th>
                                 <th>Joined</th>
-                             </tr>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for user in users %}
@@ -396,13 +392,13 @@
                                 <td>{{ user.phone }}</td>
                                 <td>{{ user.email or 'N/A' }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                                    <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %} rounded-pill">
                                         {{ user.role }}
                                     </span>
                                  </td>
                                 <td>{{ user.requests|length if user.requests else 0 }}</td>
                                 <td><small>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</small></td>
-                             </tr>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -411,37 +407,43 @@
         </div>
     </div>
     
+    <!-- Payments Tab -->
     <div class="tab-pane fade" id="payments">
-        <div class="card">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Transaction ID</th>
                                 <th>User</th>
+                                <th>Service</th>
                                 <th>Amount</th>
                                 <th>Method</th>
                                 <th>Status</th>
                                 <th>Date</th>
-                             </tr>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for payment in payments %}
                             <tr>
-                                <td><small>{{ payment.transaction_id }}</small></td>
+                                <td><code>{{ payment.transaction_id }}</code></td>
                                 <td>{{ payment.user.name if payment.user else 'N/A' }}</td>
+                                <td>{{ payment.service_name if payment.service_name else 'N/A' }}</td>
                                 <td>₹{{ "%.2f"|format(payment.amount) }}</td>
                                 <td>{{ payment.payment_method|upper }}</td>
                                 <td>
-                                    <span class="badge bg-success">{{ payment.status }}</span>
+                                    <span class="badge bg-success rounded-pill">{{ payment.status }}</span>
                                  </td>
                                 <td><small>{{ payment.created_at.strftime('%Y-%m-%d %H:%M') if payment.created_at else 'N/A' }}</small></td>
-                             </tr>
+                            </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center">No payments recorded</td>
-                             </tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                                    <p>No payments recorded</p>
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -453,19 +455,20 @@
 
 <!-- Application Details Modal -->
 <div class="modal fade" id="applicationModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Application Details</h5>
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4 border-0">
+                <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i> Application Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="applicationModalBody">
-                <div class="text-center py-4">
-                    <div class="loader-small"></div> Loading...
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3">Loading...</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -473,18 +476,19 @@
 
 <!-- Add Service Modal -->
 <div class="modal fade" id="addServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="fas fa-plus"></i> Add New Service</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4 border-0">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i> Add New Service</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="addServiceForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
                             <select class="form-select" name="category" required>
+                                <option value="">Select Category</option>
                                 <option value="scholarship">Scholarship Services</option>
                                 <option value="education">Education Services</option>
                                 <option value="exams">Exam Form Filling</option>
@@ -493,60 +497,161 @@
                                 <option value="document">Document Services</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Service Name</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Service Name</label>
                             <input type="text" class="form-control" name="name" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Description</label>
                         <textarea class="form-control" name="description" rows="3" required></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Eligibility Criteria</label>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Eligibility Criteria</label>
                         <textarea class="form-control" name="eligibility" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Documents Required</label>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Documents Required</label>
                         <textarea class="form-control" name="documents_required" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Instructions</label>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Instructions</label>
                         <textarea class="form-control" name="instructions" rows="3"></textarea>
                     </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Processing Time</label>
-                            <input type="text" class="form-control" name="processing_time" placeholder="e.g., 7-10 working days">
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Processing Time</label>
+                            <input type="text" class="form-control" name="processing_time" placeholder="e.g., 7-10 days">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Service Charge (₹)</label>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Service Charge (₹)</label>
                             <input type="number" class="form-control" name="service_charge" value="0" step="0.01">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Icon Class</label>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Icon Class</label>
                             <input type="text" class="form-control" name="icon" value="fas fa-file-alt">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Convenience Fee (%)</label>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Convenience Fee (%)</label>
                             <input type="number" class="form-control" name="convenience_fee_percent" value="2" step="0.5">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">GST (%)</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">GST (%)</label>
                             <input type="number" class="form-control" name="gst_percent" value="18" step="0.5">
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="addService()">Add Service</button>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill" onclick="addService()">Add Service</button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.stat-card {
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.notification-item {
+    transition: var(--transition);
+}
+
+.notification-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 45px;
+    margin-bottom: 25px;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    z-index: 2;
+}
+
+.timeline-icon.completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.timeline-icon.pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.timeline-content {
+    background: var(--bg-secondary);
+    padding: 12px 16px;
+    border-radius: 10px;
+    border-left: 3px solid #667eea;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    background: var(--bg-secondary);
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.detail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-select {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+</style>
 
 <script>
 // Charts
@@ -558,17 +663,27 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(monthlyCtx, {
             type: 'line',
             data: {
-                labels: monthlyData.map(d => d.month),
+                labels: monthlyData.map(d => `${d._id.month}/${d._id.year}`),
                 datasets: [{
                     label: 'Applications',
                     data: monthlyData.map(d => d.count),
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
     }
     
@@ -576,16 +691,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const serviceCtx = document.getElementById('serviceDistributionChart')?.getContext('2d');
     if (serviceCtx) {
         const serviceData = {{ stats.service_distribution|tojson }};
+        const colors = ['#667eea', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14'];
         new Chart(serviceCtx, {
             type: 'pie',
             data: {
-                labels: serviceData.map(d => d._id),
+                labels: serviceData.map(d => d._id.replace('_', ' ').title()),
                 datasets: [{
                     data: serviceData.map(d => d.count),
-                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6f42c1', '#fd7e14']
+                    backgroundColor: colors,
+                    borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
     }
     
@@ -596,13 +719,20 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(statusCtx, {
             type: 'doughnut',
             data: {
-                labels: statusData.map(d => d._id),
+                labels: statusData.map(d => d._id.toUpperCase()),
                 datasets: [{
                     data: statusData.map(d => d.count),
-                    backgroundColor: ['#ffc107', '#0dcaf0', '#198754', '#dc3545']
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545'],
+                    borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
     }
 });
@@ -633,7 +763,7 @@ document.querySelectorAll('.status-select').forEach(select => {
 // View application details
 async function viewApplication(requestId) {
     const modalBody = document.getElementById('applicationModalBody');
-    modalBody.innerHTML = '<div class="text-center py-4"><div class="loader-small"></div> Loading...</div>';
+    modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3">Loading...</p></div>';
     
     const response = await fetch(`/admin/request-details/${requestId}`);
     const data = await response.json();
@@ -642,29 +772,27 @@ async function viewApplication(requestId) {
     const documents = data.documents;
     const user = data.user;
     
-    let statusClass = '';
-    switch(request.status) {
-        case 'pending': statusClass = 'warning'; break;
-        case 'in_progress': statusClass = 'info'; break;
-        case 'completed': statusClass = 'success'; break;
-        case 'rejected': statusClass = 'danger'; break;
-        default: statusClass = 'secondary';
-    }
+    const statusColor = {
+        'pending': 'warning',
+        'in_progress': 'info',
+        'completed': 'success',
+        'rejected': 'danger'
+    }[request.status] || 'secondary';
     
     // Build timeline HTML
     let timelineHtml = '';
     if (request.timeline && request.timeline.length > 0) {
-        timelineHtml = '<h6>Application Timeline</h6><div class="timeline">';
+        timelineHtml = '<div class="timeline">';
         request.timeline.forEach(item => {
             timelineHtml += `
                 <div class="timeline-item">
-                    <div class="timeline-icon completed">
-                        <i class="fas fa-check"></i>
+                    <div class="timeline-icon ${item.completed ? 'completed' : 'pending'}">
+                        <i class="fas ${item.completed ? 'fa-check' : 'fa-clock'}"></i>
                     </div>
                     <div class="timeline-content">
-                        <h6>${item.title}</h6>
-                        <p class="small mb-1">${item.description}</p>
-                        <small class="text-muted">${item.timestamp}</small>
+                        <h6 class="mb-1">${escapeHtml(item.title)}</h6>
+                        <p class="small mb-1">${escapeHtml(item.description)}</p>
+                        <small class="text-muted">${escapeHtml(item.timestamp)}</small>
                     </div>
                 </div>
             `;
@@ -673,108 +801,71 @@ async function viewApplication(requestId) {
     }
     
     modalBody.innerHTML = `
-        <div class="row">
+        <div class="row g-3">
             <div class="col-md-6">
-                <div class="application-details-card">
-                    <h6><i class="fas fa-user"></i> Applicant Information</h6>
+                <div class="application-details-card mb-3">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-user me-2"></i> Applicant Information</h6>
                     <div class="details-grid">
-                        <div class="detail-item">
-                            <div class="detail-label">Name</div>
-                            <div class="detail-value">${request.applicant_name || user?.name || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Phone</div>
-                            <div class="detail-value">${user?.phone || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Email</div>
-                            <div class="detail-value">${request.applicant_email || user?.email || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">DOB</div>
-                            <div class="detail-value">${request.applicant_dob || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Gender</div>
-                            <div class="detail-value">${request.applicant_gender || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Category</div>
-                            <div class="detail-value">${request.applicant_category || 'N/A'}</div>
-                        </div>
+                        <div class="detail-item"><div class="detail-label">Name</div><div class="detail-value">${escapeHtml(request.applicant_name || user?.name || 'N/A')}</div></div>
+                        <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value">${escapeHtml(user?.phone || 'N/A')}</div></div>
+                        <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${escapeHtml(request.applicant_email || user?.email || 'N/A')}</div></div>
+                        <div class="detail-item"><div class="detail-label">DOB</div><div class="detail-value">${escapeHtml(request.applicant_dob || 'N/A')}</div></div>
+                        <div class="detail-item"><div class="detail-label">Gender</div><div class="detail-value">${escapeHtml((request.applicant_gender || 'N/A').toUpperCase())}</div></div>
+                        <div class="detail-item"><div class="detail-label">Category</div><div class="detail-value">${escapeHtml((request.applicant_category || 'N/A').toUpperCase())}</div></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="application-details-card">
-                    <h6><i class="fas fa-info-circle"></i> Application Information</h6>
+                <div class="application-details-card mb-3">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2"></i> Application Information</h6>
                     <div class="details-grid">
-                        <div class="detail-item">
-                            <div class="detail-label">Reference</div>
-                            <div class="detail-value"><code>${request.reference_number}</code></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Service</div>
-                            <div class="detail-value">${request.service_name}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Status</div>
-                            <div class="detail-value"><span class="badge bg-${statusClass}">${request.status.toUpperCase()}</span></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Payment Status</div>
-                            <div class="detail-value"><span class="badge bg-${request.payment_status === 'completed' ? 'success' : 'warning'}">${request.payment_status.toUpperCase()}</span></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Amount</div>
-                            <div class="detail-value">₹${request.amount}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Submitted</div>
-                            <div class="detail-value">${request.submitted_at}</div>
-                        </div>
+                        <div class="detail-item"><div class="detail-label">Reference</div><div class="detail-value"><code>${escapeHtml(request.reference_number)}</code></div></div>
+                        <div class="detail-item"><div class="detail-label">Service</div><div class="detail-value">${escapeHtml(request.service_name)}</div></div>
+                        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="badge bg-${statusColor}">${request.status.toUpperCase()}</span></div></div>
+                        <div class="detail-item"><div class="detail-label">Payment</div><div class="detail-value"><span class="badge bg-${request.payment_status === 'completed' ? 'success' : 'warning'}">${request.payment_status.toUpperCase()}</span></div></div>
+                        <div class="detail-item"><div class="detail-label">Amount</div><div class="detail-value">₹${parseFloat(request.amount).toFixed(2)}</div></div>
+                        <div class="detail-item"><div class="detail-label">Submitted</div><div class="detail-value">${escapeHtml(request.submitted_at)}</div></div>
                     </div>
                 </div>
             </div>
         </div>
         
         ${request.applicant_address ? `
-        <div class="application-details-card">
-            <h6><i class="fas fa-map-marker-alt"></i> Address Information</h6>
+        <div class="application-details-card mb-3">
+            <h6 class="fw-bold mb-3"><i class="fas fa-map-marker-alt me-2"></i> Address Information</h6>
             <div class="details-grid">
-                <div class="detail-item">
-                    <div class="detail-label">Address</div>
-                    <div class="detail-value">${request.applicant_address || 'N/A'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">City</div>
-                    <div class="detail-value">${request.applicant_city || 'N/A'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">State</div>
-                    <div class="detail-value">${request.applicant_state || 'N/A'}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Pincode</div>
-                    <div class="detail-value">${request.applicant_pincode || 'N/A'}</div>
-                </div>
+                <div class="detail-item"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(request.applicant_address)}</div></div>
+                <div class="detail-item"><div class="detail-label">City</div><div class="detail-value">${escapeHtml(request.applicant_city || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">State</div><div class="detail-value">${escapeHtml(request.applicant_state || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">Pincode</div><div class="detail-value">${escapeHtml(request.applicant_pincode || 'N/A')}</div></div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${request.qualification ? `
+        <div class="application-details-card mb-3">
+            <h6 class="fw-bold mb-3"><i class="fas fa-graduation-cap me-2"></i> Educational Information</h6>
+            <div class="details-grid">
+                <div class="detail-item"><div class="detail-label">Qualification</div><div class="detail-value">${escapeHtml(request.qualification || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">Institute</div><div class="detail-value">${escapeHtml(request.institute_name || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">Course</div><div class="detail-value">${escapeHtml(request.course_name || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">Passing Year</div><div class="detail-value">${escapeHtml(request.passing_year || 'N/A')}</div></div>
+                <div class="detail-item"><div class="detail-label">Percentage</div><div class="detail-value">${escapeHtml(request.percentage || 'N/A')}</div></div>
             </div>
         </div>
         ` : ''}
         
         ${timelineHtml}
         
-        ${request.admin_remarks ? `<div class="alert alert-info"><strong>Admin Remarks:</strong> ${request.admin_remarks}</div>` : ''}
-        
         <div class="application-details-card">
-            <h6><i class="fas fa-paperclip"></i> Uploaded Documents</h6>
+            <h6 class="fw-bold mb-3"><i class="fas fa-paperclip me-2"></i> Uploaded Documents</h6>
             ${documents && documents.length > 0 ? `
                 <div class="details-grid">
                     ${documents.map(doc => `
                         <div class="detail-item">
-                            <div class="detail-label">${doc.original_filename}</div>
+                            <div class="detail-label">${escapeHtml(doc.original_filename)}</div>
                             <div class="detail-value small">
-                                <i class="far fa-calendar-alt"></i> ${doc.uploaded_at}<br>
+                                <i class="far fa-calendar-alt"></i> ${escapeHtml(doc.uploaded_at)}<br>
                                 <i class="fas fa-database"></i> ${(doc.file_size/1024).toFixed(2)} KB
                             </div>
                         </div>
@@ -782,6 +873,13 @@ async function viewApplication(requestId) {
                 </div>
             ` : '<p class="text-muted">No documents uploaded</p>'}
         </div>
+        
+        ${request.admin_remarks ? `
+        <div class="alert alert-info mt-3 rounded-3">
+            <i class="fas fa-comment-dots me-2"></i> <strong>Admin Remarks:</strong><br>
+            ${escapeHtml(request.admin_remarks)}
+        </div>
+        ` : ''}
     `;
     
     const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
@@ -797,6 +895,11 @@ async function addService() {
     data.convenience_fee_percent = parseFloat(data.convenience_fee_percent) || 2;
     data.gst_percent = parseFloat(data.gst_percent) || 18;
     data.service_charge = parseFloat(data.service_charge) || 0;
+    
+    if (!data.category || !data.name || !data.description) {
+        alert('Please fill all required fields');
+        return;
+    }
     
     const response = await fetch('/admin/add-service', {
         method: 'POST',
@@ -814,25 +917,25 @@ async function addService() {
 }
 
 // Export functions
-async function exportApplications() {
-    window.location.href = '/export/applications/excel';
+function exportApplications() {
+    window.location.href = '/export/applications/csv';
 }
 
-async function exportRevenue() {
-    window.location.href = '/export/revenue/excel';
+function exportRevenue() {
+    window.location.href = '/export/revenue/csv';
 }
 
-async function exportUsers() {
-    window.location.href = '/export/users/excel';
+function exportUsers() {
+    window.location.href = '/export/users/csv';
 }
 
 async function sendSummaryNow() {
     const response = await fetch('/admin/send-summary', { method: 'POST' });
     const result = await response.json();
     if(result.success) {
-        alert('Summary email sent successfully!');
+        alert('Summary sent successfully!');
     } else {
-        alert('Failed to send summary email.');
+        alert('Failed to send summary.');
     }
 }
 
@@ -845,6 +948,13 @@ async function markRead(notificationId) {
 async function markAllRead() {
     const response = await fetch('/notifications/mark-all-read', { method: 'POST' });
     if (response.ok) location.reload();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Auto-refresh pending count
