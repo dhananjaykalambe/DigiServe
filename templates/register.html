@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Complete Registration - DigiServe eSeva{% endblock %}
+{% block title %}Complete Registration - DigiServe{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,7 +9,7 @@
             <div class="card-header bg-success text-white text-center py-4 border-0">
                 <i class="fas fa-user-check fa-3x mb-2"></i>
                 <h3 class="mb-0 fw-bold">Complete Registration</h3>
-                <p class="mb-0 mt-2 small opacity-75">Welcome! Please provide your details to get started.</p>
+                <p class="mb-0 mt-2 small opacity-75">Welcome to DigiServe! Please provide your details to get started.</p>
             </div>
             <div class="card-body p-4 p-lg-5">
                 <div class="alert alert-info small rounded-3">
@@ -106,7 +106,6 @@
         })
     })()
     
-    // Name validation (only letters and spaces)
     const nameInput = document.getElementById('name');
     if (nameInput) {
         nameInput.addEventListener('input', function() {
@@ -114,7 +113,6 @@
         });
     }
     
-    // Pincode validation
     const pincodeInput = document.getElementById('pincode');
     if (pincodeInput) {
         pincodeInput.addEventListener('input', function() {
@@ -122,7 +120,6 @@
         });
     }
     
-    // Auto-focus on name field if phone is present
     if (document.getElementById('name')) {
         document.getElementById('name').focus();
     }

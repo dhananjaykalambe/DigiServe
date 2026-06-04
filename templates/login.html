@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - DigiServe eSeva{% endblock %}
+{% block title %}Login - DigiServe{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center min-vh-75 align-items-center">
@@ -9,7 +9,7 @@
             <div class="card-header bg-primary text-white text-center py-4 border-0">
                 <i class="fas fa-mobile-alt fa-3x mb-2"></i>
                 <h3 class="mb-0 fw-bold">Welcome Back!</h3>
-                <p class="mb-0 mt-2 small opacity-75">No password or OTP required! Just enter your mobile number.</p>
+                <p class="mb-0 mt-2 small opacity-75">Login to your DigiServe account</p>
             </div>
             <div class="card-body p-4 p-lg-5">
                 <form method="POST" action="{{ url_for('login') }}" id="loginForm">
@@ -77,11 +77,9 @@
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
         
-        // Auto focus on phone input
         phoneInput.focus();
     }
     
-    // Form validation
     document.getElementById('loginForm')?.addEventListener('submit', function(e) {
         const phone = document.getElementById('phone').value;
         if (!phone || phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
