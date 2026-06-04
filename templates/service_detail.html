@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ service.name }} - Apply Online | DigiServe {% endblock %}
+{% block title %}{{ service.name }} - Apply Online | DigiServe{% endblock %}
 
 {% block content %}
 <div class="mb-4">
@@ -502,8 +502,9 @@ function initDocumentChecklist() {
         
         let checklistHtml = '';
         documents.forEach(doc => {
+            const docId = doc.replace(/[^a-zA-Z0-9]/g, '');
             checklistHtml += `
-                <div class="checklist-item pending" data-doc="${doc.replace(/[^a-zA-Z0-9]/g, '')}">
+                <div class="checklist-item pending" data-doc="${docId}">
                     <div class="checklist-icon"><i class="far fa-circle"></i></div>
                     <div class="flex-grow-1">${doc}</div>
                     <div class="checklist-status text-muted small">Pending</div>
@@ -768,6 +769,7 @@ document.getElementById('applicationForm').addEventListener('submit', async (e) 
         }
     } catch (error) {
         hideUploadProgress();
+        console.error('Submission error:', error);
         document.getElementById('result').innerHTML = `
             <div class="alert alert-danger rounded-3">
                 <i class="fas fa-exclamation-triangle me-2"></i> Network error. Please try again.
