@@ -841,19 +841,25 @@ def services_dashboard():
 def service_detail(slug):
     """Service detail page"""
     try:
+        print(f"Looking for service with slug: {slug}")  # Debug print
         service = get_service_by_slug(slug)
+        
         if not service:
+            print(f"Service not found for slug: {slug}")  # Debug print
             flash('Service not found', 'danger')
             return redirect(url_for('services_dashboard'))
         
         # Convert ObjectId to string
         service['id'] = str(service['_id'])
+        print(f"Found service: {service['name']}")  # Debug print
         
         user = get_user_by_id(session['user_id'])
         
         return render_template('service_detail.html', service=service, user=user)
     except Exception as e:
         print(f"Error loading service: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Unable to load service details.', 'danger')
         return redirect(url_for('services_dashboard'))
 
@@ -1863,6 +1869,57 @@ def too_large_error(error):
     flash('File too large. Maximum size is 10MB per file.', 'danger')
     return redirect(request.referrer or url_for('index'))
 
+# Debug route to check services
+@app.route('/debug-services')
+@login_required
+def debug_services():
+    """Debug route to check services in database"""
+    try:
+        services = list(db.services.find({'is_active': True}))
+        result = []
+        for service in services:
+            result.append({
+                'id': str(service['_id']),
+                'name': service['name'],
+                'slug': service['slug'],
+                'category': service['category'],
+                'service_charge': service.get('service_charge', 0)
+            })
+        return jsonify({
+            'count': len(result),
+            'services': result,
+            'message': 'Services fetched successfully'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Test service detail route
+@app.route('/test-service/<service_id>')
+@login_required
+def test_service(service_id):
+    """Test route to view service by ID"""
+    try:
+        service = db.services.find_one({'_id': ObjectId(service_id)})
+        if not service:
+            return jsonify({'error': 'Service not found'}), 404
+        
+        service['id'] = str(service['_id'])
+        user = get_user_by_id(session['user_id'])
+        
+        return render_template('service_detail.html', service=service, user=user)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/view-services')
+@login_required
+def view_services():
+    """Simple page to view all services"""
+    try:
+        services = list(db.services.find({'is_active': True}))
+        return render_template('view_services.html', services=services)
+    except Exception as e:
+        return f"Error: {e}"
+    
 # ============== Application Entry Point ==============
 
 if __name__ == '__main__':
