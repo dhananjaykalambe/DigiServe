@@ -12,6 +12,7 @@ import random
 import re
 import hashlib
 import uuid
+import csv
 from typing import Optional, Dict, List, Any
 
 app = Flask(__name__)
@@ -30,8 +31,10 @@ class Config:
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
     ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'txt'}
     
-    # Rate Limiting (simple implementation)
-    RATELIMIT_DEFAULT = "100 per day"
+    # Admin Configuration
+    ADMIN_PHONE = '9999999999'
+    ADMIN_NAME = 'Administrator'
+    ADMIN_EMAIL = 'admin@digiserve.com'
     
     # Pagination
     ITEMS_PER_PAGE = 10
@@ -64,7 +67,10 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or session.get('user_role') != 'admin':
-            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Admin access required'}), 403
+            flash('Admin access required', 'danger')
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -233,6 +239,36 @@ def get_applicant_display_name(request_data: Dict) -> str:
         pass
     return 'N/A'
 
+def auto_create_admin_user(phone: str) -> Optional[Dict]:
+    """Auto-create admin user if not exists"""
+    try:
+        # Check if admin already exists
+        existing_admin = db.users.find_one({'phone': phone})
+        if existing_admin:
+            return existing_admin
+        
+        # Create new admin user
+        admin_user = {
+            'name': Config.ADMIN_NAME,
+            'phone': Config.ADMIN_PHONE,
+            'email': Config.ADMIN_EMAIL,
+            'role': 'admin',
+            'is_active': True,
+            'created_at': datetime.now(timezone.utc),
+            'last_login': datetime.now(timezone.utc),
+            'address': 'Admin Office',
+            'city': 'Mumbai',
+            'state': 'Maharashtra',
+            'pincode': '400001'
+        }
+        result = db.users.insert_one(admin_user)
+        admin_user['_id'] = result.inserted_id
+        print(f"✅ Auto-created admin user: {phone}")
+        return admin_user
+    except Exception as e:
+        print(f"Error auto-creating admin: {e}")
+        return None
+
 # ============== Database Initialization ==============
 
 def init_db():
@@ -261,27 +297,12 @@ def init_db():
         db.notifications.create_index('created_at')
         db.payment_transactions.create_index('transaction_id', unique=True)
         db.payment_transactions.create_index('user_id')
+        db.request_documents.create_index('request_id')
         
         print("✅ Indexes created successfully")
         
-        # Create admin user if not exists
-        admin_phone = '9999999999'
-        if not db.users.find_one({'phone': admin_phone}):
-            admin = {
-                'name': 'Administrator',
-                'phone': admin_phone,
-                'email': 'admin@digiserve.com',
-                'role': 'admin',
-                'is_active': True,
-                'created_at': datetime.now(timezone.utc),
-                'last_login': None,
-                'address': 'Admin Office',
-                'city': 'Mumbai',
-                'state': 'Maharashtra',
-                'pincode': '400001'
-            }
-            db.users.insert_one(admin)
-            print("✅ Admin user created (Phone: 9999999999)")
+        # Create admin user if not exists (using the auto-create function)
+        auto_create_admin_user(Config.ADMIN_PHONE)
         
         # Create default services
         default_services = [
@@ -392,7 +413,7 @@ def init_db():
         print("🚀 DigiServe eSeva Portal is ready!")
         print("📍 MongoDB Atlas: Connected")
         print("📱 User Login: Any mobile number")
-        print("👑 Admin Login: 9999999999")
+        print("👑 Admin Login: 9999999999 (Auto-creates if missing)")
         print("=" * 50)
         return True
         
@@ -423,7 +444,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login with mobile number"""
+    """User login with mobile number - Fixed admin auto-creation"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         
@@ -436,7 +457,7 @@ def login():
             user = get_user_by_phone(phone)
             
             if user:
-                # Login existing user
+                # === EXISTING USER LOGIN ===
                 session['user_id'] = str(user['_id'])
                 session['user_name'] = user['name']
                 session['user_role'] = user.get('role', 'user')
@@ -463,15 +484,41 @@ def login():
                 if user.get('role') == 'admin':
                     return redirect(url_for('admin_panel'))
                 else:
-                    # Check for redirect after login
                     redirect_url = session.pop('redirect_after_login', None)
                     if redirect_url:
                         return redirect(redirect_url)
                     return redirect(url_for('services_dashboard'))
+            
             else:
-                # New user - redirect to registration
-                flash('New number detected! Please complete registration.', 'info')
-                return redirect(url_for('register', phone=phone))
+                # === NEW USER - Check if it's the Admin number ===
+                if phone == Config.ADMIN_PHONE:
+                    # Auto-create admin account on the fly
+                    print(f"🔧 Admin login detected. Auto-creating admin account for {phone}...")
+                    admin_user = auto_create_admin_user(phone)
+                    
+                    if admin_user:
+                        # Log the admin in immediately
+                        session['user_id'] = str(admin_user['_id'])
+                        session['user_name'] = admin_user['name']
+                        session['user_role'] = 'admin'
+                        session['user_phone'] = admin_user['phone']
+                        session.permanent = True
+                        
+                        # Update last login
+                        db.users.update_one(
+                            {'_id': admin_user['_id']},
+                            {'$set': {'last_login': datetime.now(timezone.utc)}}
+                        )
+                        
+                        flash('Welcome, Administrator! You have been logged in.', 'success')
+                        return redirect(url_for('admin_panel'))
+                    else:
+                        flash('Unable to create admin account. Please contact support.', 'danger')
+                        return redirect(url_for('login'))
+                else:
+                    # New regular user - redirect to registration
+                    flash('New number detected! Please complete registration.', 'info')
+                    return redirect(url_for('register', phone=phone))
                 
         except Exception as e:
             print(f"Login error: {e}")
@@ -482,8 +529,13 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration"""
+    """User registration - Block admin number from registering as normal user"""
     phone = request.args.get('phone', '')
+    
+    # Prevent admin number from registering as normal user
+    if phone == Config.ADMIN_PHONE:
+        flash('This is an administrator number. Please use admin login.', 'warning')
+        return redirect(url_for('login'))
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -502,6 +554,11 @@ def register():
         if not phone or not validate_phone(phone):
             flash('Please enter a valid 10-digit mobile number', 'danger')
             return redirect(url_for('register', phone=phone))
+        
+        # Block admin number from registering
+        if phone == Config.ADMIN_PHONE:
+            flash('This number is reserved for administrator. Please use admin login.', 'warning')
+            return redirect(url_for('login'))
         
         if email and not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
             flash('Please enter a valid email address', 'danger')
@@ -578,10 +635,20 @@ def services_dashboard():
         
         categorized_services = get_services_by_category()
         
-        # Get recent applications count
+        # Get counts for dashboard
         recent_count = db.service_requests.count_documents({
             'user_id': ObjectId(session['user_id']),
             'submitted_at': {'$gte': datetime.now(timezone.utc) - timedelta(days=30)}
+        })
+        
+        completed_count = db.service_requests.count_documents({
+            'user_id': ObjectId(session['user_id']),
+            'status': 'completed'
+        })
+        
+        pending_count = db.service_requests.count_documents({
+            'user_id': ObjectId(session['user_id']),
+            'status': {'$in': ['pending', 'in_progress']}
         })
         
         unread_count = db.notifications.count_documents({
@@ -593,6 +660,8 @@ def services_dashboard():
                              user=user,
                              services=categorized_services,
                              recent_count=recent_count,
+                             completed_count=completed_count,
+                             pending_count=pending_count,
                              unread_count=unread_count)
     except Exception as e:
         print(f"Error loading dashboard: {e}")
@@ -849,10 +918,20 @@ def api_my_requests():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', Config.ITEMS_PER_PAGE))
         status = request.args.get('status', 'all')
+        payment = request.args.get('payment', 'all')
+        search = request.args.get('search', '').strip()
         
         query = {'user_id': ObjectId(session['user_id'])}
         if status != 'all':
             query['status'] = status
+        if payment != 'all':
+            query['payment_status'] = payment
+        if search:
+            query['$or'] = [
+                {'reference_number': {'$regex': search, '$options': 'i'}},
+                {'service_name': {'$regex': search, '$options': 'i'}},
+                {'applicant_name': {'$regex': search, '$options': 'i'}}
+            ]
         
         total = db.service_requests.count_documents(query)
         skip = (page - 1) * per_page
@@ -881,7 +960,7 @@ def api_my_requests():
             'total': total,
             'page': page,
             'per_page': per_page,
-            'total_pages': (total + per_page - 1) // per_page
+            'total_pages': (total + per_page - 1) // per_page if per_page > 0 else 1
         })
     except Exception as e:
         print(f"Error fetching requests: {e}")
@@ -1072,10 +1151,6 @@ def update_profile():
                 {'_id': ObjectId(session['user_id'])},
                 {'$set': update_data}
             )
-            
-            # Update session name if changed
-            if 'name' in update_data:
-                session['user_name'] = update_data['name']
         
         return jsonify({'success': True, 'message': 'Profile updated successfully'})
     except Exception as e:
@@ -1223,7 +1298,9 @@ def admin_panel():
         for payment in payments:
             payment['_id'] = str(payment['_id'])
             user = get_user_by_id(payment['user_id'])
+            service_request = db.service_requests.find_one({'_id': payment['request_id']})
             payment['user'] = {'name': user['name']} if user else None
+            payment['service_name'] = service_request['service_name'] if service_request else 'N/A'
         
         services = list(db.services.find())
         for service in services:
