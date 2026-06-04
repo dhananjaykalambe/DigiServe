@@ -206,6 +206,20 @@ def get_service_by_id(service_id: str) -> Optional[Dict]:
     except:
         return None
 
+def get_all_services(limit: int = None) -> List[Dict]:
+    """Get all active services"""
+    try:
+        query = {'is_active': True}
+        services = list(db.services.find(query))
+        if limit:
+            services = services[:limit]
+        for service in services:
+            service['id'] = str(service['_id'])
+        return services
+    except Exception as e:
+        print(f"Error getting services: {e}")
+        return []
+
 def get_services_by_category(limit: int = None) -> Dict:
     """Get services grouped by category"""
     try:
@@ -301,7 +315,7 @@ def init_db():
         
         print("✅ Indexes created successfully")
         
-        # Create admin user if not exists (using the auto-create function)
+        # Create admin user if not exists
         auto_create_admin_user(Config.ADMIN_PHONE)
         
         # Create default services
@@ -310,7 +324,7 @@ def init_db():
                 'category': 'scholarship',
                 'name': 'PMSSS Scholarship Application',
                 'slug': 'pmsss-scholarship',
-                'description': 'Prime Minister\'s Special Scholarship Scheme for Jammu and Kashmir students. Apply now for financial assistance.',
+                'description': "Prime Minister's Special Scholarship Scheme for Jammu and Kashmir students. Apply now for financial assistance.",
                 'eligibility': 'Students who have passed 10+2 examination from J&K board with minimum 60% marks.',
                 'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate, Bank Account Details',
                 'instructions': 'Ensure all documents are self-attested. Upload clear scanned copies.',
@@ -320,6 +334,22 @@ def init_db():
                 'gst_percent': 18,
                 'is_active': True,
                 'icon': 'fas fa-graduation-cap',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'scholarship',
+                'name': 'Post Matric Scholarship',
+                'slug': 'post-matric-scholarship',
+                'description': 'Post Matric Scholarship for SC/ST/OBC students. Financial aid for higher education.',
+                'eligibility': 'Students belonging to SC/ST/OBC categories with family income less than ₹2.5 LPA.',
+                'documents_required': 'Caste Certificate, Income Certificate, Previous Year Marksheet, Admission Letter',
+                'instructions': 'Fill all details carefully. Upload income certificate for verification.',
+                'processing_time': '20-25 working days',
+                'service_charge': 0,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-university',
                 'created_at': datetime.now(timezone.utc)
             },
             {
@@ -401,6 +431,134 @@ def init_db():
                 'is_active': True,
                 'icon': 'fas fa-baby-carriage',
                 'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'eseva',
+                'name': 'Income Certificate Application',
+                'slug': 'income-certificate',
+                'description': 'Apply for income certificate for scholarship, government schemes, and other benefits.',
+                'eligibility': 'Resident of the state with valid address proof.',
+                'documents_required': 'Aadhar Card, Address Proof, Previous Income Certificate (if any), Land Records',
+                'instructions': 'Provide correct income details from all sources.',
+                'processing_time': '10-15 working days',
+                'service_charge': 100,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-file-invoice-dollar',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'document',
+                'name': 'Driving License Application',
+                'slug': 'driving-license',
+                'description': 'Apply for learner license or permanent driving license. Online application assistance.',
+                'eligibility': 'Age 18+ for LMV, 20+ for transport vehicles.',
+                'documents_required': 'Age Proof, Address Proof, Medical Certificate, Passport Size Photo',
+                'instructions': 'Fill form accurately. Schedule test after application submission.',
+                'processing_time': '10-15 working days',
+                'service_charge': 200,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-car',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'education',
+                'name': 'JEE Main Application',
+                'slug': 'jee-main-application',
+                'description': 'Joint Entrance Examination (JEE) Main application form filling for engineering aspirants.',
+                'eligibility': 'Passed 10+2 with Physics, Chemistry, and Mathematics from recognized board.',
+                'documents_required': 'Class 10 & 12 Marksheet, Category Certificate, Photo, Signature',
+                'instructions': 'Check eligibility criteria before applying. Upload scanned documents as per specifications.',
+                'processing_time': 'Same day processing',
+                'service_charge': 1000,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-chalkboard-user',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'bill_payment',
+                'name': 'Water Bill Payment',
+                'slug': 'water-bill-payment',
+                'description': 'Pay your water supply bill online. Fast and secure payment.',
+                'eligibility': 'Valid water connection number',
+                'documents_required': 'Water Connection ID / Customer ID',
+                'instructions': 'Enter correct customer ID as mentioned on your bill.',
+                'processing_time': 'Instant',
+                'service_charge': 0,
+                'convenience_fee_percent': 0,
+                'gst_percent': 0,
+                'is_active': True,
+                'icon': 'fas fa-water',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'bill_payment',
+                'name': 'Gas Bill Payment',
+                'slug': 'gas-bill-payment',
+                'description': 'Pay your LPG gas bill online. Support for all major gas companies.',
+                'eligibility': 'Valid LPG consumer number',
+                'documents_required': 'Consumer Number',
+                'instructions': 'Enter your registered mobile number or consumer ID.',
+                'processing_time': 'Instant',
+                'service_charge': 0,
+                'convenience_fee_percent': 0,
+                'gst_percent': 0,
+                'is_active': True,
+                'icon': 'fas fa-fire',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'document',
+                'name': 'Voter ID Card Application',
+                'slug': 'voter-id-application',
+                'description': 'Apply for new voter ID card or correction in existing card.',
+                'eligibility': 'Indian citizen aged 18 years or above on qualifying date.',
+                'documents_required': 'Age Proof, Address Proof, Passport Size Photo',
+                'instructions': 'Fill Form 6 for new registration. Form 8 for corrections.',
+                'processing_time': '15-20 working days',
+                'service_charge': 50,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-vote-yea',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'eseva',
+                'name': 'Death Certificate Application',
+                'slug': 'death-certificate',
+                'description': 'Apply for death certificate online. Get certificate for legal and insurance purposes.',
+                'eligibility': 'Death registered with municipal corporation within 21 days.',
+                'documents_required': 'Hospital Death Report, ID Proof of Applicant, Relationship Proof',
+                'instructions': 'Attach hospital discharge summary or cremation certificate.',
+                'processing_time': '10-15 working days',
+                'service_charge': 200,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-heartbeat',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                'category': 'scholarship',
+                'name': 'National Scholarship Portal (NSP)',
+                'slug': 'nsp-scholarship',
+                'description': 'Apply for various central government scholarships through National Scholarship Portal.',
+                'eligibility': 'Students from economically weaker sections with good academic record.',
+                'documents_required': 'Aadhar Card, Bank Passbook, Caste Certificate, Income Certificate, Previous Marksheet',
+                'instructions': 'Link Aadhar with bank account. Keep digital copies of all documents ready.',
+                'processing_time': '30-45 working days',
+                'service_charge': 100,
+                'convenience_fee_percent': 2,
+                'gst_percent': 18,
+                'is_active': True,
+                'icon': 'fas fa-medal',
+                'created_at': datetime.now(timezone.utc)
             }
         ]
         
@@ -444,7 +602,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login with mobile number - Fixed admin auto-creation"""
+    """User login with mobile number"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         
@@ -457,7 +615,7 @@ def login():
             user = get_user_by_phone(phone)
             
             if user:
-                # === EXISTING USER LOGIN ===
+                # Existing user login
                 session['user_id'] = str(user['_id'])
                 session['user_name'] = user['name']
                 session['user_role'] = user.get('role', 'user')
@@ -490,21 +648,18 @@ def login():
                     return redirect(url_for('services_dashboard'))
             
             else:
-                # === NEW USER - Check if it's the Admin number ===
+                # New user - Check if it's the Admin number
                 if phone == Config.ADMIN_PHONE:
-                    # Auto-create admin account on the fly
                     print(f"🔧 Admin login detected. Auto-creating admin account for {phone}...")
                     admin_user = auto_create_admin_user(phone)
                     
                     if admin_user:
-                        # Log the admin in immediately
                         session['user_id'] = str(admin_user['_id'])
                         session['user_name'] = admin_user['name']
                         session['user_role'] = 'admin'
                         session['user_phone'] = admin_user['phone']
                         session.permanent = True
                         
-                        # Update last login
                         db.users.update_one(
                             {'_id': admin_user['_id']},
                             {'$set': {'last_login': datetime.now(timezone.utc)}}
@@ -621,6 +776,19 @@ def logout():
     session.clear()
     flash('You have been logged out successfully', 'info')
     return redirect(url_for('index'))
+
+@app.route('/services')
+@login_required
+def services_list():
+    """List all services"""
+    try:
+        all_services = get_all_services()
+        categorized_services = get_services_by_category()
+        return render_template('services.html', services=all_services, categorized_services=categorized_services)
+    except Exception as e:
+        print(f"Error loading services: {e}")
+        flash('Unable to load services. Please try again.', 'danger')
+        return redirect(url_for('index'))
 
 @app.route('/services-dashboard')
 @login_required
@@ -891,6 +1059,8 @@ def submit_service_request():
         
     except Exception as e:
         print(f"Error submitting request: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/my-requests')
