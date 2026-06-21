@@ -1,25 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, make_response
+# app.py - Main Application File
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
-from bson.errors import InvalidId
 from functools import wraps
 from io import BytesIO
 import os
 import json
 import random
 import re
-import hashlib
 import uuid
 import csv
+import hashlib
 from typing import Optional, Dict, List, Any
 
 app = Flask(__name__)
 
-# Configuration
+# ============== Configuration ==============
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-secret-key-2026-prod')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-super-secret-key-2026')
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
     # MongoDB Atlas Connection
@@ -28,7 +28,7 @@ class Config:
     # Upload Configuration
     UPLOAD_FOLDER = 'uploads/'
     DOCUMENT_FOLDER = 'uploads/documents/'
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'txt'}
     
     # Admin Configuration
@@ -52,9 +52,9 @@ db = mongo.db
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
-print("=" * 50)
-print("🚀 DigiServe eSeva Portal Initializing...")
-print("=" * 50)
+print("=" * 60)
+print("🚀 DigiServe eSeva Portal v3.0 Initializing...")
+print("=" * 60)
 
 # ============== Helper Functions ==============
 
@@ -115,6 +115,10 @@ def validate_phone(phone: str) -> bool:
 def validate_pincode(pincode: str) -> bool:
     """Validate pincode"""
     return bool(re.match(r'^\d{6}$', pincode))
+
+def validate_email(email: str) -> bool:
+    """Validate email format"""
+    return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
 
 def calculate_fees(service_charge: float, convenience_fee_percent: float = 2, gst_percent: float = 18) -> Dict:
     """Calculate total fees including convenience fee and GST"""
@@ -210,7 +214,7 @@ def get_all_services(limit: int = None) -> List[Dict]:
     """Get all active services"""
     try:
         query = {'is_active': True}
-        services = list(db.services.find(query))
+        services = list(db.services.find(query).sort('created_at', 1))
         if limit:
             services = services[:limit]
         for service in services:
@@ -220,25 +224,22 @@ def get_all_services(limit: int = None) -> List[Dict]:
         print(f"Error getting services: {e}")
         return []
 
-def get_services_by_category(limit: int = None) -> Dict:
+def get_services_by_category() -> Dict:
     """Get services grouped by category"""
     try:
         query = {'is_active': True}
-        services = list(db.services.find(query))
-        if limit:
-            services = services[:limit]
+        services = list(db.services.find(query).sort('created_at', 1))
         
         categorized = {}
         for service in services:
             category = service.get('category', 'other')
             if category not in categorized:
                 categorized[category] = []
-            # Convert ObjectId to string for JSON serialization
             service['id'] = str(service['_id'])
             categorized[category].append(service)
         return categorized
     except Exception as e:
-        print(f"Error getting services: {e}")
+        print(f"Error getting services by category: {e}")
         return {}
 
 def get_applicant_display_name(request_data: Dict) -> str:
@@ -253,15 +254,13 @@ def get_applicant_display_name(request_data: Dict) -> str:
         pass
     return 'N/A'
 
-def auto_create_admin_user(phone: str) -> Optional[Dict]:
+def auto_create_admin_user() -> Optional[Dict]:
     """Auto-create admin user if not exists"""
     try:
-        # Check if admin already exists
-        existing_admin = db.users.find_one({'phone': phone})
+        existing_admin = db.users.find_one({'phone': Config.ADMIN_PHONE})
         if existing_admin:
             return existing_admin
         
-        # Create new admin user
         admin_user = {
             'name': Config.ADMIN_NAME,
             'phone': Config.ADMIN_PHONE,
@@ -277,7 +276,7 @@ def auto_create_admin_user(phone: str) -> Optional[Dict]:
         }
         result = db.users.insert_one(admin_user)
         admin_user['_id'] = result.inserted_id
-        print(f"✅ Auto-created admin user: {phone}")
+        print(f"✅ Auto-created admin user: {Config.ADMIN_PHONE}")
         return admin_user
     except Exception as e:
         print(f"Error auto-creating admin: {e}")
@@ -290,7 +289,6 @@ def init_db():
     print("📦 Initializing database...")
     
     try:
-        # Test connection
         db.command('ping')
         print("✅ MongoDB Atlas connected successfully!")
     except Exception as e:
@@ -298,7 +296,7 @@ def init_db():
         return False
     
     try:
-        # Create indexes for performance
+        # Create indexes
         db.users.create_index('phone', unique=True)
         db.users.create_index('email', sparse=True)
         db.services.create_index('slug', unique=True)
@@ -315,8 +313,8 @@ def init_db():
         
         print("✅ Indexes created successfully")
         
-        # Create admin user if not exists
-        auto_create_admin_user(Config.ADMIN_PHONE)
+        # Create admin user
+        auto_create_admin_user()
         
         # Create default services
         default_services = [
@@ -567,12 +565,12 @@ def init_db():
                 db.services.insert_one(service)
                 print(f"✅ Added service: {service['name']}")
         
-        print("=" * 50)
-        print("🚀 DigiServe eSeva Portal is ready!")
+        print("=" * 60)
+        print("🚀 DigiServe eSeva Portal v3.0 is ready!")
         print("📍 MongoDB Atlas: Connected")
         print("📱 User Login: Any mobile number")
         print("👑 Admin Login: 9999999999 (Auto-creates if missing)")
-        print("=" * 50)
+        print("=" * 60)
         return True
         
     except Exception as e:
@@ -598,7 +596,7 @@ def index():
         return render_template('index.html', services=featured_services, stats=stats)
     except Exception as e:
         print(f"Error loading index: {e}")
-        return render_template('index.html', services=[], stats={})
+        return render_template('index.html', services=[], stats={'total_users': 0, 'total_applications': 0, 'total_services': 0})
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -606,7 +604,6 @@ def login():
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         
-        # Validate phone number
         if not phone or not validate_phone(phone):
             flash('Please enter a valid 10-digit mobile number', 'danger')
             return redirect(url_for('login'))
@@ -615,25 +612,22 @@ def login():
             user = get_user_by_phone(phone)
             
             if user:
-                # Existing user login
                 session['user_id'] = str(user['_id'])
                 session['user_name'] = user['name']
                 session['user_role'] = user.get('role', 'user')
                 session['user_phone'] = user['phone']
                 session.permanent = True
                 
-                # Update last login
                 db.users.update_one(
                     {'_id': user['_id']},
                     {'$set': {'last_login': datetime.now(timezone.utc)}}
                 )
                 
-                # Send welcome back notification
                 create_notification(
                     user['_id'],
                     None,
                     'Welcome Back! 👋',
-                    f'Welcome back to DigiServe, {user["name"]}! Check out our latest services.',
+                    f'Welcome back to DigiServe, {user["name"]}!',
                     'success'
                 )
                 
@@ -648,10 +642,8 @@ def login():
                     return redirect(url_for('services_dashboard'))
             
             else:
-                # New user - Check if it's the Admin number
                 if phone == Config.ADMIN_PHONE:
-                    print(f"🔧 Admin login detected. Auto-creating admin account for {phone}...")
-                    admin_user = auto_create_admin_user(phone)
+                    admin_user = auto_create_admin_user()
                     
                     if admin_user:
                         session['user_id'] = str(admin_user['_id'])
@@ -665,13 +657,12 @@ def login():
                             {'$set': {'last_login': datetime.now(timezone.utc)}}
                         )
                         
-                        flash('Welcome, Administrator! You have been logged in.', 'success')
+                        flash('Welcome, Administrator!', 'success')
                         return redirect(url_for('admin_panel'))
                     else:
-                        flash('Unable to create admin account. Please contact support.', 'danger')
+                        flash('Unable to create admin account.', 'danger')
                         return redirect(url_for('login'))
                 else:
-                    # New regular user - redirect to registration
                     flash('New number detected! Please complete registration.', 'info')
                     return redirect(url_for('register', phone=phone))
                 
@@ -684,10 +675,9 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration - Block admin number from registering as normal user"""
+    """User registration"""
     phone = request.args.get('phone', '')
     
-    # Prevent admin number from registering as normal user
     if phone == Config.ADMIN_PHONE:
         flash('This is an administrator number. Please use admin login.', 'warning')
         return redirect(url_for('login'))
@@ -701,7 +691,6 @@ def register():
         state = request.form.get('state', '').strip() or None
         pincode = request.form.get('pincode', '').strip() or None
         
-        # Validation
         if not name or len(name) < 2:
             flash('Please enter a valid name (minimum 2 characters)', 'danger')
             return redirect(url_for('register', phone=phone))
@@ -710,12 +699,11 @@ def register():
             flash('Please enter a valid 10-digit mobile number', 'danger')
             return redirect(url_for('register', phone=phone))
         
-        # Block admin number from registering
         if phone == Config.ADMIN_PHONE:
-            flash('This number is reserved for administrator. Please use admin login.', 'warning')
+            flash('This number is reserved for administrator.', 'warning')
             return redirect(url_for('login'))
         
-        if email and not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        if email and not validate_email(email):
             flash('Please enter a valid email address', 'danger')
             return redirect(url_for('register', phone=phone))
         
@@ -744,23 +732,21 @@ def register():
             }
             result = db.users.insert_one(new_user)
             
-            # Auto-login after registration
             session['user_id'] = str(result.inserted_id)
             session['user_name'] = name
             session['user_role'] = 'user'
             session['user_phone'] = phone
             session.permanent = True
             
-            # Welcome notification
             create_notification(
                 result.inserted_id,
                 None,
                 'Welcome to DigiServe! 🎉',
-                f'Welcome {name}! Thank you for registering with DigiServe. Explore our services and get started.',
+                f'Welcome {name}! Thank you for registering with DigiServe.',
                 'success'
             )
             
-            flash(f'Welcome to DigiServe, {name}! Registration successful.', 'success')
+            flash(f'Welcome to DigiServe, {name}!', 'success')
             return redirect(url_for('services_dashboard'))
             
         except Exception as e:
@@ -803,7 +789,6 @@ def services_dashboard():
         
         categorized_services = get_services_by_category()
         
-        # Get counts for dashboard
         recent_count = db.service_requests.count_documents({
             'user_id': ObjectId(session['user_id']),
             'submitted_at': {'$gte': datetime.now(timezone.utc) - timedelta(days=30)}
@@ -841,29 +826,23 @@ def services_dashboard():
 def service_detail(slug):
     """Service detail page"""
     try:
-        print(f"Looking for service with slug: {slug}")  # Debug print
         service = get_service_by_slug(slug)
         
         if not service:
-            print(f"Service not found for slug: {slug}")  # Debug print
             flash('Service not found', 'danger')
             return redirect(url_for('services_dashboard'))
         
-        # Convert ObjectId to string
         service['id'] = str(service['_id'])
-        print(f"Found service: {service['name']}")  # Debug print
-        
         user = get_user_by_id(session['user_id'])
         
         return render_template('service_detail.html', service=service, user=user)
     except Exception as e:
         print(f"Error loading service: {e}")
-        import traceback
-        traceback.print_exc()
         flash('Unable to load service details.', 'danger')
         return redirect(url_for('services_dashboard'))
 
 @app.route('/calculate-fees', methods=['POST'])
+@login_required
 def calculate_fees_api():
     """Calculate fees API endpoint"""
     try:
@@ -878,6 +857,7 @@ def calculate_fees_api():
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/validate-document', methods=['POST'])
+@login_required
 def validate_document_api():
     """Validate document number API"""
     try:
@@ -934,7 +914,6 @@ def submit_service_request():
         if not all(required_fields):
             return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
         
-        # Validate pincode
         if pincode and not validate_pincode(pincode):
             return jsonify({'success': False, 'message': 'Invalid pincode format'}), 400
         
@@ -1151,19 +1130,16 @@ def request_details(request_id):
         if not service_request:
             return jsonify({'error': 'Request not found'}), 404
         
-        # Check ownership or admin access
         if str(service_request['user_id']) != session['user_id'] and session.get('user_role') != 'admin':
             return jsonify({'error': 'Access denied'}), 403
         
         documents = list(db.request_documents.find({'request_id': ObjectId(request_id)}))
         
-        # Format documents
         for doc in documents:
             doc['id'] = str(doc['_id'])
             if isinstance(doc.get('uploaded_at'), datetime):
                 doc['uploaded_at'] = doc['uploaded_at'].strftime('%Y-%m-%d %H:%M:%S')
         
-        # Format request
         request_dict = {
             'id': str(service_request['_id']),
             'reference_number': service_request['reference_number'],
@@ -1192,7 +1168,6 @@ def request_details(request_id):
             'timeline': service_request.get('timeline', [])
         }
         
-        # Parse details JSON if present
         if service_request.get('details'):
             try:
                 details_data = json.loads(service_request['details'])
@@ -1238,7 +1213,6 @@ def initiate_payment(ref_number):
         
         db.payment_transactions.insert_one(payment)
         
-        # Update service request
         db.service_requests.update_one(
             {'_id': service_request['_id']},
             {'$set': {
@@ -1247,7 +1221,6 @@ def initiate_payment(ref_number):
             }}
         )
         
-        # Add to timeline
         db.service_requests.update_one(
             {'_id': service_request['_id']},
             {'$push': {
@@ -1260,7 +1233,6 @@ def initiate_payment(ref_number):
             }}
         )
         
-        # Notify user
         create_notification(
             ObjectId(session['user_id']),
             str(service_request['_id']),
@@ -1310,6 +1282,8 @@ def update_profile():
         
         update_data = {}
         if 'email' in data:
+            if data['email'] and not validate_email(data['email']):
+                return jsonify({'success': False, 'message': 'Invalid email format'}), 400
             update_data['email'] = data['email'] or None
         if 'address' in data:
             update_data['address'] = data['address'] or None
@@ -1412,7 +1386,6 @@ def get_unread_count():
 def admin_panel():
     """Admin dashboard"""
     try:
-        # Get statistics
         total_requests = db.service_requests.count_documents({})
         pending_requests = db.service_requests.count_documents({'status': 'pending'})
         in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
@@ -1422,7 +1395,6 @@ def admin_panel():
         total_users = db.users.count_documents({'role': 'user'})
         total_services = db.services.count_documents({'is_active': True})
         
-        # Revenue calculation
         revenue_pipeline = [
             {'$match': {'status': 'completed'}},
             {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
@@ -1430,7 +1402,6 @@ def admin_panel():
         revenue_result = list(db.payment_transactions.aggregate(revenue_pipeline))
         total_revenue = revenue_result[0]['total'] if revenue_result else 0
         
-        # Monthly trends
         monthly_pipeline = [
             {
                 '$group': {
@@ -1446,18 +1417,15 @@ def admin_panel():
         ]
         monthly_trends = list(db.service_requests.aggregate(monthly_pipeline))
         
-        # Service distribution
         service_distribution = list(db.service_requests.aggregate([
             {'$group': {'_id': '$service_type', 'count': {'$sum': 1}}},
             {'$sort': {'count': -1}}
         ]))
         
-        # Status distribution
         status_distribution = list(db.service_requests.aggregate([
             {'$group': {'_id': '$status', 'count': {'$sum': 1}}}
         ]))
         
-        # Get all requests with user details
         all_requests = list(db.service_requests.find().sort('submitted_at', -1))
         for req in all_requests:
             req['_id'] = str(req['_id'])
@@ -1482,7 +1450,6 @@ def admin_panel():
         for service in services:
             service['_id'] = str(service['_id'])
         
-        # Service names for filter
         service_names = list(set([req.get('service_name') for req in all_requests if req.get('service_name')]))
         
         admin_notifications = list(db.notifications.find(
@@ -1538,7 +1505,6 @@ def update_status(request_id):
         if not service_request:
             return jsonify({'success': False, 'message': 'Request not found'}), 404
         
-        # Update status
         db.service_requests.update_one(
             {'_id': ObjectId(request_id)},
             {'$set': {
@@ -1548,10 +1514,9 @@ def update_status(request_id):
             }}
         )
         
-        # Add to timeline
         status_titles = {
             'in_progress': 'Application Under Review',
-            'completed': 'Application Approved',
+            'completed': 'Application Approved ✅',
             'rejected': 'Application Update'
         }
         
@@ -1578,7 +1543,6 @@ def update_status(request_id):
             }}
         )
         
-        # Notify user
         create_notification(
             service_request['user_id'],
             request_id,
@@ -1609,7 +1573,6 @@ def admin_request_details(request_id):
         
         user = get_user_by_id(service_request['user_id'])
         
-        # Format request
         request_dict = {
             'id': str(service_request['_id']),
             'reference_number': service_request['reference_number'],
@@ -1639,7 +1602,6 @@ def admin_request_details(request_id):
             'timeline': service_request.get('timeline', [])
         }
         
-        # Parse details JSON
         if service_request.get('details'):
             try:
                 details_data = json.loads(service_request['details'])
@@ -1667,12 +1629,10 @@ def add_service():
     try:
         data = request.get_json()
         
-        # Generate slug from name
         slug = data.get('name', '').lower().strip()
         slug = re.sub(r'[^a-z0-9]+', '-', slug)
         slug = slug.strip('-')
         
-        # Check if slug exists
         if db.services.find_one({'slug': slug}):
             return jsonify({'success': False, 'message': 'Service with similar name already exists'}), 400
         
@@ -1695,7 +1655,6 @@ def add_service():
         
         db.services.insert_one(service)
         
-        # Notify all users about new service
         users = list(db.users.find({'role': 'user'}))
         for user in users:
             create_notification(
@@ -1723,7 +1682,7 @@ def get_pending_count():
 @app.route('/admin/send-summary', methods=['POST'])
 @admin_required
 def send_summary():
-    """Send daily summary (simplified - just notification)"""
+    """Send daily summary"""
     try:
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -1734,7 +1693,6 @@ def send_summary():
         
         pending_applications = db.service_requests.count_documents({'status': 'pending'})
         
-        # Notify admin
         create_notification(
             ObjectId(session['user_id']),
             None,
@@ -1869,62 +1827,11 @@ def too_large_error(error):
     flash('File too large. Maximum size is 10MB per file.', 'danger')
     return redirect(request.referrer or url_for('index'))
 
-# Debug route to check services
-@app.route('/debug-services')
-@login_required
-def debug_services():
-    """Debug route to check services in database"""
-    try:
-        services = list(db.services.find({'is_active': True}))
-        result = []
-        for service in services:
-            result.append({
-                'id': str(service['_id']),
-                'name': service['name'],
-                'slug': service['slug'],
-                'category': service['category'],
-                'service_charge': service.get('service_charge', 0)
-            })
-        return jsonify({
-            'count': len(result),
-            'services': result,
-            'message': 'Services fetched successfully'
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Test service detail route
-@app.route('/test-service/<service_id>')
-@login_required
-def test_service(service_id):
-    """Test route to view service by ID"""
-    try:
-        service = db.services.find_one({'_id': ObjectId(service_id)})
-        if not service:
-            return jsonify({'error': 'Service not found'}), 404
-        
-        service['id'] = str(service['_id'])
-        user = get_user_by_id(session['user_id'])
-        
-        return render_template('service_detail.html', service=service, user=user)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-@app.route('/view-services')
-@login_required
-def view_services():
-    """Simple page to view all services"""
-    try:
-        services = list(db.services.find({'is_active': True}))
-        return render_template('view_services.html', services=services)
-    except Exception as e:
-        return f"Error: {e}"
-    
 # ============== Application Entry Point ==============
 
 if __name__ == '__main__':
     print("\n" + "=" * 60)
-    print("DIGISERVE ESEVA PORTAL - PROFESSIONAL EDITION")
+    print("DIGISERVE ESEVA PORTAL v3.0 - PROFESSIONAL EDITION")
     print("=" * 60)
     
     if init_db():
