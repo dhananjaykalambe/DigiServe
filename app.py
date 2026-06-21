@@ -1526,13 +1526,32 @@ def export_users_csv():
 
 # ============== Error Handlers ==============
 
+# ============== Error Handlers ==============
+
 @app.errorhandler(404)
 def not_found_error(error):
+    """Handle 404 errors"""
     return render_template('errors/404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template('errors/500.html'), 500
+    """Handle 500 errors"""
+    error_message = str(error) if error else 'An unexpected error occurred.'
+    return render_template('errors/500.html', error_message=error_message), 500
+
+@app.errorhandler(413)
+def too_large_error(error):
+    """Handle file too large errors"""
+    flash('File too large. Maximum size is 10MB per file.', 'danger')
+    return redirect(request.referrer or url_for('index'))
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    """Handle all other exceptions"""
+    print(f"Unhandled exception: {error}")
+    traceback.print_exc()
+    error_message = str(error) if str(error) else 'An unexpected error occurred.'
+    return render_template('errors/500.html', error_message=error_message), 500
 
 # ============== Debug Route ==============
 
