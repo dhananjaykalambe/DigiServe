@@ -1,359 +1,23 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="DigiServe - Your One-Stop Digital Service Portal for Scholarships, Exams, Bill Payments & Government Services">
-    <meta name="keywords" content="DigiServe, Digital Service, Scholarship, Exam Form, Bill Payment, Government Services">
-    <meta name="author" content="DigiServe">
     <title>DigiServe - {% block title %}Your Digital Service Portal{% endblock %}</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- AOS Animation -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
-    <style>
-        /* CSS Variables for Theme Support */
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --primary-light: #eef2ff;
-            --secondary: #6c757d;
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --danger: #ef4444;
-            --danger-light: #fee2e2;
-            --warning: #f59e0b;
-            --warning-light: #fef3c7;
-            --info: #3b82f6;
-            --info-light: #dbeafe;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --border-color: #e2e8f0;
-            --card-bg: #ffffff;
-            --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3b82f6 100%);
-            --gradient-hero: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            --radius-sm: 0.375rem;
-            --radius: 0.5rem;
-            --radius-md: 0.75rem;
-            --radius-lg: 1rem;
-            --radius-xl: 1.5rem;
-            --radius-2xl: 2rem;
-            --radius-full: 9999px;
-            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --card-bg: #1e293b;
-            --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            font-size: 0.9375rem;
-            line-height: 1.5;
-            transition: background-color var(--transition), color var(--transition);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-            border-radius: var(--radius-full);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: var(--radius-full);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-dark);
-        }
-
-        /* Navbar */
-        .navbar {
-            background: var(--gradient-hero) !important;
-            box-shadow: var(--shadow-md);
-            padding: 0.875rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent !important;
-        }
-
-        .navbar-dark .navbar-nav .nav-link {
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-md);
-            transition: var(--transition);
-        }
-
-        .navbar-dark .navbar-nav .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        /* Cards */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            transition: var(--transition);
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
-            font-weight: 500;
-            border-radius: var(--radius-md);
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: var(--gradient-primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            color: white;
-        }
-
-        /* Forms */
-        .form-control, .form-select {
-            background-color: var(--bg-primary);
-            border: 1.5px solid var(--border-color);
-            color: var(--text-primary);
-            border-radius: var(--radius-md);
-            padding: 0.625rem 1rem;
-            transition: var(--transition);
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-            outline: none;
-        }
-
-        /* Badges */
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: var(--radius-full);
-            font-weight: 500;
-        }
-
-        /* Alerts */
-        .alert {
-            border: none;
-            border-radius: var(--radius-md);
-            padding: 1rem 1.25rem;
-        }
-
-        /* Tables */
-        .table {
-            color: var(--text-primary);
-            margin-bottom: 0;
-        }
-
-        .table-light {
-            background-color: var(--bg-secondary);
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: var(--bg-tertiary);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--gradient-hero);
-            color: white;
-            margin-top: auto;
-            padding: 3rem 0 1.5rem;
-        }
-
-        footer a {
-            color: rgba(255, 255, 255, 0.8);
-            transition: var(--transition);
-        }
-
-        footer a:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        /* Notification Badge */
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 20px;
-        }
-
-        .notification-dropdown {
-            min-width: 360px;
-            max-height: 500px;
-            overflow-y: auto;
-            border-radius: 16px;
-            box-shadow: var(--shadow-xl);
-        }
-
-        .notification-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .notification-item:hover {
-            background-color: var(--bg-secondary);
-        }
-
-        .notification-item.unread {
-            background-color: rgba(67, 97, 238, 0.05);
-        }
-
-        /* Theme Toggle */
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-            color: white;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: rotate(15deg);
-        }
-
-        /* Toast Notifications */
-        .toast-notification {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 10000;
-            min-width: 300px;
-            max-width: 400px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-xl);
-            animation: slideInRight 0.3s ease-out;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -362,13 +26,13 @@
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-handshake"></i> DigiServe
+                <i class="fas fa-handshake me-2"></i>DigiServe
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
                             <i class="fas fa-home"></i> Home
@@ -392,26 +56,20 @@
                                     <i class="fas fa-history"></i> My Apps
                                 </a>
                             </li>
-                            <!-- Debug Link - View All Services (Temporary for debugging) -->
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('view_services') }}">
-                                    <i class="fas fa-list"></i> View Services
-                                </a>
-                            </li>
                         {% endif %}
                         
                         <!-- Theme Toggle -->
                         <li class="nav-item">
-                            <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+                            <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
                                 <i class="fas fa-moon"></i>
                             </button>
                         </li>
                         
-                        <!-- Notifications Dropdown -->
+                        <!-- Notifications -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" data-bs-toggle="dropdown">
                                 <i class="fas fa-bell"></i>
-                                <span class="badge bg-danger notification-badge" id="notificationBadge" style="display: none;">0</span>
+                                <span class="badge bg-danger notification-badge" id="notificationBadge" style="display:none;">0</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg" aria-labelledby="notificationDropdown">
                                 <div class="dropdown-header d-flex justify-content-between align-items-center bg-primary text-white rounded-top py-3 px-4">
@@ -436,7 +94,7 @@
                         
                         <!-- User Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle fa-lg"></i>
                                 <span>{{ session.user_name.split()[0] }}</span>
                             </a>
@@ -453,7 +111,7 @@
                     {% else %}
                         <li class="nav-item">
                             <a class="btn btn-light rounded-pill px-4" href="{{ url_for('login') }}">
-                                <i class="fas fa-mobile-alt me-2"></i> Login / Register
+                                <i class="fas fa-mobile-alt me-2"></i> Login
                             </a>
                         </li>
                     {% endif %}
@@ -469,7 +127,7 @@
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm rounded-3" role="alert" data-aos="fade-down">
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm rounded-3" role="alert">
                             <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -488,7 +146,7 @@
             <div class="row">
                 <div class="col-md-4 mb-4 text-center text-md-start">
                     <h5><i class="fas fa-handshake me-2"></i> DigiServe</h5>
-                    <p class="small text-white-50 mt-3">Your Trusted Digital Service Partner since 2024. We provide seamless online services for all your needs.</p>
+                    <p class="small text-white-50 mt-3">Your Trusted Digital Service Partner. We provide seamless online services for all your needs.</p>
                     <div class="mt-3">
                         <a href="#" class="text-white-50 me-3"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="text-white-50 me-3"><i class="fab fa-twitter"></i></a>
@@ -511,34 +169,31 @@
                 <div class="col-md-3 mb-4 text-center text-md-start">
                     <h6>Services</h6>
                     <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Scholarship Services</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Exam Form Filling</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Scholarship</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Exam Forms</a></li>
                         <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Bill Payments</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Document Services</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Documents</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3 mb-4 text-center text-md-start">
-                    <h6>Contact Us</h6>
+                    <h6>Contact</h6>
                     <p class="small mb-2 text-white-50">
-                        <i class="fas fa-phone-alt me-2"></i> 
+                        <i class="fas fa-phone-alt me-2"></i>
                         <a href="tel:9421456959" class="text-white-50 text-decoration-none">+91 94214 56959</a>
                     </p>
                     <p class="small mb-2 text-white-50">
-                        <i class="fab fa-whatsapp me-2"></i> 
-                        <a href="https://wa.me/919421456959" target="_blank" class="text-white-50 text-decoration-none">WhatsApp Support</a>
+                        <i class="fab fa-whatsapp me-2"></i>
+                        <a href="https://wa.me/919421456959" target="_blank" class="text-white-50 text-decoration-none">WhatsApp</a>
                     </p>
                     <p class="small mb-2 text-white-50">
-                        <i class="fas fa-envelope me-2"></i> 
+                        <i class="fas fa-envelope me-2"></i>
                         <a href="mailto:support@digiserve.com" class="text-white-50 text-decoration-none">support@digiserve.com</a>
-                    </p>
-                    <p class="small text-white-50">
-                        <i class="fas fa-clock me-2"></i> Mon-Sat: 9AM - 7PM
                     </p>
                 </div>
             </div>
             <hr class="bg-white-50">
             <div class="text-center">
-                <small>&copy; 2026 DigiServe. All Rights Reserved. | <a href="#" class="text-white-50 text-decoration-none">Privacy Policy</a> | <a href="#" class="text-white-50 text-decoration-none">Terms of Service</a></small>
+                <small>&copy; 2026 DigiServe. All Rights Reserved.</small>
             </div>
         </div>
     </footer>
@@ -566,7 +221,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     
     <script>
@@ -600,17 +255,25 @@
             updateThemeIcon(newTheme);
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             initTheme();
             const themeToggle = document.getElementById('themeToggle');
             if (themeToggle) {
                 themeToggle.addEventListener('click', toggleTheme);
             }
+            
+            {% if 'user_id' in session %}
+                loadNotifications();
+                setInterval(loadNotifications, 30000);
+                
+                const profileModal = document.getElementById('profileModal');
+                if (profileModal) {
+                    profileModal.addEventListener('show.bs.modal', loadProfile);
+                }
+            {% endif %}
         });
         
         // Notification Functions
-        let notificationInterval = null;
-        
         async function loadNotifications() {
             const notificationList = document.getElementById('notificationList');
             if (!notificationList) return;
@@ -655,12 +318,6 @@
                 `).join('');
             } catch (error) {
                 console.error('Error loading notifications:', error);
-                notificationList.innerHTML = `
-                    <div class="text-center py-5 text-danger">
-                        <i class="fas fa-exclamation-circle fa-3x"></i>
-                        <p class="mt-2">Error loading notifications</p>
-                    </div>
-                `;
             }
         }
         
@@ -697,7 +354,7 @@
         async function handleNotificationClick(notificationId, requestId) {
             await markNotificationRead(notificationId);
             if (requestId) {
-                window.location.href = `/my-requests`;
+                window.location.href = '/my-requests';
             }
             loadNotifications();
         }
@@ -742,9 +399,6 @@
                             <label class="form-label fw-semibold">Pincode</label>
                             <input type="text" class="form-control" id="profilePincode" value="${escapeHtml(user.pincode || '')}" maxlength="6">
                         </div>
-                        <div class="alert alert-info small rounded-3 mb-0">
-                            <i class="fas fa-info-circle me-2"></i> Your profile information helps us serve you better.
-                        </div>
                     `;
                 }
             } catch (error) {
@@ -784,9 +438,9 @@
         // Toast Notification
         function showToast(message, type = 'info') {
             const toastHtml = `
-                <div class="toast-notification p-3 rounded-3 shadow-lg mb-2" style="background: var(--card-bg); border-left: 4px solid ${type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#4361ee'}">
+                <div class="toast-notification p-3 rounded-3 shadow-lg mb-2" style="border-left: 4px solid ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#4f46e5'}">
                     <div class="d-flex align-items-center gap-3">
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} fs-5" style="color: ${type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#4361ee'}"></i>
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} fs-5" style="color: ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#4f46e5'}"></i>
                         <div class="flex-grow-1">${escapeHtml(message)}</div>
                         <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
                     </div>
@@ -809,32 +463,12 @@
             }, 5000);
         }
         
-        // Escape HTML
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            {% if 'user_id' in session %}
-                loadNotifications();
-                if (notificationInterval) clearInterval(notificationInterval);
-                notificationInterval = setInterval(loadNotifications, 30000);
-                
-                const profileModal = document.getElementById('profileModal');
-                if (profileModal) {
-                    profileModal.addEventListener('show.bs.modal', loadProfile);
-                }
-            {% endif %}
-        });
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (notificationInterval) clearInterval(notificationInterval);
-        });
     </script>
     
     {% block extra_scripts %}{% endblock %}
