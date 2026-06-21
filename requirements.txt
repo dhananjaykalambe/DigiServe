@@ -1,6 +1,6 @@
-Flask==3.0.0
+Flask==2.3.3
 flask-pymongo==2.3.0
-pymongo==4.6.0
-Werkzeug==3.0.1
+pymongo==4.5.0
+Werkzeug==2.3.7
 python-dotenv==1.0.0
 gunicorn==21.2.0

@@ -10,7 +10,6 @@ import json
 import random
 import re
 import csv
-import sys
 import traceback
 
 app = Flask(__name__)
@@ -41,15 +40,12 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
 # Initialize MongoDB
-try:
-    mongo = PyMongo(app)
-    db = mongo.db
-    # Test connection
-    db.command('ping')
-    print("✅ MongoDB Atlas connected successfully!")
-except Exception as e:
-    print(f"❌ MongoDB connection error: {e}")
-    db = None
+mongo = PyMongo(app)
+db = mongo.db
+
+print("=" * 60)
+print("🚀 DigiServe eSeva Portal Initializing...")
+print("=" * 60)
 
 # ============== Helper Functions ==============
 
@@ -75,16 +71,12 @@ def login_required(f):
     return decorated_function
 
 def get_user_by_id(user_id):
-    if not db:
-        return None
     try:
         return db.users.find_one({'_id': ObjectId(user_id)})
     except:
         return None
 
 def get_user_by_phone(phone):
-    if not db:
-        return None
     try:
         return db.users.find_one({'phone': phone})
     except:
@@ -131,8 +123,6 @@ def generate_transaction_id():
     return f'TXN{timestamp}{random_part}'
 
 def create_notification(user_id, request_id, title, message, type='info'):
-    if not db:
-        return None
     try:
         notification = {
             'user_id': ObjectId(user_id) if isinstance(user_id, str) else user_id,
@@ -175,24 +165,18 @@ def format_time_ago(dt):
     return str(dt)
 
 def get_service_by_slug(slug):
-    if not db:
-        return None
     try:
         return db.services.find_one({'slug': slug, 'is_active': True})
     except:
         return None
 
 def get_service_by_id(service_id):
-    if not db:
-        return None
     try:
         return db.services.find_one({'_id': ObjectId(service_id)})
     except:
         return None
 
 def get_all_services(limit=None):
-    if not db:
-        return []
     try:
         query = {'is_active': True}
         services = list(db.services.find(query).sort('created_at', 1))
@@ -206,8 +190,6 @@ def get_all_services(limit=None):
         return []
 
 def get_services_by_category():
-    if not db:
-        return {}
     try:
         query = {'is_active': True}
         services = list(db.services.find(query).sort('created_at', 1))
@@ -235,8 +217,6 @@ def get_applicant_display_name(request_data):
     return 'N/A'
 
 def auto_create_admin_user():
-    if not db:
-        return None
     try:
         existing_admin = db.users.find_one({'phone': Config.ADMIN_PHONE})
         if existing_admin:
@@ -266,11 +246,15 @@ def auto_create_admin_user():
 # ============== Database Initialization ==============
 
 def init_db():
-    if not db:
-        print("❌ Database not available")
-        return False
-    
     print("📦 Initializing database...")
+    
+    try:
+        # Test connection
+        db.command('ping')
+        print("✅ MongoDB Atlas connected successfully!")
+    except Exception as e:
+        print(f"❌ MongoDB connection failed: {e}")
+        return False
     
     try:
         # Create indexes
@@ -292,140 +276,140 @@ def init_db():
         # Create admin user
         auto_create_admin_user()
         
-        # Create default services
-        default_services = [
-            {
-                'category': 'scholarship',
-                'name': 'PMSSS Scholarship Application',
-                'slug': 'pmsss-scholarship',
-                'description': "Prime Minister's Special Scholarship Scheme for Jammu and Kashmir students.",
-                'eligibility': 'Students who have passed 10+2 examination from J&K board with minimum 60% marks.',
-                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate',
-                'instructions': 'Ensure all documents are self-attested. Upload clear scanned copies.',
-                'processing_time': '15-20 working days',
-                'service_charge': 0,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-graduation-cap',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'scholarship',
-                'name': 'Post Matric Scholarship',
-                'slug': 'post-matric-scholarship',
-                'description': 'Post Matric Scholarship for SC/ST/OBC students.',
-                'eligibility': 'Students belonging to SC/ST/OBC categories with family income less than ₹2.5 LPA.',
-                'documents_required': 'Caste Certificate, Income Certificate, Previous Year Marksheet',
-                'instructions': 'Fill all details carefully. Upload income certificate for verification.',
-                'processing_time': '20-25 working days',
-                'service_charge': 0,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-university',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'education',
-                'name': 'MHT-CET Application Form',
-                'slug': 'mht-cet-application',
-                'description': 'Maharashtra Common Entrance Test for Engineering and Pharmacy admissions.',
-                'eligibility': 'Indian citizen, passed 10+2 with PCM/PCB from recognized board.',
-                'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Photo, Signature',
-                'instructions': 'Fill the form carefully. Double-check all entered information.',
-                'processing_time': 'Same day processing',
-                'service_charge': 800,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-file-alt',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'document',
-                'name': 'PAN Card Application',
-                'slug': 'pan-card-application',
-                'description': 'Apply for new PAN card or request for reprint.',
-                'eligibility': 'Indian citizen with valid address proof and identity proof.',
-                'documents_required': 'Aadhar Card, Address Proof, Passport Size Photo',
-                'instructions': 'Use clear photograph with white background.',
-                'processing_time': '15-20 working days',
-                'service_charge': 150,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-id-card',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'bill_payment',
-                'name': 'Electricity Bill Payment',
-                'slug': 'electricity-bill-payment',
-                'description': 'Pay your electricity bill online instantly.',
-                'eligibility': 'Valid electricity consumer number',
-                'documents_required': 'Consumer Number',
-                'instructions': 'Enter correct consumer number as shown on your bill.',
-                'processing_time': 'Instant',
-                'service_charge': 0,
-                'convenience_fee_percent': 0,
-                'gst_percent': 0,
-                'is_active': True,
-                'icon': 'fas fa-lightbulb',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'exams',
-                'name': 'UPSC Civil Services Form',
-                'slug': 'upsc-civil-services',
-                'description': 'UPSC Civil Services Examination application form filling assistance.',
-                'eligibility': 'Graduate in any discipline from recognized university',
-                'documents_required': 'Graduation Certificate, Date of Birth Proof, Photo, Signature',
-                'instructions': 'Fill DAF (Detailed Application Form) carefully.',
-                'processing_time': '2-3 working days',
-                'service_charge': 500,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-landmark',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'eseva',
-                'name': 'Birth Certificate Application',
-                'slug': 'birth-certificate',
-                'description': 'Apply for new birth certificate online.',
-                'eligibility': 'Birth registered within 21 days of occurrence',
-                'documents_required': 'Hospital Discharge Certificate, Parents ID Proof',
-                'instructions': 'Provide correct hospital name and date of birth.',
-                'processing_time': '7-10 working days',
-                'service_charge': 200,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-baby-carriage',
-                'created_at': datetime.now(timezone.utc)
-            },
-            {
-                'category': 'eseva',
-                'name': 'Income Certificate Application',
-                'slug': 'income-certificate',
-                'description': 'Apply for income certificate for scholarship and government schemes.',
-                'eligibility': 'Resident of the state with valid address proof.',
-                'documents_required': 'Aadhar Card, Address Proof, Previous Income Certificate',
-                'instructions': 'Provide correct income details from all sources.',
-                'processing_time': '10-15 working days',
-                'service_charge': 100,
-                'convenience_fee_percent': 2,
-                'gst_percent': 18,
-                'is_active': True,
-                'icon': 'fas fa-file-invoice-dollar',
-                'created_at': datetime.now(timezone.utc)
-            }
-        ]
-        
-        for service in default_services:
-            if not db.services.find_one({'slug': service['slug']}):
+        # Create default services if none exist
+        if db.services.count_documents({}) == 0:
+            default_services = [
+                {
+                    'category': 'scholarship',
+                    'name': 'PMSSS Scholarship Application',
+                    'slug': 'pmsss-scholarship',
+                    'description': "Prime Minister's Special Scholarship Scheme for Jammu and Kashmir students.",
+                    'eligibility': 'Students who have passed 10+2 examination from J&K board with minimum 60% marks.',
+                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate',
+                    'instructions': 'Ensure all documents are self-attested. Upload clear scanned copies.',
+                    'processing_time': '15-20 working days',
+                    'service_charge': 0,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-graduation-cap',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'scholarship',
+                    'name': 'Post Matric Scholarship',
+                    'slug': 'post-matric-scholarship',
+                    'description': 'Post Matric Scholarship for SC/ST/OBC students.',
+                    'eligibility': 'Students belonging to SC/ST/OBC categories with family income less than ₹2.5 LPA.',
+                    'documents_required': 'Caste Certificate, Income Certificate, Previous Year Marksheet',
+                    'instructions': 'Fill all details carefully. Upload income certificate for verification.',
+                    'processing_time': '20-25 working days',
+                    'service_charge': 0,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-university',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'education',
+                    'name': 'MHT-CET Application Form',
+                    'slug': 'mht-cet-application',
+                    'description': 'Maharashtra Common Entrance Test for Engineering and Pharmacy admissions.',
+                    'eligibility': 'Indian citizen, passed 10+2 with PCM/PCB from recognized board.',
+                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Photo, Signature',
+                    'instructions': 'Fill the form carefully. Double-check all entered information.',
+                    'processing_time': 'Same day processing',
+                    'service_charge': 800,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-file-alt',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'document',
+                    'name': 'PAN Card Application',
+                    'slug': 'pan-card-application',
+                    'description': 'Apply for new PAN card or request for reprint.',
+                    'eligibility': 'Indian citizen with valid address proof and identity proof.',
+                    'documents_required': 'Aadhar Card, Address Proof, Passport Size Photo',
+                    'instructions': 'Use clear photograph with white background.',
+                    'processing_time': '15-20 working days',
+                    'service_charge': 150,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-id-card',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'bill_payment',
+                    'name': 'Electricity Bill Payment',
+                    'slug': 'electricity-bill-payment',
+                    'description': 'Pay your electricity bill online instantly.',
+                    'eligibility': 'Valid electricity consumer number',
+                    'documents_required': 'Consumer Number',
+                    'instructions': 'Enter correct consumer number as shown on your bill.',
+                    'processing_time': 'Instant',
+                    'service_charge': 0,
+                    'convenience_fee_percent': 0,
+                    'gst_percent': 0,
+                    'is_active': True,
+                    'icon': 'fas fa-lightbulb',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'exams',
+                    'name': 'UPSC Civil Services Form',
+                    'slug': 'upsc-civil-services',
+                    'description': 'UPSC Civil Services Examination application form filling assistance.',
+                    'eligibility': 'Graduate in any discipline from recognized university',
+                    'documents_required': 'Graduation Certificate, Date of Birth Proof, Photo, Signature',
+                    'instructions': 'Fill DAF (Detailed Application Form) carefully.',
+                    'processing_time': '2-3 working days',
+                    'service_charge': 500,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-landmark',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'eseva',
+                    'name': 'Birth Certificate Application',
+                    'slug': 'birth-certificate',
+                    'description': 'Apply for new birth certificate online.',
+                    'eligibility': 'Birth registered within 21 days of occurrence',
+                    'documents_required': 'Hospital Discharge Certificate, Parents ID Proof',
+                    'instructions': 'Provide correct hospital name and date of birth.',
+                    'processing_time': '7-10 working days',
+                    'service_charge': 200,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-baby-carriage',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    'category': 'eseva',
+                    'name': 'Income Certificate Application',
+                    'slug': 'income-certificate',
+                    'description': 'Apply for income certificate for scholarship and government schemes.',
+                    'eligibility': 'Resident of the state with valid address proof.',
+                    'documents_required': 'Aadhar Card, Address Proof, Previous Income Certificate',
+                    'instructions': 'Provide correct income details from all sources.',
+                    'processing_time': '10-15 working days',
+                    'service_charge': 100,
+                    'convenience_fee_percent': 2,
+                    'gst_percent': 18,
+                    'is_active': True,
+                    'icon': 'fas fa-file-invoice-dollar',
+                    'created_at': datetime.now(timezone.utc)
+                }
+            ]
+            
+            for service in default_services:
                 db.services.insert_one(service)
                 print(f"✅ Added service: {service['name']}")
         
@@ -448,9 +432,9 @@ def index():
     try:
         services = get_all_services(6)
         stats = {
-            'total_users': db.users.count_documents({'role': 'user'}) if db else 0,
-            'total_applications': db.service_requests.count_documents({}) if db else 0,
-            'total_services': db.services.count_documents({'is_active': True}) if db else 0
+            'total_users': db.users.count_documents({'role': 'user'}),
+            'total_applications': db.service_requests.count_documents({}),
+            'total_services': db.services.count_documents({'is_active': True})
         }
         return render_template('index.html', services=services, stats=stats)
     except Exception as e:
@@ -467,20 +451,22 @@ def login():
             return redirect(url_for('login'))
         
         try:
+            # Check if user exists
             user = get_user_by_phone(phone)
             
             if user:
+                # Existing user
                 session['user_id'] = str(user['_id'])
                 session['user_name'] = user['name']
                 session['user_role'] = user.get('role', 'user')
                 session['user_phone'] = user['phone']
                 session.permanent = True
                 
-                if db:
-                    db.users.update_one(
-                        {'_id': user['_id']},
-                        {'$set': {'last_login': datetime.now(timezone.utc)}}
-                    )
+                # Update last login
+                db.users.update_one(
+                    {'_id': user['_id']},
+                    {'$set': {'last_login': datetime.now(timezone.utc)}}
+                )
                 
                 flash(f'Welcome back, {user["name"]}!', 'success')
                 
@@ -489,6 +475,7 @@ def login():
                 return redirect(url_for('services_dashboard'))
             
             else:
+                # New user - check if admin
                 if phone == Config.ADMIN_PHONE:
                     admin_user = auto_create_admin_user()
                     if admin_user:
@@ -499,15 +486,14 @@ def login():
                         session.permanent = True
                         flash('Welcome, Administrator!', 'success')
                         return redirect(url_for('admin_panel'))
-                    else:
-                        flash('Unable to create admin account.', 'danger')
-                        return redirect(url_for('login'))
-                else:
-                    flash('New number detected! Please complete registration.', 'info')
-                    return redirect(url_for('register', phone=phone))
+                
+                # Regular new user - redirect to registration
+                flash('New number detected! Please complete registration.', 'info')
+                return redirect(url_for('register', phone=phone))
                 
         except Exception as e:
             print(f"Login error: {e}")
+            traceback.print_exc()
             flash('An error occurred. Please try again.', 'danger')
             return redirect(url_for('login'))
     
@@ -530,6 +516,7 @@ def register():
         state = request.form.get('state', '').strip() or None
         pincode = request.form.get('pincode', '').strip() or None
         
+        # Validation
         if not name or len(name) < 2:
             flash('Please enter a valid name (minimum 2 characters)', 'danger')
             return redirect(url_for('register', phone=phone))
@@ -551,11 +538,13 @@ def register():
             return redirect(url_for('register', phone=phone))
         
         try:
+            # Check if user already exists
             existing_user = get_user_by_phone(phone)
             if existing_user:
                 flash('Mobile number already registered. Please login.', 'info')
                 return redirect(url_for('login'))
             
+            # Create new user
             new_user = {
                 'name': name.title(),
                 'phone': phone,
@@ -563,7 +552,7 @@ def register():
                 'role': 'user',
                 'is_active': True,
                 'created_at': datetime.now(timezone.utc),
-                'last_login': None,
+                'last_login': datetime.now(timezone.utc),
                 'address': address,
                 'city': city,
                 'state': state,
@@ -571,12 +560,14 @@ def register():
             }
             result = db.users.insert_one(new_user)
             
+            # Auto-login
             session['user_id'] = str(result.inserted_id)
             session['user_name'] = name
             session['user_role'] = 'user'
             session['user_phone'] = phone
             session.permanent = True
             
+            # Welcome notification
             create_notification(
                 result.inserted_id,
                 None,
@@ -590,6 +581,7 @@ def register():
             
         except Exception as e:
             print(f"Registration error: {e}")
+            traceback.print_exc()
             flash('An error occurred during registration. Please try again.', 'danger')
             return redirect(url_for('register', phone=phone))
     
@@ -616,22 +608,22 @@ def services_dashboard():
         recent_count = db.service_requests.count_documents({
             'user_id': ObjectId(session['user_id']),
             'submitted_at': {'$gte': datetime.now(timezone.utc) - timedelta(days=30)}
-        }) if db else 0
+        })
         
         completed_count = db.service_requests.count_documents({
             'user_id': ObjectId(session['user_id']),
             'status': 'completed'
-        }) if db else 0
+        })
         
         pending_count = db.service_requests.count_documents({
             'user_id': ObjectId(session['user_id']),
             'status': {'$in': ['pending', 'in_progress']}
-        }) if db else 0
+        })
         
         unread_count = db.notifications.count_documents({
             'user_id': ObjectId(session['user_id']),
             'is_read': False
-        }) if db else 0
+        })
         
         return render_template('services_dashboard.html',
                              user=user,
@@ -671,7 +663,7 @@ def my_requests_page():
         unread_count = db.notifications.count_documents({
             'user_id': ObjectId(session['user_id']),
             'is_read': False
-        }) if db else 0
+        })
         
         return render_template('my_requests.html', user=user, unread_count=unread_count)
     except Exception as e:
@@ -701,10 +693,13 @@ def api_my_requests():
                 {'applicant_name': {'$regex': search, '$options': 'i'}}
             ]
         
-        total = db.service_requests.count_documents(query) if db else 0
+        total = db.service_requests.count_documents(query)
         skip = (page - 1) * per_page
         
-        requests_list = list(db.service_requests.find(query).sort('submitted_at', -1).skip(skip).limit(per_page)) if db else []
+        requests_list = list(db.service_requests.find(query)
+                           .sort('submitted_at', -1)
+                           .skip(skip)
+                           .limit(per_page))
         
         data = []
         for req in requests_list:
@@ -716,7 +711,7 @@ def api_my_requests():
                 'payment_status': req['payment_status'],
                 'amount': req['amount'],
                 'submitted_at': req['submitted_at'].strftime('%Y-%m-%d %H:%M'),
-                'documents_count': db.request_documents.count_documents({'request_id': req['_id']}) if db else 0,
+                'documents_count': db.request_documents.count_documents({'request_id': req['_id']}),
                 'applicant_name': req.get('applicant_name', get_applicant_display_name(req))
             })
         
@@ -735,14 +730,14 @@ def api_my_requests():
 @login_required
 def request_details(request_id):
     try:
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)}) if db else None
+        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
         if not service_request:
             return jsonify({'error': 'Request not found'}), 404
         
         if str(service_request['user_id']) != session['user_id'] and session.get('user_role') != 'admin':
             return jsonify({'error': 'Access denied'}), 403
         
-        documents = list(db.request_documents.find({'request_id': ObjectId(request_id)})) if db else []
+        documents = list(db.request_documents.find({'request_id': ObjectId(request_id)}))
         
         for doc in documents:
             doc['id'] = str(doc['_id'])
@@ -803,6 +798,7 @@ def submit_service_request():
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
+        # Extract form data
         full_name = request.form.get('full_name', '').strip()
         dob = request.form.get('dob', '')
         gender = request.form.get('gender', '')
@@ -821,6 +817,7 @@ def submit_service_request():
         percentage = request.form.get('percentage', '')
         additional_details = request.form.get('additional_details', '').strip()
         
+        # Validate required fields
         required_fields = [full_name, dob, gender, category, address, city, state, pincode]
         if not all(required_fields):
             return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
@@ -828,11 +825,13 @@ def submit_service_request():
         if pincode and not validate_pincode(pincode):
             return jsonify({'success': False, 'message': 'Invalid pincode format'}), 400
         
+        # Calculate fees
         service_charge = service.get('service_charge', 0)
         convenience_fee_percent = service.get('convenience_fee_percent', 2)
         gst_percent = service.get('gst_percent', 18)
         fee_details = calculate_fees(service_charge, convenience_fee_percent, gst_percent)
         
+        # Store details as JSON
         details_json = {
             'full_name': full_name,
             'dob': dob,
@@ -860,6 +859,7 @@ def submit_service_request():
         details = json.dumps(details_json, indent=2)
         ref_number = generate_reference_number()
         
+        # Create service request
         request_data = {
             'user_id': ObjectId(session['user_id']),
             'service_id': ObjectId(service_id),
@@ -897,6 +897,7 @@ def submit_service_request():
         result = db.service_requests.insert_one(request_data)
         request_id = result.inserted_id
         
+        # Handle document uploads
         uploaded_docs = []
         files = request.files.getlist('documents')
         for file in files:
@@ -919,6 +920,7 @@ def submit_service_request():
                 db.request_documents.insert_one(doc)
                 uploaded_docs.append(original_filename)
         
+        # Notify user
         create_notification(
             ObjectId(session['user_id']),
             str(request_id),
@@ -927,7 +929,8 @@ def submit_service_request():
             'success'
         )
         
-        admins = list(db.users.find({'role': 'admin'})) if db else []
+        # Notify admins
+        admins = list(db.users.find({'role': 'admin'}))
         for admin in admins:
             create_notification(
                 admin['_id'],
@@ -959,7 +962,7 @@ def initiate_payment(ref_number):
         service_request = db.service_requests.find_one({
             'reference_number': ref_number,
             'user_id': ObjectId(session['user_id'])
-        }) if db else None
+        })
         
         if not service_request:
             return jsonify({'success': False, 'message': 'Request not found'}), 404
@@ -1079,7 +1082,7 @@ def get_notifications():
     try:
         notifications = list(db.notifications.find(
             {'user_id': ObjectId(session['user_id'])}
-        ).sort('created_at', -1).limit(50)) if db else []
+        ).sort('created_at', -1).limit(50))
         
         result = []
         for n in notifications:
@@ -1103,7 +1106,7 @@ def get_notifications():
 @login_required
 def mark_notification_read(notification_id):
     try:
-        notification = db.notifications.find_one({'_id': ObjectId(notification_id)}) if db else None
+        notification = db.notifications.find_one({'_id': ObjectId(notification_id)})
         if notification and str(notification['user_id']) == session['user_id']:
             db.notifications.update_one(
                 {'_id': ObjectId(notification_id)},
@@ -1136,7 +1139,7 @@ def get_unread_count():
         count = db.notifications.count_documents({
             'user_id': ObjectId(session['user_id']),
             'is_read': False
-        }) if db else 0
+        })
         return jsonify({'count': count})
     except:
         return jsonify({'count': 0})
@@ -1147,43 +1150,43 @@ def get_unread_count():
 @admin_required
 def admin_panel():
     try:
-        total_requests = db.service_requests.count_documents({}) if db else 0
-        pending_requests = db.service_requests.count_documents({'status': 'pending'}) if db else 0
-        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'}) if db else 0
-        completed_requests = db.service_requests.count_documents({'status': 'completed'}) if db else 0
-        rejected_requests = db.service_requests.count_documents({'status': 'rejected'}) if db else 0
+        total_requests = db.service_requests.count_documents({})
+        pending_requests = db.service_requests.count_documents({'status': 'pending'})
+        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
+        completed_requests = db.service_requests.count_documents({'status': 'completed'})
+        rejected_requests = db.service_requests.count_documents({'status': 'rejected'})
         
-        total_users = db.users.count_documents({'role': 'user'}) if db else 0
-        total_services = db.services.count_documents({'is_active': True}) if db else 0
+        total_users = db.users.count_documents({'role': 'user'})
+        total_services = db.services.count_documents({'is_active': True})
         
         revenue_pipeline = [
             {'$match': {'status': 'completed'}},
             {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
         ]
-        revenue_result = list(db.payment_transactions.aggregate(revenue_pipeline)) if db else []
+        revenue_result = list(db.payment_transactions.aggregate(revenue_pipeline))
         total_revenue = revenue_result[0]['total'] if revenue_result else 0
         
-        all_requests = list(db.service_requests.find().sort('submitted_at', -1)) if db else []
+        all_requests = list(db.service_requests.find().sort('submitted_at', -1))
         for req in all_requests:
             req['_id'] = str(req['_id'])
             user = get_user_by_id(req['user_id'])
             req['user'] = {'name': user['name'], 'phone': user['phone']} if user else None
             req['applicant_name'] = get_applicant_display_name(req)
         
-        users = list(db.users.find()) if db else []
+        users = list(db.users.find())
         for user in users:
             user['_id'] = str(user['_id'])
-            user['requests'] = list(db.service_requests.find({'user_id': ObjectId(user['_id'])})) if db else []
+            user['requests'] = list(db.service_requests.find({'user_id': ObjectId(user['_id'])}))
         
-        payments = list(db.payment_transactions.find().sort('created_at', -1)) if db else []
+        payments = list(db.payment_transactions.find().sort('created_at', -1))
         for payment in payments:
             payment['_id'] = str(payment['_id'])
             user = get_user_by_id(payment['user_id'])
-            service_request = db.service_requests.find_one({'_id': payment['request_id']}) if db else None
+            service_request = db.service_requests.find_one({'_id': payment['request_id']})
             payment['user'] = {'name': user['name']} if user else None
             payment['service_name'] = service_request['service_name'] if service_request else 'N/A'
         
-        services = list(db.services.find()) if db else []
+        services = list(db.services.find())
         for service in services:
             service['_id'] = str(service['_id'])
         
@@ -1191,12 +1194,12 @@ def admin_panel():
         
         admin_notifications = list(db.notifications.find(
             {'user_id': ObjectId(session['user_id'])}
-        ).sort('created_at', -1).limit(20)) if db else []
+        ).sort('created_at', -1).limit(20))
         
         unread_count = db.notifications.count_documents({
             'user_id': ObjectId(session['user_id']),
             'is_read': False
-        }) if db else 0
+        })
         
         stats = {
             'total_requests': total_requests,
@@ -1233,7 +1236,7 @@ def update_status(request_id):
         status = data.get('status')
         remarks = data.get('remarks', '')
         
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)}) if db else None
+        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
         if not service_request:
             return jsonify({'success': False, 'message': 'Request not found'}), 404
         
@@ -1292,11 +1295,11 @@ def update_status(request_id):
 @admin_required
 def admin_request_details(request_id):
     try:
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)}) if db else None
+        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
         if not service_request:
             return jsonify({'error': 'Request not found'}), 404
         
-        documents = list(db.request_documents.find({'request_id': ObjectId(request_id)})) if db else []
+        documents = list(db.request_documents.find({'request_id': ObjectId(request_id)}))
         for doc in documents:
             doc['_id'] = str(doc['_id'])
             if isinstance(doc.get('uploaded_at'), datetime):
@@ -1385,7 +1388,7 @@ def add_service():
         
         db.services.insert_one(service)
         
-        users = list(db.users.find({'role': 'user'})) if db else []
+        users = list(db.users.find({'role': 'user'}))
         for user in users:
             create_notification(
                 user['_id'],
@@ -1403,7 +1406,7 @@ def add_service():
 @admin_required
 def get_pending_count():
     try:
-        count = db.service_requests.count_documents({'status': 'pending'}) if db else 0
+        count = db.service_requests.count_documents({'status': 'pending'})
         return jsonify({'count': count})
     except:
         return jsonify({'count': 0})
@@ -1417,15 +1420,15 @@ def send_summary():
         
         today_applications = db.service_requests.count_documents({
             'submitted_at': {'$gte': today_start, '$lte': today_end}
-        }) if db else 0
+        })
         
-        pending_applications = db.service_requests.count_documents({'status': 'pending'}) if db else 0
+        pending_applications = db.service_requests.count_documents({'status': 'pending'})
         
         create_notification(
             ObjectId(session['user_id']),
             None,
             'Daily Summary Report 📊',
-            f"Today's Summary:\n• New Applications: {today_applications}\n• Pending Applications: {pending_applications}\n• Total Users: {db.users.count_documents({'role': 'user'}) if db else 0}",
+            f"Today's Summary:\n• New Applications: {today_applications}\n• Pending Applications: {pending_applications}\n• Total Users: {db.users.count_documents({'role': 'user'})}",
             'info'
         )
         
@@ -1439,7 +1442,7 @@ def send_summary():
 @admin_required
 def export_applications_csv():
     try:
-        applications = list(db.service_requests.find().sort('submitted_at', -1)) if db else []
+        applications = list(db.service_requests.find().sort('submitted_at', -1))
         
         output = BytesIO()
         writer = csv.writer(output)
@@ -1472,7 +1475,7 @@ def export_applications_csv():
 @admin_required
 def export_revenue_csv():
     try:
-        payments = list(db.payment_transactions.find().sort('created_at', -1)) if db else []
+        payments = list(db.payment_transactions.find().sort('created_at', -1))
         
         output = BytesIO()
         writer = csv.writer(output)
@@ -1480,7 +1483,7 @@ def export_revenue_csv():
         
         for payment in payments:
             user = get_user_by_id(payment['user_id'])
-            service_request = db.service_requests.find_one({'_id': payment['request_id']}) if db else None
+            service_request = db.service_requests.find_one({'_id': payment['request_id']})
             writer.writerow([
                 payment['transaction_id'],
                 user['name'] if user else '',
@@ -1506,14 +1509,14 @@ def export_revenue_csv():
 @admin_required
 def export_users_csv():
     try:
-        users = list(db.users.find()) if db else []
+        users = list(db.users.find())
         
         output = BytesIO()
         writer = csv.writer(output)
         writer.writerow(['Name', 'Phone', 'Email', 'Role', 'Applications Count', 'Joined Date', 'Last Login'])
         
         for user in users:
-            request_count = db.service_requests.count_documents({'user_id': user['_id']}) if db else 0
+            request_count = db.service_requests.count_documents({'user_id': user['_id']})
             writer.writerow([
                 user['name'],
                 user['phone'],
@@ -1548,12 +1551,17 @@ def internal_error(error):
 
 @app.route('/health')
 def health_check():
-    status = {
+    try:
+        db.command('ping')
+        db_status = 'connected'
+    except:
+        db_status = 'disconnected'
+    
+    return jsonify({
         'status': 'healthy',
-        'database': 'connected' if db else 'disconnected',
+        'database': db_status,
         'timestamp': datetime.now(timezone.utc).isoformat()
-    }
-    return jsonify(status)
+    })
 
 # ============== Application Entry Point ==============
 
