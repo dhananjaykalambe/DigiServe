@@ -46,7 +46,7 @@
                     </div>
                 </div>
                 
-                <!-- Processing Time -->
+                <!-- Processing Time & Fee -->
                 <div class="row">
                     <div class="col-md-6">
                         <div class="alert alert-info rounded-3 mb-3">
@@ -107,7 +107,7 @@
                 <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i> Apply for this Service</h5>
             </div>
             <div class="card-body p-4">
-                <form id="applicationForm" enctype="multipart/form-data">
+                <form id="applicationForm" enctype="multipart/form-data" method="POST" action="{{ url_for('submit_service_request') }}">
                     <input type="hidden" name="service_id" value="{{ service.id }}">
                     <input type="hidden" id="serviceCharge" value="{{ service.service_charge }}">
                     <input type="hidden" id="convenienceFeePercent" value="{{ service.get('convenience_fee_percent', 2) }}">
@@ -120,7 +120,7 @@
                         <div class="mb-3">
                             <label class="form-label">Full Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="full_name" id="fullName" 
-                                   value="{{ user.name }}" required placeholder="Enter your full name as per documents">
+                                   value="{{ user.name if user else '' }}" required placeholder="Enter your full name as per documents">
                         </div>
                         
                         <div class="row">
@@ -154,7 +154,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Email Address</label>
                                 <input type="email" class="form-control" name="email" id="email" 
-                                       value="{{ user.email or '' }}" placeholder="your@email.com">
+                                       value="{{ user.email if user else '' }}" placeholder="your@email.com">
                             </div>
                         </div>
                     </div>
@@ -188,7 +188,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Mobile Number</label>
-                                <input type="tel" class="form-control" value="{{ user.phone }}" disabled>
+                                <input type="tel" class="form-control" value="{{ user.phone if user else '' }}" disabled>
                                 <small class="text-muted">Registered mobile number</small>
                             </div>
                         </div>
@@ -717,7 +717,10 @@ document.getElementById('applicationForm').addEventListener('submit', async (e) 
     }
     
     try {
-        const response = await fetch('/submit-service-request', { method: 'POST', body: formData });
+        const response = await fetch('/submit-service-request', { 
+            method: 'POST', 
+            body: formData 
+        });
         const result = await response.json();
         hideUploadProgress();
         
@@ -798,7 +801,7 @@ async function processPayment(refNumber) {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     calculateFees();
     initDocumentChecklist();
     
