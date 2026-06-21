@@ -6,7 +6,7 @@ services:
     plan: free
     region: singapore
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app --timeout 120
     envVars:
       - key: MONGO_URI
         value: mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster
@@ -14,3 +14,5 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: FLASK_DEBUG
+        value: false
