@@ -11,12 +11,13 @@ import random
 import re
 import csv
 import traceback
+import sys
 
 app = Flask(__name__)
 
 # ============== Configuration ==============
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-secret-key-2026')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-super-secret-key-2026')
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
     # MongoDB Atlas Connection
@@ -40,11 +41,19 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
 # Initialize MongoDB
-mongo = PyMongo(app)
-db = mongo.db
+try:
+    mongo = PyMongo(app)
+    db = mongo.db
+    # Test connection
+    db.command('ping')
+    print("✅ MongoDB Atlas connected successfully!")
+except Exception as e:
+    print(f"❌ MongoDB connection error: {e}")
+    db = None
+    sys.exit(1)
 
 print("=" * 60)
-print("🚀 DigiServe eSeva Portal Initializing...")
+print("🚀 DigiServe eSeva Portal v3.0 Initializing...")
 print("=" * 60)
 
 # ============== Helper Functions ==============
@@ -283,9 +292,9 @@ def init_db():
                     'category': 'scholarship',
                     'name': 'PMSSS Scholarship Application',
                     'slug': 'pmsss-scholarship',
-                    'description': "Prime Minister's Special Scholarship Scheme for Jammu and Kashmir students.",
+                    'description': "Prime Minister's Special Scholarship Scheme for Jammu and Kashmir students. Apply now for financial assistance.",
                     'eligibility': 'Students who have passed 10+2 examination from J&K board with minimum 60% marks.',
-                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate',
+                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Income Certificate, Bank Account Details',
                     'instructions': 'Ensure all documents are self-attested. Upload clear scanned copies.',
                     'processing_time': '15-20 working days',
                     'service_charge': 0,
@@ -299,9 +308,9 @@ def init_db():
                     'category': 'scholarship',
                     'name': 'Post Matric Scholarship',
                     'slug': 'post-matric-scholarship',
-                    'description': 'Post Matric Scholarship for SC/ST/OBC students.',
+                    'description': 'Post Matric Scholarship for SC/ST/OBC students. Financial aid for higher education.',
                     'eligibility': 'Students belonging to SC/ST/OBC categories with family income less than ₹2.5 LPA.',
-                    'documents_required': 'Caste Certificate, Income Certificate, Previous Year Marksheet',
+                    'documents_required': 'Caste Certificate, Income Certificate, Previous Year Marksheet, Admission Letter',
                     'instructions': 'Fill all details carefully. Upload income certificate for verification.',
                     'processing_time': '20-25 working days',
                     'service_charge': 0,
@@ -315,9 +324,9 @@ def init_db():
                     'category': 'education',
                     'name': 'MHT-CET Application Form',
                     'slug': 'mht-cet-application',
-                    'description': 'Maharashtra Common Entrance Test for Engineering and Pharmacy admissions.',
+                    'description': 'Maharashtra Common Entrance Test for Engineering and Pharmacy admissions. Online form filling assistance.',
                     'eligibility': 'Indian citizen, passed 10+2 with PCM/PCB from recognized board.',
-                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Photo, Signature',
+                    'documents_required': '10th Marksheet, 12th Marksheet, Domicile Certificate, Caste Certificate (if applicable), Photo, Signature',
                     'instructions': 'Fill the form carefully. Double-check all entered information.',
                     'processing_time': 'Same day processing',
                     'service_charge': 800,
@@ -331,10 +340,10 @@ def init_db():
                     'category': 'document',
                     'name': 'PAN Card Application',
                     'slug': 'pan-card-application',
-                    'description': 'Apply for new PAN card or request for reprint.',
+                    'description': 'Apply for new PAN card or request for reprint. Get your PAN card delivered to your doorstep.',
                     'eligibility': 'Indian citizen with valid address proof and identity proof.',
-                    'documents_required': 'Aadhar Card, Address Proof, Passport Size Photo',
-                    'instructions': 'Use clear photograph with white background.',
+                    'documents_required': 'Aadhar Card, Address Proof (Electricity Bill/Passport), Passport Size Photo',
+                    'instructions': 'Use clear photograph with white background. Sign on the declaration form.',
                     'processing_time': '15-20 working days',
                     'service_charge': 150,
                     'convenience_fee_percent': 2,
@@ -347,7 +356,7 @@ def init_db():
                     'category': 'bill_payment',
                     'name': 'Electricity Bill Payment',
                     'slug': 'electricity-bill-payment',
-                    'description': 'Pay your electricity bill online instantly.',
+                    'description': 'Pay your electricity bill online instantly. Support for all major electricity boards.',
                     'eligibility': 'Valid electricity consumer number',
                     'documents_required': 'Consumer Number',
                     'instructions': 'Enter correct consumer number as shown on your bill.',
@@ -365,8 +374,8 @@ def init_db():
                     'slug': 'upsc-civil-services',
                     'description': 'UPSC Civil Services Examination application form filling assistance.',
                     'eligibility': 'Graduate in any discipline from recognized university',
-                    'documents_required': 'Graduation Certificate, Date of Birth Proof, Photo, Signature',
-                    'instructions': 'Fill DAF (Detailed Application Form) carefully.',
+                    'documents_required': 'Graduation Certificate, Date of Birth Proof, Photo, Signature, Category Certificate (if applicable)',
+                    'instructions': 'Fill DAF (Detailed Application Form) carefully. Upload photo as per specifications.',
                     'processing_time': '2-3 working days',
                     'service_charge': 500,
                     'convenience_fee_percent': 2,
@@ -379,9 +388,9 @@ def init_db():
                     'category': 'eseva',
                     'name': 'Birth Certificate Application',
                     'slug': 'birth-certificate',
-                    'description': 'Apply for new birth certificate online.',
+                    'description': 'Apply for new birth certificate online. Get digital and physical copy.',
                     'eligibility': 'Birth registered within 21 days of occurrence',
-                    'documents_required': 'Hospital Discharge Certificate, Parents ID Proof',
+                    'documents_required': 'Hospital Discharge Certificate, Parents ID Proof, Parents Marriage Certificate',
                     'instructions': 'Provide correct hospital name and date of birth.',
                     'processing_time': '7-10 working days',
                     'service_charge': 200,
@@ -395,9 +404,9 @@ def init_db():
                     'category': 'eseva',
                     'name': 'Income Certificate Application',
                     'slug': 'income-certificate',
-                    'description': 'Apply for income certificate for scholarship and government schemes.',
+                    'description': 'Apply for income certificate for scholarship, government schemes, and other benefits.',
                     'eligibility': 'Resident of the state with valid address proof.',
-                    'documents_required': 'Aadhar Card, Address Proof, Previous Income Certificate',
+                    'documents_required': 'Aadhar Card, Address Proof, Previous Income Certificate (if any), Land Records',
                     'instructions': 'Provide correct income details from all sources.',
                     'processing_time': '10-15 working days',
                     'service_charge': 100,
@@ -451,18 +460,15 @@ def login():
             return redirect(url_for('login'))
         
         try:
-            # Check if user exists
             user = get_user_by_phone(phone)
             
             if user:
-                # Existing user
                 session['user_id'] = str(user['_id'])
                 session['user_name'] = user['name']
                 session['user_role'] = user.get('role', 'user')
                 session['user_phone'] = user['phone']
                 session.permanent = True
                 
-                # Update last login
                 db.users.update_one(
                     {'_id': user['_id']},
                     {'$set': {'last_login': datetime.now(timezone.utc)}}
@@ -475,7 +481,6 @@ def login():
                 return redirect(url_for('services_dashboard'))
             
             else:
-                # New user - check if admin
                 if phone == Config.ADMIN_PHONE:
                     admin_user = auto_create_admin_user()
                     if admin_user:
@@ -487,7 +492,6 @@ def login():
                         flash('Welcome, Administrator!', 'success')
                         return redirect(url_for('admin_panel'))
                 
-                # Regular new user - redirect to registration
                 flash('New number detected! Please complete registration.', 'info')
                 return redirect(url_for('register', phone=phone))
                 
@@ -516,7 +520,6 @@ def register():
         state = request.form.get('state', '').strip() or None
         pincode = request.form.get('pincode', '').strip() or None
         
-        # Validation
         if not name or len(name) < 2:
             flash('Please enter a valid name (minimum 2 characters)', 'danger')
             return redirect(url_for('register', phone=phone))
@@ -538,13 +541,11 @@ def register():
             return redirect(url_for('register', phone=phone))
         
         try:
-            # Check if user already exists
             existing_user = get_user_by_phone(phone)
             if existing_user:
                 flash('Mobile number already registered. Please login.', 'info')
                 return redirect(url_for('login'))
             
-            # Create new user
             new_user = {
                 'name': name.title(),
                 'phone': phone,
@@ -560,14 +561,12 @@ def register():
             }
             result = db.users.insert_one(new_user)
             
-            # Auto-login
             session['user_id'] = str(result.inserted_id)
             session['user_name'] = name
             session['user_role'] = 'user'
             session['user_phone'] = phone
             session.permanent = True
             
-            # Welcome notification
             create_notification(
                 result.inserted_id,
                 None,
@@ -1562,6 +1561,31 @@ def health_check():
         'database': db_status,
         'timestamp': datetime.now(timezone.utc).isoformat()
     })
+
+# ============== Debug Route ==============
+
+@app.route('/debug-services')
+@login_required
+def debug_services():
+    """Debug route to check services in database"""
+    try:
+        services = list(db.services.find({'is_active': True}))
+        result = []
+        for service in services:
+            result.append({
+                'id': str(service['_id']),
+                'name': service['name'],
+                'slug': service['slug'],
+                'category': service['category'],
+                'service_charge': service.get('service_charge', 0)
+            })
+        return jsonify({
+            'count': len(result),
+            'services': result,
+            'message': 'Services fetched successfully'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ============== Application Entry Point ==============
 
