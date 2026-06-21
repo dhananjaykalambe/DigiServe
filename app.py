@@ -11,7 +11,6 @@ import random
 import re
 import csv
 import traceback
-import sys
 
 app = Flask(__name__)
 
@@ -20,10 +19,8 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-super-secret-key-2026')
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
-    # MongoDB Atlas Connection
     MONGO_URI = os.environ.get('MONGO_URI', "mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster")
     
-    # Upload Configuration
     UPLOAD_FOLDER = 'uploads/'
     DOCUMENT_FOLDER = 'uploads/documents/'
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024
@@ -41,19 +38,11 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
 # Initialize MongoDB
-try:
-    mongo = PyMongo(app)
-    db = mongo.db
-    # Test connection
-    db.command('ping')
-    print("✅ MongoDB Atlas connected successfully!")
-except Exception as e:
-    print(f"❌ MongoDB connection error: {e}")
-    db = None
-    sys.exit(1)
+mongo = PyMongo(app)
+db = mongo.db
 
 print("=" * 60)
-print("🚀 DigiServe eSeva Portal v3.0 Initializing...")
+print("🚀 DigiServe eSeva Portal Initializing...")
 print("=" * 60)
 
 # ============== Helper Functions ==============
@@ -258,7 +247,6 @@ def init_db():
     print("📦 Initializing database...")
     
     try:
-        # Test connection
         db.command('ping')
         print("✅ MongoDB Atlas connected successfully!")
     except Exception as e:
@@ -1546,28 +1534,11 @@ def not_found_error(error):
 def internal_error(error):
     return render_template('errors/500.html'), 500
 
-# ============== Health Check ==============
-
-@app.route('/health')
-def health_check():
-    try:
-        db.command('ping')
-        db_status = 'connected'
-    except:
-        db_status = 'disconnected'
-    
-    return jsonify({
-        'status': 'healthy',
-        'database': db_status,
-        'timestamp': datetime.now(timezone.utc).isoformat()
-    })
-
 # ============== Debug Route ==============
 
 @app.route('/debug-services')
 @login_required
 def debug_services():
-    """Debug route to check services in database"""
     try:
         services = list(db.services.find({'is_active': True}))
         result = []
@@ -1586,6 +1557,22 @@ def debug_services():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ============== Health Check ==============
+
+@app.route('/health')
+def health_check():
+    try:
+        db.command('ping')
+        db_status = 'connected'
+    except:
+        db_status = 'disconnected'
+    
+    return jsonify({
+        'status': 'healthy',
+        'database': db_status,
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
 
 # ============== Application Entry Point ==============
 

@@ -2,7 +2,6 @@ services:
   - type: web
     name: digiserve
     runtime: python
-    repo: https://github.com/dhananjaykalambe/DigiServe
     plan: free
     region: singapore
     buildCommand: pip install -r requirements.txt
@@ -11,7 +10,7 @@ services:
       - key: MONGO_URI
         value: mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster
       - key: SECRET_KEY
-        generateValue: true
+        value: d4f8e2c1a9b7e5d3f6a8c4b2e1d9f7a5c3b8e6d4f2a1c9e7b5d3f8a6c4e2b9d7f5
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: FLASK_DEBUG
