@@ -1,0 +1,387 @@
+<!-- templates/my_applications.html -->
+{% extends "base.html" %}
+
+{% block title %}My Applications - DigiServe{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up">
+    <h2 class="fw-bold"><i class="fas fa-file-alt text-primary me-2"></i> My Applications</h2>
+    <a href="{{ url_for('index') }}#services" class="btn btn-primary rounded-pill px-4">
+        <i class="fas fa-plus me-2"></i> New Application
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+    <div class="card-body p-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by reference or service...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="statusFilter">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                    <i class="fas fa-undo-alt me-1"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Applications Table -->
+<div class="card shadow-sm rounded-4" data-aos="fade-up" data-aos-delay="200">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Reference</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="applicationsBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="spinner-border text-primary"></div>
+                            <p class="mt-3 text-muted">Loading...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-4" id="paginationContainer" style="display: none;">
+    <div class="text-muted small" id="paginationInfo"></div>
+    <nav>
+        <ul class="pagination mb-0" id="pagination"></ul>
+    </nav>
+</div>
+
+<style>
+    .status-pending { background-color: #ffc107; color: #000; }
+    .status-in_progress { background-color: #17a2b8; color: #fff; }
+    .status-completed { background-color: #28a745; color: #fff; }
+    .status-rejected { background-color: #dc3545; color: #fff; }
+    .payment-pending { background-color: #ffc107; color: #000; }
+    .payment-completed { background-color: #28a745; color: #fff; }
+</style>
+
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let currentFilters = { status: 'all', search: '' };
+
+async function loadApplications() {
+    const tbody = document.getElementById('applicationsBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-3 text-muted">Loading...</p>
+            </td>
+        </tr>
+    `;
+    
+    try {
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: 10,
+            status: currentFilters.status,
+            search: currentFilters.search
+        });
+        
+        const response = await fetch(`/api/my-applications?${params}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-danger">
+                        <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                        <p>${data.error}</p>
+                        <button class="btn btn-primary btn-sm rounded-pill" onclick="loadApplications()">Try Again</button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        if (!data.applications || data.applications.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p>No applications found.</p>
+                        <a href="{{ url_for('index') }}#services" class="btn btn-primary rounded-pill">
+                            <i class="fas fa-plus me-2"></i> Apply for Service
+                        </a>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('paginationContainer').style.display = 'none';
+            return;
+        }
+        
+        totalPages = data.total_pages;
+        updatePagination();
+        
+        tbody.innerHTML = '';
+        for (const app of data.applications) {
+            const statusClass = `status-${app.status}`;
+            const paymentClass = `payment-${app.payment_status}`;
+            const statusLabels = {
+                'pending': 'Pending',
+                'in_progress': 'In Progress',
+                'completed': 'Completed',
+                'rejected': 'Rejected'
+            };
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><code class="fw-bold">${escapeHtml(app.reference)}</code></td>
+                <td>${escapeHtml(app.service_name)}</td>
+                <td><span class="badge ${statusClass}">${statusLabels[app.status] || app.status}</span></td>
+                <td><span class="badge ${paymentClass}">${app.payment_status.toUpperCase()}</span></td>
+                <td>₹${parseFloat(app.amount).toFixed(2)}</td>
+                <td><small>${escapeHtml(app.submitted_at)}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="viewApplication('${app.id}')">
+                        <i class="fas fa-eye me-1"></i> View
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+    } catch (error) {
+        console.error('Error loading applications:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-5 text-danger">
+                    <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                    <p>Error loading applications. Please try again.</p>
+                    <button class="btn btn-primary btn-sm rounded-pill" onclick="loadApplications()">Retry</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function updatePagination() {
+    const container = document.getElementById('paginationContainer');
+    const pagination = document.getElementById('pagination');
+    const info = document.getElementById('paginationInfo');
+    
+    if (totalPages <= 1) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'flex';
+    info.innerHTML = `Page ${currentPage} of ${totalPages}`;
+    
+    let html = '';
+    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">&laquo;</a>
+            </li>`;
+    
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = start; i <= end; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                </li>`;
+    }
+    
+    html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">&raquo;</a>
+            </li>`;
+    
+    pagination.innerHTML = html;
+}
+
+function changePage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadApplications();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function applyFilters() {
+    currentFilters = {
+        status: document.getElementById('statusFilter').value,
+        search: document.getElementById('searchInput').value
+    };
+    currentPage = 1;
+    loadApplications();
+}
+
+function resetFilters() {
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('searchInput').value = '';
+    applyFilters();
+}
+
+document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
+document.getElementById('searchInput')?.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+
+async function viewApplication(requestId) {
+    try {
+        const response = await fetch(`/application-details/${requestId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        const app = data.application;
+        const documents = data.documents || [];
+        
+        const statusColors = {
+            'pending': 'warning',
+            'in_progress': 'info',
+            'completed': 'success',
+            'rejected': 'danger'
+        };
+        const statusColor = statusColors[app.status] || 'secondary';
+        
+        let timelineHtml = '';
+        if (app.timeline && app.timeline.length > 0) {
+            timelineHtml = '<div class="mt-3"><h6 class="fw-bold"><i class="fas fa-clock me-2"></i> Timeline</h6>';
+            app.timeline.forEach(item => {
+                timelineHtml += `
+                    <div class="d-flex gap-3 mb-2 p-2 bg-light rounded-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas ${item.completed ? 'fa-check-circle text-success' : 'fa-clock text-warning'}"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">${escapeHtml(item.title)}</div>
+                            <div class="small text-muted">${escapeHtml(item.description)}</div>
+                            <div class="small text-muted">${escapeHtml(item.timestamp)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            timelineHtml += '</div>';
+        }
+        
+        const modalHtml = `
+            <div class="modal fade" id="appModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content rounded-4">
+                        <div class="modal-header bg-primary text-white rounded-top-4 border-0">
+                            <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i> Application Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-item"><div class="detail-label">Reference</div><div class="detail-value"><code>${escapeHtml(app.reference_number)}</code></div></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item"><div class="detail-label">Service</div><div class="detail-value">${escapeHtml(app.service_name)}</div></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="badge bg-${statusColor}">${app.status.toUpperCase()}</span></div></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detail-item"><div class="detail-label">Payment</div><div class="detail-value"><span class="badge bg-${app.payment_status === 'completed' ? 'success' : 'warning'}">${app.payment_status.toUpperCase()}</span></div></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detail-item"><div class="detail-label">Amount</div><div class="detail-value">₹${parseFloat(app.amount).toFixed(2)}</div></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item"><div class="detail-label">Submitted</div><div class="detail-value">${escapeHtml(app.submitted_at)}</div></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item"><div class="detail-label">Applicant</div><div class="detail-value">${escapeHtml(app.applicant_name)}</div></div>
+                                </div>
+                                ${app.applicant_address ? `
+                                <div class="col-12">
+                                    <div class="detail-item"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(app.applicant_address)}${app.applicant_city ? ', ' + escapeHtml(app.applicant_city) : ''}${app.applicant_state ? ', ' + escapeHtml(app.applicant_state) : ''}${app.applicant_pincode ? ' - ' + escapeHtml(app.applicant_pincode) : ''}</div></div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            ${timelineHtml}
+                            
+                            ${documents.length > 0 ? `
+                            <div class="mt-3">
+                                <h6 class="fw-bold"><i class="fas fa-paperclip me-2"></i> Documents</h6>
+                                ${documents.map(doc => `
+                                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded-3 mb-1">
+                                        <span><i class="fas fa-file-alt me-2"></i> ${escapeHtml(doc.original_filename)}</span>
+                                        <span class="text-muted small">${(doc.file_size/1024).toFixed(2)} KB</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ` : ''}
+                            
+                            ${app.admin_remarks ? `
+                            <div class="alert alert-info mt-3 rounded-3">
+                                <i class="fas fa-comment-dots me-2"></i> <strong>Admin Remarks:</strong><br>
+                                ${escapeHtml(app.admin_remarks)}
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const existing = document.getElementById('appModal');
+        if (existing) existing.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('appModal'));
+        modal.show();
+        
+        document.getElementById('appModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Error fetching application details:', error);
+        alert('Error loading application details. Please try again.');
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', loadApplications);
+</script>
+{% endblock %}

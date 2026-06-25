@@ -1,0 +1,78 @@
+<!-- templates/track_application.html -->
+{% extends "base.html" %}
+
+{% block title %}Track Application - DigiServe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" data-aos="fade-up">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white text-center py-4 border-0">
+                <i class="fas fa-search fa-3x mb-2"></i>
+                <h3 class="mb-0 fw-bold">Track Your Application</h3>
+                <p class="mb-0 mt-2 small opacity-75">Enter your reference number to check status</p>
+            </div>
+            <div class="card-body p-4 p-lg-5">
+                <form method="POST" action="{{ url_for('track_application') }}">
+                    <div class="mb-3">
+                        <label for="reference" class="form-label fw-semibold">Reference Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-hashtag text-primary"></i>
+                            </span>
+                            <input type="text" class="form-control form-control-lg border-start-0" 
+                                   id="reference" name="reference" 
+                                   placeholder="e.g., DS2025010112345678" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-phone text-primary"></i>
+                            </span>
+                            <input type="tel" class="form-control form-control-lg border-start-0" 
+                                   id="phone" name="phone" 
+                                   placeholder="10-digit mobile number" 
+                                   pattern="[6-9][0-9]{9}" maxlength="10" required>
+                        </div>
+                        <div class="form-text">Enter the phone number used during application.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                            <i class="fas fa-search me-2"></i> Track Application
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="small text-muted">
+                        <i class="fas fa-info-circle me-1"></i> 
+                        Don't have a reference number? 
+                        <a href="{{ url_for('index') }}#services" class="text-primary">Apply for a service</a>
+                    </p>
+                    {% if 'user_id' not in session %}
+                        <p class="small">
+                            <a href="{{ url_for('login') }}" class="text-primary">Login</a> to view all your applications.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('phone')?.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+    
+    document.getElementById('reference')?.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+</script>
+{% endblock %}

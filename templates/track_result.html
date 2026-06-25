@@ -1,0 +1,187 @@
+<!-- templates/track_result.html -->
+{% extends "base.html" %}
+
+{% block title %}Application Status - DigiServe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" data-aos="fade-up">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header {% if application.status == 'completed' %}bg-success{% elif application.status == 'rejected' %}bg-danger{% elif application.status == 'in_progress' %}bg-info{% else %}bg-warning{% endif %} text-white text-center py-4 border-0">
+                <i class="fas {% if application.status == 'completed' %}fa-check-circle{% elif application.status == 'rejected' %}fa-times-circle{% elif application.status == 'in_progress' %}fa-spinner fa-pulse{% else %}fa-clock{% endif %} fa-3x mb-2"></i>
+                <h3 class="mb-0 fw-bold">Application Status</h3>
+                <p class="mb-0 mt-2 small opacity-75">
+                    Reference: <strong>{{ application.reference_number }}</strong>
+                </p>
+            </div>
+            <div class="card-body p-4 p-lg-5">
+                <div class="text-center mb-4">
+                    <span class="badge {% if application.status == 'completed' %}bg-success{% elif application.status == 'rejected' %}bg-danger{% elif application.status == 'in_progress' %}bg-info{% else %}bg-warning{% endif %} fs-6 px-4 py-2 rounded-pill">
+                        {{ application.status|upper }}
+                    </span>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-label">Service</div>
+                            <div class="detail-value">{{ application.service_name }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-label">Submitted On</div>
+                            <div class="detail-value">{{ application.submitted_at.strftime('%Y-%m-%d %H:%M') if application.submitted_at else 'N/A' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-label">Payment Status</div>
+                            <div class="detail-value">
+                                <span class="badge {% if application.payment_status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ application.payment_status|upper }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-label">Amount</div>
+                            <div class="detail-value">₹{{ "%.2f"|format(application.amount) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="detail-item">
+                            <div class="detail-label">Applicant Name</div>
+                            <div class="detail-value">{{ application.applicant_name or 'N/A' }}</div>
+                        </div>
+                    </div>
+                    {% if application.applicant_address %}
+                    <div class="col-12">
+                        <div class="detail-item">
+                            <div class="detail-label">Address</div>
+                            <div class="detail-value">{{ application.applicant_address }}{% if application.applicant_city %}, {{ application.applicant_city }}{% endif %}{% if application.applicant_state %}, {{ application.applicant_state }}{% endif %}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Timeline -->
+                {% if application.timeline %}
+                <div class="mt-4">
+                    <h6 class="fw-bold"><i class="fas fa-clock me-2"></i> Timeline</h6>
+                    <div class="timeline">
+                        {% for item in application.timeline %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon {% if item.completed %}completed{% else %}pending{% endif %}">
+                                <i class="fas {% if item.completed %}fa-check{% else %}fa-clock{% endif %}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="fw-semibold small">{{ item.title }}</div>
+                                <div class="small text-muted">{{ item.description }}</div>
+                                <div class="small text-muted">{{ item.timestamp }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if application.admin_remarks %}
+                <div class="alert alert-info mt-4 rounded-3">
+                    <i class="fas fa-comment-dots me-2"></i> <strong>Remarks:</strong><br>
+                    {{ application.admin_remarks }}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex gap-3 mt-4 flex-wrap">
+                    <a href="{{ url_for('track_application') }}" class="btn btn-outline-primary rounded-pill">
+                        <i class="fas fa-arrow-left me-2"></i> Track Another
+                    </a>
+                    {% if 'user_id' not in session %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary rounded-pill">
+                            <i class="fas fa-sign-in-alt me-2"></i> Login for More
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('my_applications') }}" class="btn btn-primary rounded-pill">
+                            <i class="fas fa-file-alt me-2"></i> My Applications
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 10px 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        z-index: 2;
+    }
+    
+    .timeline-icon.completed {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .timeline-icon.pending {
+        background-color: #ffc107;
+        color: #000;
+    }
+    
+    .timeline-content {
+        background: var(--bg-secondary);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border-left: 3px solid #4f46e5;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 5px;
+        bottom: 5px;
+        width: 2px;
+        background: var(--border-color);
+    }
+    
+    .detail-item {
+        background: var(--bg-secondary);
+        padding: 10px 14px;
+        border-radius: 8px;
+    }
+    
+    .detail-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 3px;
+    }
+    
+    .detail-value {
+        font-size: 14px;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

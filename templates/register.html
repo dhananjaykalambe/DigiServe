@@ -1,6 +1,7 @@
+<!-- templates/register.html -->
 {% extends "base.html" %}
 
-{% block title %}Complete Registration - DigiServe{% endblock %}
+{% block title %}Register - DigiServe{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -8,8 +9,8 @@
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
             <div class="card-header bg-success text-white text-center py-4 border-0">
                 <i class="fas fa-user-check fa-3x mb-2"></i>
-                <h3 class="mb-0 fw-bold">Complete Registration</h3>
-                <p class="mb-0 mt-2 small opacity-75">Welcome to DigiServe! Please provide your details to get started.</p>
+                <h3 class="mb-0 fw-bold">Create Account</h3>
+                <p class="mb-0 mt-2 small opacity-75">Join DigiServe for seamless digital services</p>
             </div>
             <div class="card-body p-4 p-lg-5">
                 <div class="alert alert-info small rounded-3">
@@ -18,7 +19,7 @@
                     <p class="mb-0 mt-1">You will receive all updates and notifications in your dashboard.</p>
                 </div>
                 
-                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate id="registerForm">
+                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
                     <input type="hidden" name="phone" value="{{ phone }}">
                     
                     <div class="mb-3">
@@ -31,6 +32,29 @@
                                    placeholder="Enter your full name" required>
                         </div>
                         <div class="invalid-feedback">Please enter your full name.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone_display" class="form-label fw-semibold">Mobile Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-phone text-primary"></i>
+                            </span>
+                            <input type="tel" class="form-control" id="phone_display" 
+                                   value="{{ phone }}" disabled>
+                        </div>
+                        <small class="text-muted">Your registered mobile number</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">Email Address <span class="text-muted">(Optional)</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </span>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="your@email.com">
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -54,30 +78,19 @@
                         <label for="pincode" class="form-label fw-semibold">Pincode <span class="text-muted">(Optional)</span></label>
                         <input type="text" class="form-control" id="pincode" name="pincode" 
                                placeholder="6-digit pincode" maxlength="6">
-                        <div class="invalid-feedback">Pincode must be 6 digits.</div>
-                    </div>
-                    
-                    <div class="alert alert-success small rounded-3">
-                        <i class="fas fa-bell me-2"></i> <strong>You will receive:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Application submission confirmation</li>
-                            <li>Payment status updates</li>
-                            <li>Application approval/rejection alerts</li>
-                            <li>New service notifications</li>
-                        </ul>
                     </div>
                     
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="terms" required>
                         <label class="form-check-label" for="terms">
-                            I agree to the <a href="#" class="text-primary">Terms and Conditions</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                            I agree to the <a href="#" class="text-primary">Terms and Conditions</a>
                         </label>
                         <div class="invalid-feedback">You must agree to the terms.</div>
                     </div>
                     
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success btn-lg rounded-pill">
-                            <i class="fas fa-check-circle me-2"></i> Complete Registration
+                            <i class="fas fa-check-circle me-2"></i> Create Account
                         </button>
                     </div>
                 </form>
@@ -111,6 +124,7 @@
         nameInput.addEventListener('input', function() {
             this.value = this.value.replace(/[0-9]/g, '').replace(/[^a-zA-Z\s]/g, '');
         });
+        nameInput.focus();
     }
     
     const pincodeInput = document.getElementById('pincode');
@@ -118,10 +132,6 @@
         pincodeInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
         });
-    }
-    
-    if (document.getElementById('name')) {
-        document.getElementById('name').focus();
     }
 </script>
 {% endblock %}

@@ -1,16 +1,16 @@
 <!-- templates/base.html -->
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DigiServe - Your One-Stop Digital Service Portal for Scholarships, Exams, Bill Payments & Government Services">
-    <title>DigiServe - {% block title %}Your Digital Service Portal{% endblock %}</title>
+    <meta name="description" content="DigiServe - Your Trusted Digital Service Partner">
+    <title>DigiServe - {% block title %}Digital Services Portal{% endblock %}</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Bootstrap 5 CSS -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,7 +23,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-handshake me-2"></i>DigiServe
@@ -38,6 +38,11 @@
                             <i class="fas fa-home"></i> Home
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('track_application') }}">
+                            <i class="fas fa-search"></i> Track
+                        </a>
+                    </li>
                     {% if 'user_id' in session %}
                         {% if session.user_role == 'admin' %}
                             <li class="nav-item">
@@ -47,23 +52,11 @@
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('services_dashboard') }}">
-                                    <i class="fas fa-th-large"></i> Services
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('my_requests_page') }}">
-                                    <i class="fas fa-history"></i> My Apps
+                                <a class="nav-link" href="{{ url_for('my_applications') }}">
+                                    <i class="fas fa-file-alt"></i> My Apps
                                 </a>
                             </li>
                         {% endif %}
-                        
-                        <!-- Theme Toggle -->
-                        <li class="nav-item">
-                            <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
-                                <i class="fas fa-moon"></i>
-                            </button>
-                        </li>
                         
                         <!-- Notifications -->
                         <li class="nav-item dropdown">
@@ -72,22 +65,17 @@
                                 <span class="badge bg-danger notification-badge" id="notificationBadge" style="display:none;">0</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg" aria-labelledby="notificationDropdown">
-                                <div class="dropdown-header d-flex justify-content-between align-items-center bg-primary text-white rounded-top py-3 px-4">
+                                <div class="dropdown-header bg-primary text-white rounded-top py-2 px-3">
                                     <strong><i class="fas fa-bell me-2"></i> Notifications</strong>
-                                    <button class="btn btn-sm btn-link text-white p-0" onclick="markAllNotificationsRead()">
-                                        <i class="fas fa-check-double me-1"></i> Mark all read
+                                    <button class="btn btn-sm btn-link text-white p-0 float-end" onclick="markAllNotificationsRead()">
+                                        Mark all read
                                     </button>
                                 </div>
-                                <div id="notificationList" class="notification-list">
+                                <div id="notificationList" class="notification-list" style="max-height: 350px; overflow-y: auto;">
                                     <div class="text-center py-4">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <div class="spinner-border spinner-border-sm text-primary"></div>
                                         <p class="mt-2 text-muted small">Loading...</p>
                                     </div>
-                                </div>
-                                <div class="dropdown-footer text-center py-2 border-top">
-                                    <a href="#" onclick="loadNotifications(); return false;" class="text-primary small text-decoration-none">
-                                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                                    </a>
                                 </div>
                             </div>
                         </li>
@@ -122,7 +110,7 @@
 
     <!-- Main Content -->
     <main class="flex-grow-1">
-        <div class="container mt-4">
+        <div class="container py-4">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -141,59 +129,57 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-5">
-        <div class="container">
+    <footer class="mt-auto">
+        <div class="container py-4">
             <div class="row">
-                <div class="col-md-4 mb-4 text-center text-md-start">
+                <div class="col-md-4 mb-3 text-center text-md-start">
                     <h5><i class="fas fa-handshake me-2"></i> DigiServe</h5>
-                    <p class="small text-white-50 mt-3">Your Trusted Digital Service Partner. We provide seamless online services for all your needs.</p>
-                    <div class="mt-3">
+                    <p class="small text-white-50">Your Trusted Digital Service Partner. We provide seamless online services for all your needs.</p>
+                    <div class="mt-2">
                         <a href="#" class="text-white-50 me-3"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="text-white-50 me-3"><i class="fab fa-twitter"></i></a>
                         <a href="#" class="text-white-50 me-3"><i class="fab fa-instagram"></i></a>
                         <a href="#" class="text-white-50"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
-                <div class="col-md-2 mb-4 text-center text-md-start">
+                <div class="col-md-2 mb-3 text-center text-md-start">
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="{{ url_for('index') }}" class="text-white-50 text-decoration-none">Home</a></li>
+                        <li class="mb-1"><a href="{{ url_for('index') }}" class="text-white-50 text-decoration-none">Home</a></li>
+                        <li class="mb-1"><a href="{{ url_for('track_application') }}" class="text-white-50 text-decoration-none">Track Application</a></li>
                         {% if 'user_id' in session %}
-                            <li class="mb-2"><a href="{{ url_for('services_dashboard') }}" class="text-white-50 text-decoration-none">Services</a></li>
-                            <li class="mb-2"><a href="{{ url_for('my_requests_page') }}" class="text-white-50 text-decoration-none">My Applications</a></li>
-                        {% else %}
-                            <li class="mb-2"><a href="{{ url_for('login') }}" class="text-white-50 text-decoration-none">Login</a></li>
+                            <li class="mb-1"><a href="{{ url_for('my_applications') }}" class="text-white-50 text-decoration-none">My Applications</a></li>
                         {% endif %}
                     </ul>
                 </div>
-                <div class="col-md-3 mb-4 text-center text-md-start">
+                <div class="col-md-3 mb-3 text-center text-md-start">
                     <h6>Services</h6>
                     <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Scholarship</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Exam Forms</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Bill Payments</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Documents</a></li>
+                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Scholarship</a></li>
+                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Exam Forms</a></li>
+                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Bill Payments</a></li>
+                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Documents</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3 mb-4 text-center text-md-start">
+                <div class="col-md-3 mb-3 text-center text-md-start">
                     <h6>Contact</h6>
-                    <p class="small mb-2 text-white-50">
+                    <p class="small mb-1 text-white-50">
                         <i class="fas fa-phone-alt me-2"></i>
                         <a href="tel:9421456959" class="text-white-50 text-decoration-none">+91 94214 56959</a>
                     </p>
-                    <p class="small mb-2 text-white-50">
+                    <p class="small mb-1 text-white-50">
                         <i class="fab fa-whatsapp me-2"></i>
                         <a href="https://wa.me/919421456959" target="_blank" class="text-white-50 text-decoration-none">WhatsApp</a>
                     </p>
-                    <p class="small mb-2 text-white-50">
+                    <p class="small mb-1 text-white-50">
                         <i class="fas fa-envelope me-2"></i>
                         <a href="mailto:support@digiserve.com" class="text-white-50 text-decoration-none">support@digiserve.com</a>
                     </p>
                 </div>
             </div>
             <hr class="bg-white-50">
-            <div class="text-center">
-                <small>&copy; 2026 DigiServe. All Rights Reserved.</small>
+            <div class="text-center small text-white-50">
+                &copy; 2026 DigiServe. All Rights Reserved.
             </div>
         </div>
     </footer>
@@ -202,14 +188,14 @@
     <div class="modal fade" id="profileModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4">
-                <div class="modal-header bg-primary text-white border-0">
+                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
                     <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i> My Profile</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="profileModalBody">
                     <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2">Loading profile...</p>
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2">Loading...</p>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -220,83 +206,50 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     
     <script>
         // Initialize AOS
-        AOS.init({
-            duration: 600,
-            once: true,
-            offset: 50
-        });
+        AOS.init({ duration: 600, once: true, offset: 50 });
         
-        // Theme Management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-        }
-        
-        function updateThemeIcon(theme) {
-            const toggleBtn = document.getElementById('themeToggle');
-            if (toggleBtn) {
-                const icon = toggleBtn.querySelector('i');
-                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            }
-        }
-        
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            initTheme();
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', toggleTheme);
-            }
+        // Load notifications if logged in
+        {% if 'user_id' in session %}
+            loadNotifications();
+            setInterval(loadNotifications, 30000);
             
-            {% if 'user_id' in session %}
-                loadNotifications();
-                setInterval(loadNotifications, 30000);
-                
-                const profileModal = document.getElementById('profileModal');
-                if (profileModal) {
-                    profileModal.addEventListener('show.bs.modal', loadProfile);
-                }
-            {% endif %}
-        });
+            // Profile modal
+            document.getElementById('profileModal')?.addEventListener('show.bs.modal', loadProfile);
+        {% endif %}
         
         // Notification Functions
         async function loadNotifications() {
-            const notificationList = document.getElementById('notificationList');
-            if (!notificationList) return;
+            const list = document.getElementById('notificationList');
+            if (!list) return;
             
             try {
                 const response = await fetch('/notifications');
                 const notifications = await response.json();
                 
                 if (notifications.length === 0) {
-                    notificationList.innerHTML = `
+                    list.innerHTML = `
                         <div class="text-center py-5">
                             <i class="fas fa-bell-slash fa-3x text-muted"></i>
                             <p class="mt-2 text-muted">No notifications</p>
                         </div>
                     `;
-                    updateNotificationBadge(0);
+                    updateBadge(0);
                     return;
                 }
                 
                 const unreadCount = notifications.filter(n => !n.is_read).length;
-                updateNotificationBadge(unreadCount);
+                updateBadge(unreadCount);
                 
-                notificationList.innerHTML = notifications.slice(0, 20).map(notif => `
+                list.innerHTML = notifications.slice(0, 20).map(notif => `
                     <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="handleNotificationClick('${notif.id}', '${notif.request_id || ''}')">
                         <div class="d-flex align-items-start gap-3">
                             <div class="flex-shrink-0">
@@ -308,9 +261,7 @@
                             <div class="flex-grow-1">
                                 <div class="fw-semibold small">${escapeHtml(notif.title)}</div>
                                 <div class="small text-muted">${escapeHtml(notif.message.substring(0, 80))}${notif.message.length > 80 ? '...' : ''}</div>
-                                <div class="small text-muted mt-1">
-                                    <i class="far fa-clock me-1"></i> ${notif.time_ago}
-                                </div>
+                                <div class="small text-muted mt-1"><i class="far fa-clock me-1"></i> ${notif.time_ago}</div>
                             </div>
                             ${!notif.is_read ? '<span class="badge bg-primary rounded-pill">New</span>' : ''}
                         </div>
@@ -321,7 +272,7 @@
             }
         }
         
-        function updateNotificationBadge(count) {
+        function updateBadge(count) {
             const badge = document.getElementById('notificationBadge');
             if (badge) {
                 if (count > 0) {
@@ -333,30 +284,18 @@
             }
         }
         
-        async function markNotificationRead(notificationId) {
-            try {
-                await fetch(`/notifications/mark-read/${notificationId}`, { method: 'POST' });
-            } catch (error) {
-                console.error('Error marking notification read:', error);
+        async function handleNotificationClick(id, requestId) {
+            await fetch(`/notifications/mark-read/${id}`, { method: 'POST' });
+            if (requestId) {
+                window.location.href = '/my-applications';
             }
+            loadNotifications();
         }
         
         async function markAllNotificationsRead() {
-            try {
-                await fetch('/notifications/mark-all-read', { method: 'POST' });
-                loadNotifications();
-                showToast('All notifications marked as read', 'success');
-            } catch (error) {
-                console.error('Error marking all read:', error);
-            }
-        }
-        
-        async function handleNotificationClick(notificationId, requestId) {
-            await markNotificationRead(notificationId);
-            if (requestId) {
-                window.location.href = '/my-requests';
-            }
+            await fetch('/notifications/mark-all-read', { method: 'POST' });
             loadNotifications();
+            showToast('All notifications marked as read', 'success');
         }
         
         // Profile Functions
@@ -365,13 +304,12 @@
                 const response = await fetch('/user-profile');
                 const user = await response.json();
                 
-                const modalBody = document.getElementById('profileModalBody');
-                if (modalBody) {
-                    modalBody.innerHTML = `
+                const body = document.getElementById('profileModalBody');
+                if (body) {
+                    body.innerHTML = `
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Full Name</label>
                             <input type="text" class="form-control" value="${escapeHtml(user.name)}" disabled>
-                            <small class="text-muted">Contact support for name changes</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Mobile Number</label>
@@ -407,7 +345,7 @@
         }
         
         async function updateProfile() {
-            const profileData = {
+            const data = {
                 email: document.getElementById('profileEmail')?.value,
                 address: document.getElementById('profileAddress')?.value,
                 city: document.getElementById('profileCity')?.value,
@@ -419,9 +357,8 @@
                 const response = await fetch('/update-profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(profileData)
+                    body: JSON.stringify(data)
                 });
-                
                 const result = await response.json();
                 if (result.success) {
                     showToast('Profile updated successfully!', 'success');
@@ -435,39 +372,92 @@
             }
         }
         
-        // Toast Notification
+        // Toast Notifications
         function showToast(message, type = 'info') {
-            const toastHtml = `
-                <div class="toast-notification p-3 rounded-3 shadow-lg mb-2" style="border-left: 4px solid ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#4f46e5'}">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} fs-5" style="color: ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#4f46e5'}"></i>
-                        <div class="flex-grow-1">${escapeHtml(message)}</div>
-                        <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
-                    </div>
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                success: '#22c55e',
+                danger: '#ef4444',
+                warning: '#f59e0b',
+                info: '#4f46e5'
+            };
+            const icons = {
+                success: 'check-circle',
+                danger: 'exclamation-circle',
+                warning: 'exclamation-triangle',
+                info: 'info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+            toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                    <div class="flex-grow-1">${escapeHtml(message)}</div>
+                    <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
                 </div>
             `;
-            const container = document.getElementById('toastContainer') || (() => {
-                const div = document.createElement('div');
-                div.id = 'toastContainer';
-                div.style.position = 'fixed';
-                div.style.top = '80px';
-                div.style.right = '20px';
-                div.style.zIndex = '10000';
-                document.body.appendChild(div);
-                return div;
-            })();
-            container.insertAdjacentHTML('beforeend', toastHtml);
-            setTimeout(() => {
-                const toast = container.lastChild;
-                if (toast) toast.remove();
-            }, 5000);
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
         }
         
+        // Utility Functions
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Track Status Function
+        async function checkApplicationStatus() {
+            const reference = document.getElementById('trackReference')?.value.trim().toUpperCase();
+            const phone = document.getElementById('trackPhone')?.value.trim();
+            
+            if (!reference || !phone) {
+                showToast('Please enter both Reference Number and Phone', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/check-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reference, phone })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const statusColors = {
+                        'pending': 'warning',
+                        'in_progress': 'info',
+                        'completed': 'success',
+                        'rejected': 'danger'
+                    };
+                    const statusLabels = {
+                        'pending': 'Pending',
+                        'in_progress': 'In Progress',
+                        'completed': 'Completed',
+                        'rejected': 'Rejected'
+                    };
+                    
+                    document.getElementById('statusResult').innerHTML = `
+                        <div class="alert alert-${statusColors[data.status] || 'secondary'} rounded-3 mt-3">
+                            <h5 class="mb-2"><i class="fas fa-check-circle me-2"></i> Application Found</h5>
+                            <p class="mb-1"><strong>Service:</strong> ${escapeHtml(data.service_name)}</p>
+                            <p class="mb-1"><strong>Reference:</strong> ${escapeHtml(data.reference)}</p>
+                            <p class="mb-1"><strong>Status:</strong> <span class="badge bg-${statusColors[data.status] || 'secondary'}">${statusLabels[data.status] || data.status}</span></p>
+                            <p class="mb-0"><strong>Submitted:</strong> ${escapeHtml(data.submitted_at)}</p>
+                        </div>
+                    `;
+                } else {
+                    showToast(data.message || 'Application not found', 'danger');
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+                showToast('Error checking status. Please try again.', 'danger');
+            }
         }
     </script>
     

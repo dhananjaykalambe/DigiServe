@@ -1,48 +1,61 @@
+<!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block title %}Home - Best Digital Service Portal India{% endblock %}
+{% block title %}Home - Digital Services Portal{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
 <div class="hero-section text-center py-5 rounded-4 mb-5" data-aos="fade-up">
-    <h1 class="display-4 fw-bold mb-3">Welcome to DigiServe</h1>
-    <p class="lead mb-4">Your One-Stop Digital Service Platform for Scholarships, Exams, Bill Payments & Government Services</p>
-    {% if 'user_id' not in session %}
-        <a href="{{ url_for('login') }}" class="btn btn-light btn-lg rounded-pill px-4">
-            <i class="fas fa-mobile-alt me-2"></i> Get Started
-        </a>
-    {% else %}
-        <a href="{{ url_for('services_dashboard') }}" class="btn btn-light btn-lg rounded-pill px-4">
-            <i class="fas fa-th-large me-2"></i> Go to Dashboard
-        </a>
-    {% endif %}
+    <div class="row align-items-center">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="display-4 fw-bold mb-3">Welcome to <span class="text-gradient">DigiServe</span></h1>
+            <p class="lead mb-4">Your Trusted Digital Service Partner for Scholarships, Exams, Bill Payments &amp; Government Services</p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                {% if 'user_id' not in session %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg rounded-pill px-5">
+                        <i class="fas fa-mobile-alt me-2"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('track_application') }}" class="btn btn-outline-light btn-lg rounded-pill px-5">
+                        <i class="fas fa-search me-2"></i> Track Application
+                    </a>
+                {% else %}
+                    <a href="#services" class="btn btn-primary btn-lg rounded-pill px-5">
+                        <i class="fas fa-th-large me-2"></i> Explore Services
+                    </a>
+                    <a href="{{ url_for('my_applications') }}" class="btn btn-outline-light btn-lg rounded-pill px-5">
+                        <i class="fas fa-file-alt me-2"></i> My Applications
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Stats Section -->
-<div class="row text-center mb-5 g-4" data-aos="fade-up" data-aos-delay="100">
+<div class="row text-center mb-5 g-3" data-aos="fade-up" data-aos-delay="100">
     <div class="col-md-3 col-6">
-        <div class="stats-card p-3 rounded-3 shadow-sm">
+        <div class="stats-card p-3 rounded-3">
             <i class="fas fa-users fa-3x text-primary mb-2"></i>
-            <h2 class="fw-bold mb-0">10,000+</h2>
-            <p class="text-muted small">Happy Customers</p>
+            <h2 class="fw-bold mb-0">{{ total_users|default(0) }}+</h2>
+            <p class="text-muted small">Happy Users</p>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="stats-card p-3 rounded-3 shadow-sm">
+        <div class="stats-card p-3 rounded-3">
             <i class="fas fa-file-alt fa-3x text-success mb-2"></i>
-            <h2 class="fw-bold mb-0">50,000+</h2>
-            <p class="text-muted small">Forms Submitted</p>
+            <h2 class="fw-bold mb-0">{{ total_applications|default(0) }}+</h2>
+            <p class="text-muted small">Applications</p>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="stats-card p-3 rounded-3 shadow-sm">
+        <div class="stats-card p-3 rounded-3">
             <i class="fas fa-clock fa-3x text-info mb-2"></i>
             <h2 class="fw-bold mb-0">24/7</h2>
             <p class="text-muted small">Online Service</p>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="stats-card p-3 rounded-3 shadow-sm">
+        <div class="stats-card p-3 rounded-3">
             <i class="fas fa-trophy fa-3x text-warning mb-2"></i>
             <h2 class="fw-bold mb-0">99%</h2>
             <p class="text-muted small">Satisfaction Rate</p>
@@ -51,224 +64,134 @@
 </div>
 
 <!-- Services Section -->
-<div class="text-center mb-4" data-aos="fade-up">
-    <h2 class="fw-bold">Our Popular Services</h2>
+<div id="services" class="text-center mb-4" data-aos="fade-up">
+    <h2 class="fw-bold">Our Services</h2>
     <p class="text-muted">Choose from a wide range of digital services tailored to your needs</p>
 </div>
 
 <div class="row g-4">
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('scholarship')">
-            <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-graduation-cap fa-3x text-primary"></i>
+    {% if services %}
+        {% for service in services %}
+        <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
+            <div class="service-card text-center p-4 h-100 rounded-4" onclick="redirectToService('{{ service.slug }}')">
+                <div class="icon-wrapper rounded-circle d-inline-flex p-3 mb-3" 
+                     style="background: {% if loop.index % 2 == 0 %}rgba(79, 70, 229, 0.1){% else %}rgba(34, 197, 94, 0.1){% endif %};">
+                    <i class="{{ service.icon }} fa-3x" style="color: {% if loop.index % 2 == 0 %}#4f46e5{% else %}#22c55e{% endif %};"></i>
+                </div>
+                <h5>{{ service.name }}</h5>
+                <p class="small text-muted">{{ service.description[:80] }}{% if service.description|length > 80 %}...{% endif %}</p>
+                <div class="mt-2">
+                    {% if service.service_charge > 0 %}
+                        <span class="badge bg-info rounded-pill">₹{{ "%.2f"|format(service.service_charge) }}</span>
+                    {% else %}
+                        <span class="badge bg-success rounded-pill">Free</span>
+                    {% endif %}
+                    <span class="badge bg-primary rounded-pill ms-1">Apply Now →</span>
+                </div>
             </div>
-            <h5>Scholarship Services</h5>
-            <p class="small text-muted">PMSSS, Post Matric, Pre Matric, Merit cum Means, National Scholarship</p>
-            <span class="badge bg-primary rounded-pill">Apply Now →</span>
         </div>
-    </div>
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('exams')">
-            <div class="icon-wrapper bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-file-alt fa-3x text-success"></i>
-            </div>
-            <h5>Exam Form Filling</h5>
-            <p class="small text-muted">MHT-CET, JEE, NEET, GATE, CAT, UPSC, MPSC, Banking Exams</p>
-            <span class="badge bg-success rounded-pill">Apply Now →</span>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+            <p>Services coming soon...</p>
         </div>
-    </div>
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="300">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('bill_payment')">
-            <div class="icon-wrapper bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-money-bill-wave fa-3x text-info"></i>
-            </div>
-            <h5>Bill Payments</h5>
-            <p class="small text-muted">Electricity, Water, Gas, Broadband, Property Tax, Municipal Tax</p>
-            <span class="badge bg-info rounded-pill">Pay Now →</span>
-        </div>
-    </div>
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="400">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('eseva')">
-            <div class="icon-wrapper bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-building fa-3x text-warning"></i>
-            </div>
-            <h5>Government Services</h5>
-            <p class="small text-muted">Birth/Death Certificate, Income/Caste Certificate, Driving License</p>
-            <span class="badge bg-warning rounded-pill">Apply Now →</span>
-        </div>
-    </div>
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="500">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('document')">
-            <div class="icon-wrapper bg-danger bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-id-card fa-3x text-danger"></i>
-            </div>
-            <h5>Document Services</h5>
-            <p class="small text-muted">Passport, Voter ID, Ration Card, PAN Card, Certificate Attestation</p>
-            <span class="badge bg-danger rounded-pill">Apply Now →</span>
-        </div>
-    </div>
-    <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="600">
-        <div class="service-card text-center p-4 h-100 rounded-4 shadow-sm" onclick="redirectToService('education')">
-            <div class="icon-wrapper bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                <i class="fas fa-university fa-3x text-secondary"></i>
-            </div>
-            <h5>Education Services</h5>
-            <p class="small text-muted">College Admissions, Course Enrollment, Certificate Verification</p>
-            <span class="badge bg-secondary rounded-pill">Apply Now →</span>
-        </div>
-    </div>
+    {% endif %}
 </div>
 
-<!-- Why Choose Us Section -->
+<!-- Quick Track Section -->
 <div class="row mt-5 pt-4" data-aos="fade-up">
-    <div class="col-12 text-center mb-4">
-        <h2 class="fw-bold">Why Choose DigiServe?</h2>
-        <p class="text-muted">We make government services accessible, affordable, and hassle-free</p>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="feature-card text-center p-4 h-100">
-            <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-            <h5>Secure & Trusted</h5>
-            <p class="small text-muted">Your data is safe with us. We use industry-standard encryption and security practices.</p>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="feature-card text-center p-4 h-100">
-            <i class="fas fa-headset fa-3x text-success mb-3"></i>
-            <h5>24/7 Support</h5>
-            <p class="small text-muted">Our dedicated support team is always ready to assist you with any queries.</p>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="feature-card text-center p-4 h-100">
-            <i class="fas fa-clock fa-3x text-info mb-3"></i>
-            <h5>Fast Processing</h5>
-            <p class="small text-muted">Quick turnaround time with real-time status updates and notifications.</p>
-        </div>
-    </div>
-</div>
-
-<!-- Testimonials Section -->
-<div class="row mt-4 pt-3" data-aos="fade-up">
-    <div class="col-12 text-center mb-4">
-        <h2 class="fw-bold">What Our Customers Say</h2>
-        <p class="text-muted">Trusted by thousands of satisfied customers across India</p>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="testimonial-card p-4 h-100 rounded-4 shadow-sm">
-            <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
-            <p class="small">"Excellent service! Got my scholarship application processed within a week. Highly recommended."</p>
-            <div class="d-flex align-items-center mt-3">
-                <i class="fas fa-user-circle fa-2x me-2 text-primary"></i>
-                <div>
-                    <h6 class="mb-0">Rahul Sharma</h6>
-                    <small class="text-muted">Student</small>
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow-sm rounded-4 border-0">
+            <div class="card-body p-4">
+                <h4 class="text-center mb-3"><i class="fas fa-search text-primary me-2"></i> Track Your Application</h4>
+                <p class="text-center text-muted small mb-4">Enter your reference number and phone number to check status</p>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <input type="text" class="form-control form-control-lg" id="trackReference" placeholder="Reference Number" maxlength="20">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="tel" class="form-control form-control-lg" id="trackPhone" placeholder="Phone Number" maxlength="10">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary btn-lg w-100 rounded-pill" onclick="checkApplicationStatus()">
+                            <i class="fas fa-search me-2"></i> Track
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="testimonial-card p-4 h-100 rounded-4 shadow-sm">
-            <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
-            <p class="small">"Very helpful platform for bill payments and document applications. Quick and reliable."</p>
-            <div class="d-flex align-items-center mt-3">
-                <i class="fas fa-user-circle fa-2x me-2 text-primary"></i>
-                <div>
-                    <h6 class="mb-0">Priya Patel</h6>
-                    <small class="text-muted">Business Owner</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="testimonial-card p-4 h-100 rounded-4 shadow-sm">
-            <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
-            <p class="small">"The best part is the real-time notifications. I always know the status of my applications."</p>
-            <div class="d-flex align-items-center mt-3">
-                <i class="fas fa-user-circle fa-2x me-2 text-primary"></i>
-                <div>
-                    <h6 class="mb-0">Amit Kumar</h6>
-                    <small class="text-muted">Government Employee</small>
-                </div>
+                <div id="statusResult" class="mt-3"></div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.hero-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.stats-card {
-    background: var(--card-bg);
-    transition: var(--transition);
-}
-
-.stats-card:hover {
-    transform: translateY(-5px);
-}
-
-.service-card {
-    background: var(--card-bg);
-    cursor: pointer;
-    transition: var(--transition);
-    border: 1px solid var(--border-color);
-}
-
-.service-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
-}
-
-.service-card:hover .badge {
-    transform: translateX(5px);
-}
-
-.icon-wrapper {
-    width: 80px;
-    height: 80px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.feature-card, .testimonial-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    transition: var(--transition);
-}
-
-.feature-card:hover, .testimonial-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-md);
-}
-
-.testimonial-card {
-    border-left: 4px solid var(--primary);
-}
+    .hero-section {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4f46e5 100%);
+        color: white;
+    }
+    
+    .text-gradient {
+        background: linear-gradient(135deg, #fff 0%, #c7d2fe 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    .stats-card {
+        background: var(--card-bg);
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .service-card {
+        background: var(--card-bg);
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+    }
+    
+    .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .service-card:hover .badge {
+        transform: translateX(5px);
+    }
+    
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <script>
-function redirectToService(category) {
-    {% if 'user_id' not in session %}
-        sessionStorage.setItem('redirectCategory', category);
-        window.location.href = "{{ url_for('login') }}";
-    {% else %}
-        window.location.href = "{{ url_for('services_dashboard') }}";
-    {% endif %}
-}
-
-{% if 'user_id' in session %}
-    const redirectCategory = sessionStorage.getItem('redirectCategory');
-    if (redirectCategory) {
-        sessionStorage.removeItem('redirectCategory');
-        setTimeout(() => {
-            const element = document.getElementById(redirectCategory);
-            if (element) element.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+    function redirectToService(slug) {
+        {% if 'user_id' not in session %}
+            sessionStorage.setItem('redirect_service', slug);
+            window.location.href = "{{ url_for('login') }}";
+        {% else %}
+            window.location.href = `/service/${slug}`;
+        {% endif %}
     }
-{% endif %}
+    
+    // Check if redirected from login
+    {% if 'user_id' in session %}
+        const redirectService = sessionStorage.getItem('redirect_service');
+        if (redirectService) {
+            sessionStorage.removeItem('redirect_service');
+            window.location.href = `/service/${redirectService}`;
+        }
+    {% endif %}
 </script>
 {% endblock %}

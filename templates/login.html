@@ -1,3 +1,4 @@
+<!-- templates/login.html -->
 {% extends "base.html" %}
 
 {% block title %}Login - DigiServe{% endblock %}
@@ -9,10 +10,10 @@
             <div class="card-header bg-primary text-white text-center py-4 border-0">
                 <i class="fas fa-mobile-alt fa-3x mb-2"></i>
                 <h3 class="mb-0 fw-bold">Welcome Back!</h3>
-                <p class="mb-0 mt-2 small opacity-75">Login to your DigiServe account</p>
+                <p class="mb-0 mt-2 small opacity-75">Login to access all services</p>
             </div>
             <div class="card-body p-4 p-lg-5">
-                <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+                <form method="POST" action="{{ url_for('login') }}">
                     <div class="mb-4">
                         <label for="phone" class="form-label fw-semibold">Mobile Number</label>
                         <div class="input-group">
@@ -42,33 +43,15 @@
                 <div class="text-center">
                     <div class="small text-muted mb-3">
                         <i class="fas fa-shield-alt me-1"></i> Secure & Password-less Authentication
-                    </div>                 
+                    </div>
+                    <a href="{{ url_for('track_application') }}" class="text-primary text-decoration-none small">
+                        <i class="fas fa-search me-1"></i> Track Application without login
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <div class="text-center mt-4">
-            <p class="small text-muted">
-                <i class="fas fa-bell"></i> Get real-time updates via in-app notifications
-            </p>
-        </div>
     </div>
 </div>
-
-<style>
-.min-vh-75 {
-    min-height: 75vh;
-}
-
-.input-group-text {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color);
-}
-
-.form-control {
-    border-color: var(--border-color);
-}
-</style>
 
 <script>
     const phoneInput = document.getElementById('phone');
@@ -76,16 +59,7 @@
         phoneInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
-        
         phoneInput.focus();
     }
-    
-    document.getElementById('loginForm')?.addEventListener('submit', function(e) {
-        const phone = document.getElementById('phone').value;
-        if (!phone || phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
-            e.preventDefault();
-            alert('Please enter a valid 10-digit mobile number starting with 6,7,8, or 9');
-        }
-    });
 </script>
 {% endblock %}
