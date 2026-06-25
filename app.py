@@ -1,4 +1,5 @@
-# app.py
+# app.py - Updated version with fixed service initialization
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
@@ -159,6 +160,350 @@ def auto_create_admin_user():
         print(f"Error auto-creating admin: {e}")
         return None
 
+def init_services():
+    """Initialize services if they don't exist"""
+    print("📦 Initializing services...")
+    
+    if db.services.count_documents({}) > 0:
+        print(f"✅ Services already exist ({db.services.count_documents({})} services found)")
+        return True
+    
+    try:
+        services_data = [
+            # Scholarship & Education
+            {
+                'category': 'scholarship',
+                'name': 'Scholarship Form Filling',
+                'slug': 'scholarship-form-filling',
+                'description': 'Expert assistance for filling various scholarship application forms including PMSSS, Post Matric, and more.',
+                'icon': 'fas fa-graduation-cap',
+                'service_charge': 0,
+                'is_active': True,
+                'order': 1,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['student_name', 'college_name', 'course', 'academic_year', 'income_certificate', 'aadhaar'],
+                'processing_time': '5-7 working days'
+            },
+            {
+                'category': 'education',
+                'name': 'College Admission Forms',
+                'slug': 'college-admission-forms',
+                'description': 'Get help with college admission applications, form filling, and document submission for various institutions.',
+                'icon': 'fas fa-university',
+                'service_charge': 500,
+                'is_active': True,
+                'order': 2,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['student_name', 'college_name', 'course', 'academic_year', 'marksheet', 'admission_test_score'],
+                'processing_time': '3-5 working days'
+            },
+            {
+                'category': 'education',
+                'name': 'Government Exam Forms',
+                'slug': 'government-exam-forms',
+                'description': 'Professional assistance for filling government exam applications like UPSC, SSC, Banking, and more.',
+                'icon': 'fas fa-file-alt',
+                'service_charge': 800,
+                'is_active': True,
+                'order': 3,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['candidate_name', 'exam_name', 'registration_number', 'photo_upload', 'signature_upload'],
+                'processing_time': '2-3 working days'
+            },
+            # Career Services
+            {
+                'category': 'career',
+                'name': 'Internship/Job Applications',
+                'slug': 'internship-job-applications',
+                'description': 'Professional assistance for internship and job applications, including form filling and document preparation.',
+                'icon': 'fas fa-briefcase',
+                'service_charge': 300,
+                'is_active': True,
+                'order': 4,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['applicant_name', 'company_name', 'position', 'cover_letter', 'resume_upload'],
+                'processing_time': '2-3 working days'
+            },
+            {
+                'category': 'career',
+                'name': 'Resume Creation',
+                'slug': 'resume-creation',
+                'description': 'Professional resume writing and CV creation services with modern templates and ATS-friendly formats.',
+                'icon': 'fas fa-file-alt',
+                'service_charge': 200,
+                'is_active': True,
+                'order': 5,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['education', 'skills', 'experience', 'resume_template'],
+                'processing_time': '2-3 working days'
+            },
+            {
+                'category': 'career',
+                'name': 'LinkedIn Profile Setup',
+                'slug': 'linkedin-profile-setup',
+                'description': 'Complete LinkedIn profile optimization including professional summary, experience, and networking strategies.',
+                'icon': 'fab fa-linkedin',
+                'service_charge': 250,
+                'is_active': True,
+                'order': 6,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'headline', 'current_position', 'linkedin_url'],
+                'processing_time': '2-3 working days'
+            },
+            # Bill Payments
+            {
+                'category': 'bill_payment',
+                'name': 'Electricity Bill Payment',
+                'slug': 'electricity-bill-payment',
+                'description': 'Quick and secure online electricity bill payment for all major providers.',
+                'icon': 'fas fa-lightbulb',
+                'service_charge': 0,
+                'is_active': True,
+                'order': 7,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['consumer_number', 'provider_name', 'bill_amount'],
+                'processing_time': 'Instant'
+            },
+            {
+                'category': 'bill_payment',
+                'name': 'Water Bill Payment',
+                'slug': 'water-bill-payment',
+                'description': 'Pay your water bills online instantly with our secure payment system.',
+                'icon': 'fas fa-tint',
+                'service_charge': 0,
+                'is_active': True,
+                'order': 8,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['consumer_number', 'provider_name', 'bill_amount'],
+                'processing_time': 'Instant'
+            },
+            {
+                'category': 'bill_payment',
+                'name': 'Mobile Recharge',
+                'slug': 'mobile-recharge',
+                'description': 'Instant mobile recharge for all prepaid and postpaid connections.',
+                'icon': 'fas fa-mobile-alt',
+                'service_charge': 0,
+                'is_active': True,
+                'order': 9,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['mobile_number', 'operator', 'recharge_amount', 'plan_type'],
+                'processing_time': 'Instant'
+            },
+            # Document Services
+            {
+                'category': 'document',
+                'name': 'PAN Card Services',
+                'slug': 'pan-card-services',
+                'description': 'Apply for new PAN card, update details, or request for reprint of existing PAN card.',
+                'icon': 'fas fa-id-card',
+                'service_charge': 150,
+                'is_active': True,
+                'order': 10,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'dob', 'father_name', 'pan_type', 'id_proof_upload'],
+                'processing_time': '7-10 working days'
+            },
+            {
+                'category': 'document',
+                'name': 'Passport Services',
+                'slug': 'passport-services',
+                'description': 'Complete assistance for passport application, renewal, and document verification.',
+                'icon': 'fas fa-passport',
+                'service_charge': 350,
+                'is_active': True,
+                'order': 11,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'dob', 'address', 'id_proof_upload', 'passport_type'],
+                'processing_time': '10-15 working days'
+            },
+            {
+                'category': 'document',
+                'name': 'Income Certificate',
+                'slug': 'income-certificate',
+                'description': 'Apply for income certificate for government schemes, scholarships, and financial assistance.',
+                'icon': 'fas fa-file-invoice-dollar',
+                'service_charge': 100,
+                'is_active': True,
+                'order': 12,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'dob', 'annual_income', 'occupation', 'address'],
+                'processing_time': '5-7 working days'
+            },
+            {
+                'category': 'document',
+                'name': 'Caste Certificate',
+                'slug': 'caste-certificate',
+                'description': 'Apply for caste certificate (SC/ST/OBC) for educational and employment purposes.',
+                'icon': 'fas fa-users',
+                'service_charge': 100,
+                'is_active': True,
+                'order': 13,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'dob', 'caste_category', 'address', 'id_proof_upload'],
+                'processing_time': '5-7 working days'
+            },
+            # Printing & Design
+            {
+                'category': 'printing',
+                'name': 'Printing Services',
+                'slug': 'printing-services',
+                'description': 'High-quality printing services for documents, photos, flyers, and more.',
+                'icon': 'fas fa-print',
+                'service_charge': 50,
+                'is_active': True,
+                'order': 14,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['document_type', 'color_type', 'page_count', 'print_quantity'],
+                'processing_time': 'Same day'
+            },
+            {
+                'category': 'printing',
+                'name': 'Scanning Services',
+                'slug': 'scanning-services',
+                'description': 'Professional document scanning services with high-quality output.',
+                'icon': 'fas fa-camera',
+                'service_charge': 20,
+                'is_active': True,
+                'order': 15,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['document_type', 'page_count', 'color_preference'],
+                'processing_time': 'Same day'
+            },
+            {
+                'category': 'printing',
+                'name': 'Passport Photo Service',
+                'slug': 'passport-photo-service',
+                'description': 'Professional passport and visa photo services meeting all specification requirements.',
+                'icon': 'fas fa-camera-retro',
+                'service_charge': 100,
+                'is_active': True,
+                'order': 16,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['full_name', 'photo_type', 'specification', 'quantity'],
+                'processing_time': 'Same day'
+            },
+            # Digital Services
+            {
+                'category': 'digital',
+                'name': 'Website Development',
+                'slug': 'website-development',
+                'description': 'Custom website development with modern design, responsive layout, and full functionality.',
+                'icon': 'fas fa-laptop-code',
+                'service_charge': 5000,
+                'is_active': True,
+                'order': 17,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['website_type', 'pages_count', 'features', 'domain_name'],
+                'processing_time': '10-15 working days'
+            },
+            {
+                'category': 'digital',
+                'name': 'Data Entry',
+                'slug': 'data-entry',
+                'description': 'Professional data entry services with accuracy and confidentiality.',
+                'icon': 'fas fa-keyboard',
+                'service_charge': 200,
+                'is_active': True,
+                'order': 18,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['data_type', 'entry_format', 'volume', 'deadline'],
+                'processing_time': '2-3 working days'
+            },
+            {
+                'category': 'digital',
+                'name': 'Excel/Data Analytics Service',
+                'slug': 'excel-data-analytics',
+                'description': 'Professional Excel and data analytics services including reports, dashboards, and data visualization.',
+                'icon': 'fas fa-chart-bar',
+                'service_charge': 350,
+                'is_active': True,
+                'order': 19,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['project_type', 'data_source', 'analysis_needed', 'output_format'],
+                'processing_time': '3-5 working days'
+            },
+            # Business Services
+            {
+                'category': 'business',
+                'name': 'Travel Booking',
+                'slug': 'travel-booking',
+                'description': 'Complete travel booking services including flights, hotels, and tour packages.',
+                'icon': 'fas fa-plane',
+                'service_charge': 200,
+                'is_active': True,
+                'order': 20,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['travel_type', 'destination', 'travel_date', 'passengers'],
+                'processing_time': '1-2 working days'
+            },
+            {
+                'category': 'business',
+                'name': 'GST Registration',
+                'slug': 'gst-registration',
+                'description': 'Professional assistance for GST registration, filing, and compliance.',
+                'icon': 'fas fa-file-invoice',
+                'service_charge': 1500,
+                'is_active': True,
+                'order': 21,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['business_name', 'business_type', 'pan_number', 'address', 'annual_turnover'],
+                'processing_time': '5-7 working days'
+            },
+            {
+                'category': 'business',
+                'name': 'Business Registration',
+                'slug': 'business-registration',
+                'description': 'Complete business registration services including sole proprietorship, partnership, and company registration.',
+                'icon': 'fas fa-building',
+                'service_charge': 2000,
+                'is_active': True,
+                'order': 22,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['business_name', 'business_type', 'pan_number', 'address', 'partners_names'],
+                'processing_time': '7-10 working days'
+            },
+            # Design Services
+            {
+                'category': 'design',
+                'name': 'Logo Design',
+                'slug': 'logo-design',
+                'description': 'Professional logo design services with multiple concepts and unlimited revisions.',
+                'icon': 'fas fa-paint-brush',
+                'service_charge': 800,
+                'is_active': True,
+                'order': 23,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['business_name', 'industry', 'color_preference', 'design_style'],
+                'processing_time': '3-5 working days'
+            },
+            {
+                'category': 'design',
+                'name': 'Social Media Design',
+                'slug': 'social-media-design',
+                'description': 'Professional social media designs including posts, covers, and ad creatives.',
+                'icon': 'fas fa-hashtag',
+                'service_charge': 500,
+                'is_active': True,
+                'order': 24,
+                'created_at': datetime.now(timezone.utc),
+                'fields': ['platform', 'design_type', 'content', 'color_scheme'],
+                'processing_time': '2-3 working days'
+            }
+        ]
+        
+        for service in services_data:
+            db.services.insert_one(service)
+            print(f"✅ Added service: {service['name']}")
+        
+        print(f"✅ Successfully initialized {len(services_data)} services")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error initializing services: {e}")
+        traceback.print_exc()
+        return False
+
 def init_db():
     print("📦 Initializing database...")
     
@@ -170,6 +515,7 @@ def init_db():
         return False
     
     try:
+        # Create indexes
         db.users.create_index('phone', unique=True)
         db.users.create_index('email', sparse=True)
         db.services.create_index('slug', unique=True)
@@ -182,316 +528,17 @@ def init_db():
         db.notifications.create_index('created_at')
         print("✅ Indexes created successfully")
         
+        # Create admin user
         auto_create_admin_user()
         
-        if db.services.count_documents({}) == 0:
-            default_services = [
-                # Scholarship & Education
-                {
-                    'category': 'scholarship',
-                    'name': 'Scholarship Form Filling',
-                    'slug': 'scholarship-form-filling',
-                    'description': 'Expert assistance for filling various scholarship application forms including PMSSS, Post Matric, and more.',
-                    'icon': 'fas fa-graduation-cap',
-                    'service_charge': 0,
-                    'is_active': True,
-                    'order': 1,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['student_name', 'college_name', 'course', 'academic_year', 'income_certificate', 'aadhaar']
-                },
-                {
-                    'category': 'education',
-                    'name': 'College Admission Forms',
-                    'slug': 'college-admission-forms',
-                    'description': 'Get help with college admission applications, form filling, and document submission for various institutions.',
-                    'icon': 'fas fa-university',
-                    'service_charge': 500,
-                    'is_active': True,
-                    'order': 2,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['student_name', 'college_name', 'course', 'academic_year', 'marksheet', 'admission_test_score']
-                },
-                {
-                    'category': 'education',
-                    'name': 'Government Exam Forms',
-                    'slug': 'government-exam-forms',
-                    'description': 'Professional assistance for filling government exam applications like UPSC, SSC, Banking, and more.',
-                    'icon': 'fas fa-file-alt',
-                    'service_charge': 800,
-                    'is_active': True,
-                    'order': 3,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['candidate_name', 'exam_name', 'registration_number', 'photo_upload', 'signature_upload']
-                },
-                # Career Services
-                {
-                    'category': 'career',
-                    'name': 'Internship/Job Applications',
-                    'slug': 'internship-job-applications',
-                    'description': 'Professional assistance for internship and job applications, including form filling and document preparation.',
-                    'icon': 'fas fa-briefcase',
-                    'service_charge': 300,
-                    'is_active': True,
-                    'order': 4,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['applicant_name', 'company_name', 'position', 'cover_letter', 'resume_upload']
-                },
-                {
-                    'category': 'career',
-                    'name': 'Resume Creation',
-                    'slug': 'resume-creation',
-                    'description': 'Professional resume writing and CV creation services with modern templates and ATS-friendly formats.',
-                    'icon': 'fas fa-file-alt',
-                    'service_charge': 200,
-                    'is_active': True,
-                    'order': 5,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['education', 'skills', 'experience', 'resume_template']
-                },
-                {
-                    'category': 'career',
-                    'name': 'LinkedIn Profile Setup',
-                    'slug': 'linkedin-profile-setup',
-                    'description': 'Complete LinkedIn profile optimization including professional summary, experience, and networking strategies.',
-                    'icon': 'fab fa-linkedin',
-                    'service_charge': 250,
-                    'is_active': True,
-                    'order': 6,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'headline', 'current_position', 'linkedin_url']
-                },
-                # Bill Payments
-                {
-                    'category': 'bill_payment',
-                    'name': 'Electricity Bill Payment',
-                    'slug': 'electricity-bill-payment',
-                    'description': 'Quick and secure online electricity bill payment for all major providers.',
-                    'icon': 'fas fa-lightbulb',
-                    'service_charge': 0,
-                    'is_active': True,
-                    'order': 7,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['consumer_number', 'provider_name', 'bill_amount']
-                },
-                {
-                    'category': 'bill_payment',
-                    'name': 'Water Bill Payment',
-                    'slug': 'water-bill-payment',
-                    'description': 'Pay your water bills online instantly with our secure payment system.',
-                    'icon': 'fas fa-tint',
-                    'service_charge': 0,
-                    'is_active': True,
-                    'order': 8,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['consumer_number', 'provider_name', 'bill_amount']
-                },
-                {
-                    'category': 'bill_payment',
-                    'name': 'Mobile Recharge',
-                    'slug': 'mobile-recharge',
-                    'description': 'Instant mobile recharge for all prepaid and postpaid connections.',
-                    'icon': 'fas fa-mobile-alt',
-                    'service_charge': 0,
-                    'is_active': True,
-                    'order': 9,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['mobile_number', 'operator', 'recharge_amount', 'plan_type']
-                },
-                # Document Services
-                {
-                    'category': 'document',
-                    'name': 'PAN Card Services',
-                    'slug': 'pan-card-services',
-                    'description': 'Apply for new PAN card, update details, or request for reprint of existing PAN card.',
-                    'icon': 'fas fa-id-card',
-                    'service_charge': 150,
-                    'is_active': True,
-                    'order': 10,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'dob', 'father_name', 'pan_type', 'id_proof_upload']
-                },
-                {
-                    'category': 'document',
-                    'name': 'Passport Services',
-                    'slug': 'passport-services',
-                    'description': 'Complete assistance for passport application, renewal, and document verification.',
-                    'icon': 'fas fa-passport',
-                    'service_charge': 350,
-                    'is_active': True,
-                    'order': 11,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'dob', 'address', 'id_proof_upload', 'passport_type']
-                },
-                {
-                    'category': 'document',
-                    'name': 'Income Certificate',
-                    'slug': 'income-certificate',
-                    'description': 'Apply for income certificate for government schemes, scholarships, and financial assistance.',
-                    'icon': 'fas fa-file-invoice-dollar',
-                    'service_charge': 100,
-                    'is_active': True,
-                    'order': 12,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'dob', 'annual_income', 'occupation', 'address']
-                },
-                {
-                    'category': 'document',
-                    'name': 'Caste Certificate',
-                    'slug': 'caste-certificate',
-                    'description': 'Apply for caste certificate (SC/ST/OBC) for educational and employment purposes.',
-                    'icon': 'fas fa-users',
-                    'service_charge': 100,
-                    'is_active': True,
-                    'order': 13,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'dob', 'caste_category', 'address', 'id_proof_upload']
-                },
-                # Printing & Design
-                {
-                    'category': 'printing',
-                    'name': 'Printing Services',
-                    'slug': 'printing-services',
-                    'description': 'High-quality printing services for documents, photos, flyers, and more.',
-                    'icon': 'fas fa-print',
-                    'service_charge': 50,
-                    'is_active': True,
-                    'order': 14,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['document_type', 'color_type', 'page_count', 'print_quantity']
-                },
-                {
-                    'category': 'printing',
-                    'name': 'Scanning Services',
-                    'slug': 'scanning-services',
-                    'description': 'Professional document scanning services with high-quality output.',
-                    'icon': 'fas fa-camera',
-                    'service_charge': 20,
-                    'is_active': True,
-                    'order': 15,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['document_type', 'page_count', 'color_preference']
-                },
-                {
-                    'category': 'printing',
-                    'name': 'Passport Photo Service',
-                    'slug': 'passport-photo-service',
-                    'description': 'Professional passport and visa photo services meeting all specification requirements.',
-                    'icon': 'fas fa-camera-retro',
-                    'service_charge': 100,
-                    'is_active': True,
-                    'order': 16,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['full_name', 'photo_type', 'specification', 'quantity']
-                },
-                # Digital Services
-                {
-                    'category': 'digital',
-                    'name': 'Website Development',
-                    'slug': 'website-development',
-                    'description': 'Custom website development with modern design, responsive layout, and full functionality.',
-                    'icon': 'fas fa-laptop-code',
-                    'service_charge': 5000,
-                    'is_active': True,
-                    'order': 17,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['website_type', 'pages_count', 'features', 'domain_name']
-                },
-                {
-                    'category': 'digital',
-                    'name': 'Data Entry',
-                    'slug': 'data-entry',
-                    'description': 'Professional data entry services with accuracy and confidentiality.',
-                    'icon': 'fas fa-keyboard',
-                    'service_charge': 200,
-                    'is_active': True,
-                    'order': 18,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['data_type', 'entry_format', 'volume', 'deadline']
-                },
-                {
-                    'category': 'digital',
-                    'name': 'Excel/Data Analytics Service',
-                    'slug': 'excel-data-analytics',
-                    'description': 'Professional Excel and data analytics services including reports, dashboards, and data visualization.',
-                    'icon': 'fas fa-chart-bar',
-                    'service_charge': 350,
-                    'is_active': True,
-                    'order': 19,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['project_type', 'data_source', 'analysis_needed', 'output_format']
-                },
-                # Business Services
-                {
-                    'category': 'business',
-                    'name': 'Travel Booking',
-                    'slug': 'travel-booking',
-                    'description': 'Complete travel booking services including flights, hotels, and tour packages.',
-                    'icon': 'fas fa-plane',
-                    'service_charge': 200,
-                    'is_active': True,
-                    'order': 20,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['travel_type', 'destination', 'travel_date', 'passengers']
-                },
-                {
-                    'category': 'business',
-                    'name': 'GST Registration',
-                    'slug': 'gst-registration',
-                    'description': 'Professional assistance for GST registration, filing, and compliance.',
-                    'icon': 'fas fa-file-invoice',
-                    'service_charge': 1500,
-                    'is_active': True,
-                    'order': 21,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['business_name', 'business_type', 'pan_number', 'address', 'annual_turnover']
-                },
-                {
-                    'category': 'business',
-                    'name': 'Business Registration',
-                    'slug': 'business-registration',
-                    'description': 'Complete business registration services including sole proprietorship, partnership, and company registration.',
-                    'icon': 'fas fa-building',
-                    'service_charge': 2000,
-                    'is_active': True,
-                    'order': 22,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['business_name', 'business_type', 'pan_number', 'address', 'partners_names']
-                },
-                # Design Services
-                {
-                    'category': 'design',
-                    'name': 'Logo Design',
-                    'slug': 'logo-design',
-                    'description': 'Professional logo design services with multiple concepts and unlimited revisions.',
-                    'icon': 'fas fa-paint-brush',
-                    'service_charge': 800,
-                    'is_active': True,
-                    'order': 23,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['business_name', 'industry', 'color_preference', 'design_style']
-                },
-                {
-                    'category': 'design',
-                    'name': 'Social Media Design',
-                    'slug': 'social-media-design',
-                    'description': 'Professional social media designs including posts, covers, and ad creatives.',
-                    'icon': 'fas fa-hashtag',
-                    'service_charge': 500,
-                    'is_active': True,
-                    'order': 24,
-                    'created_at': datetime.now(timezone.utc),
-                    'fields': ['platform', 'design_type', 'content', 'color_scheme']
-                }
-            ]
-            
-            for service in default_services:
-                db.services.insert_one(service)
-                print(f"✅ Added service: {service['name']}")
+        # Initialize services
+        init_services()
         
         print("=" * 60)
         print("🚀 DigiServe Portal is ready!")
         print("📍 MongoDB Atlas: Connected")
         print("👑 Admin Login: 9999999999")
+        print(f"📊 Services Available: {db.services.count_documents({'is_active': True})}")
         print("=" * 60)
         return True
         
@@ -525,6 +572,7 @@ def index():
                              total_services=total_services)
     except Exception as e:
         print(f"Error loading index: {e}")
+        traceback.print_exc()
         return render_template('index.html', services=[], categories={})
 
 @app.route('/login', methods=['GET', 'POST'])
