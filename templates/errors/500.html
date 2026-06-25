@@ -1,95 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - Server Error | DigiServe</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        .error-card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 24px;
-            padding: 50px 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .error-icon {
-            font-size: 72px;
-            color: #ef4444;
-            margin-bottom: 20px;
-        }
-        .error-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 10px;
-        }
-        .error-subtitle {
-            color: #64748b;
-            margin-bottom: 25px;
-            font-size: 16px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-        }
-        .error-details {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
-            font-size: 13px;
-            color: #475569;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-    </style>
-</head>
-<body>
-    <div class="error-card">
-        <div class="error-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h1 class="error-title">500 - Server Error</h1>
-        <p class="error-subtitle">Something went wrong on our end. We're working to fix it.</p>
-        
-        <div class="error-details">
-            <strong><i class="fas fa-bug me-2"></i> Error Details:</strong>
-            <p class="mb-0 mt-1 small">{{ error_message if error_message else 'An unexpected error occurred. Please try again later.' }}</p>
-        </div>
-        
-        <div class="d-grid gap-2">
-            <a href="{{ url_for('index') }}" class="btn btn-primary">
-                <i class="fas fa-home me-2"></i> Go to Homepage
-            </a>
-            <button onclick="location.reload()" class="btn btn-outline-secondary">
-                <i class="fas fa-sync-alt me-2"></i> Try Again
-            </button>
-        </div>
-        
-        <div class="mt-4">
-            <small class="text-muted">If the problem persists, please contact support.</small>
-        </div>
+{% extends "base.html" %}
+
+{% block title %}Server Error - DigiServe{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <i class="fas fa-exclamation-triangle fa-5x text-danger mb-4"></i>
+    <h1 class="display-1 fw-bold text-danger">500</h1>
+    <h2 class="mb-3">Something Went Wrong</h2>
+    <p class="text-muted mb-4">We're sorry, but something went wrong on our end. Please try again later.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill px-4">
+            <i class="fas fa-home me-2"></i> Go Home
+        </a>
+        <button class="btn btn-outline-secondary rounded-pill px-4" onclick="location.reload()">
+            <i class="fas fa-sync-alt me-2"></i> Try Again
+        </button>
     </div>
-</body>
-</html>
+    {% if error_message %}
+        <div class="alert alert-danger mt-4 text-start small">
+            <strong>Error Details:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
