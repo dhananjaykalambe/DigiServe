@@ -1,0 +1,312 @@
+<!-- templates/admin_services.html -->
+{% extends "base.html" %}
+
+{% block title %}Manage Services - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up">
+    <div>
+        <h2 class="fw-bold"><i class="fas fa-cogs text-primary me-2"></i> Manage Services</h2>
+        <p class="text-muted mb-0">Create, edit, and manage all services offered on the platform</p>
+    </div>
+    <a href="{{ url_for('admin_create_service') }}" class="btn btn-primary rounded-pill px-4">
+        <i class="fas fa-plus me-2"></i> Add New Service
+    </a>
+</div>
+
+<div class="card shadow-sm rounded-4" data-aos="fade-up">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="servicesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Service</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Processing Time</th>
+                        <th>Fields</th>
+                        <th>Status</th>
+                        <th style="width: 180px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="servicesBody">
+                    {% for service in services %}
+                    <tr data-id="{{ service.id }}" data-order="{{ service.order }}">
+                        <td>
+                            <span class="drag-handle cursor-move" style="cursor: move;">
+                                <i class="fas fa-grip-vertical text-muted"></i>
+                            </span>
+                            <span class="order-number">{{ service.order or loop.index }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="{{ service.icon }} text-primary"></i>
+                                <div>
+                                    <div class="fw-semibold">{{ service.name }}</div>
+                                    <div class="small text-muted">{{ service.slug }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info rounded-pill">{{ service.category|replace('_', ' ')|title }}</span>
+                        </td>
+                        <td>
+                            {% if service.service_charge > 0 %}
+                                ₹{{ "%.2f"|format(service.service_charge) }}
+                            {% else %}
+                                <span class="badge bg-success rounded-pill">Free</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ service.processing_time or '3-5 working days' }}</td>
+                        <td>
+                            <span class="badge bg-secondary rounded-pill">{{ service.fields|length if service.fields else 0 }}</span>
+                            <span class="small text-muted">fields</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm toggle-status {% if service.is_active %}btn-success{% else %}btn-secondary{% endif %} rounded-pill" 
+                                    onclick="toggleStatus('{{ service.id }}')" 
+                                    data-id="{{ service.id }}">
+                                {% if service.is_active %}
+                                    <i class="fas fa-check-circle me-1"></i> Active
+                                {% else %}
+                                    <i class="fas fa-times-circle me-1"></i> Inactive
+                                {% endif %}
+                            </button>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" 
+                                   class="btn btn-outline-primary rounded-pill me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-outline-danger rounded-pill" 
+                                        onclick="deleteService('{{ service.id }}', '{{ service.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                            <p>No services found. <a href="{{ url_for('admin_create_service') }}">Create your first service</a></p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mt-4 g-3" data-aos="fade-up">
+    <div class="col-md-3 col-6">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <h3 class="fw-bold text-primary">{{ services|length }}</h3>
+                <p class="text-muted small mb-0">Total Services</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <h3 class="fw-bold text-success">{{ services|selectattr('is_active')|list|length }}</h3>
+                <p class="text-muted small mb-0">Active Services</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <h3 class="fw-bold text-warning">{{ services|rejectattr('is_active')|list|length }}</h3>
+                <p class="text-muted small mb-0">Inactive Services</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <h3 class="fw-bold text-info">{{ services|sum(attribute='service_charge')|round(2) }}</h3>
+                <p class="text-muted small mb-0">Total Revenue Potential</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .drag-handle {
+        cursor: grab;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .order-number {
+        font-size: 12px;
+        color: #999;
+        margin-left: 4px;
+    }
+    .dragging {
+        opacity: 0.5;
+        background: var(--bg-tertiary);
+    }
+</style>
+
+<script>
+    // Toggle service status
+    async function toggleStatus(serviceId) {
+        try {
+            const response = await fetch(`/admin/service/toggle-status/${serviceId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                location.reload();
+            } else {
+                showToast(result.message, 'danger');
+            }
+        } catch (error) {
+            showToast('Error toggling status', 'danger');
+        }
+    }
+
+    // Delete service
+    async function deleteService(serviceId, serviceName) {
+        if (!confirm(`Are you sure you want to delete "${serviceName}"? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin/service/delete/${serviceId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                location.reload();
+            } else {
+                showToast(result.message, 'danger');
+            }
+        } catch (error) {
+            showToast('Error deleting service', 'danger');
+        }
+    }
+
+    // Drag and drop reordering
+    let draggedRow = null;
+    
+    document.querySelectorAll('.drag-handle').forEach(handle => {
+        handle.addEventListener('mousedown', function(e) {
+            draggedRow = this.closest('tr');
+            this.style.cursor = 'grabbing';
+        });
+        
+        handle.addEventListener('mouseup', function() {
+            this.style.cursor = 'grab';
+        });
+    });
+
+    document.querySelectorAll('#servicesBody tr').forEach(row => {
+        row.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            if (draggedRow && draggedRow !== this) {
+                const rows = Array.from(document.querySelectorAll('#servicesBody tr'));
+                const dragIndex = rows.indexOf(draggedRow);
+                const targetIndex = rows.indexOf(this);
+                
+                if (dragIndex < targetIndex) {
+                    this.parentNode.insertBefore(draggedRow, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(draggedRow, this);
+                }
+            }
+        });
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (draggedRow) {
+            // Save new order
+            const rows = document.querySelectorAll('#servicesBody tr');
+            const serviceIds = Array.from(rows).map(row => row.dataset.id);
+            
+            // Update order numbers visually
+            rows.forEach((row, index) => {
+                const orderSpan = row.querySelector('.order-number');
+                if (orderSpan) {
+                    orderSpan.textContent = index + 1;
+                }
+            });
+            
+            // Save to server
+            fetch('/admin/service/reorder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ service_ids: serviceIds })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Services reordered successfully!', 'success');
+                }
+            })
+            .catch(error => {
+                showToast('Error saving order', 'danger');
+            });
+            
+            draggedRow = null;
+        }
+    });
+
+    // Make rows draggable
+    document.querySelectorAll('#servicesBody tr').forEach(row => {
+        row.setAttribute('draggable', 'true');
+        row.addEventListener('dragstart', function(e) {
+            draggedRow = this;
+            this.classList.add('dragging');
+        });
+        row.addEventListener('dragend', function(e) {
+            this.classList.remove('dragging');
+        });
+    });
+
+    // Toast function
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const colors = {
+            success: '#22c55e',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#4f46e5'
+        };
+        const icons = {
+            success: 'check-circle',
+            danger: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,266 @@
+<!-- templates/admin_service_form.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ form_title }} - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('admin_services') }}" class="btn btn-outline-secondary rounded-pill">
+        <i class="fas fa-arrow-left me-2"></i> Back to Services
+    </a>
+</div>
+
+<div class="row justify-content-center" data-aos="fade-up">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white py-3 border-0">
+                <h4 class="mb-0"><i class="fas fa-{{ 'plus-circle' if not service else 'edit' }} me-2"></i> {{ form_title }}</h4>
+            </div>
+            <div class="card-body p-4 p-lg-5">
+                <form method="POST" action="{{ form_action }}" id="serviceForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Service Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="serviceName" 
+                                   value="{{ service.name if service else '' }}" 
+                                   placeholder="e.g., Scholarship Form Filling" required>
+                            <div class="form-text">The display name of the service.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Slug <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="slug" id="serviceSlug" 
+                                   value="{{ service.slug if service else '' }}" 
+                                   placeholder="e.g., scholarship-form-filling" required>
+                            <div class="form-text">URL-friendly name (auto-generated from name).</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" name="category" id="category" required>
+                                <option value="">Select Category</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {% if service and service.category == cat %}selected{% endif %}>
+                                    {{ cat|replace('_', ' ')|title }}
+                                </option>
+                                {% endfor %}
+                                <option value="other" {% if service and service.category == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                            <div class="form-text">Category helps organize services.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Icon <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-icons"></i></span>
+                                <input type="text" class="form-control" name="icon" id="iconInput" 
+                                       value="{{ service.icon if service else 'fas fa-cog' }}" 
+                                       placeholder="fas fa-cog" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="previewIcon()">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <span class="badge bg-light p-2 me-2">Preview: <i class="{{ service.icon if service else 'fas fa-cog' }}" id="iconPreview"></i></span>
+                                Font Awesome icon class (e.g., fas fa-graduation-cap)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="description" rows="3" 
+                                  placeholder="Describe the service in detail..." required>{{ service.description if service else '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Service Charge (₹)</label>
+                            <input type="number" class="form-control" name="service_charge" 
+                                   value="{{ service.service_charge if service else 0 }}" 
+                                   placeholder="0 for free" step="0.01" min="0">
+                            <div class="form-text">Set to 0 for free services.</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Processing Time</label>
+                            <input type="text" class="form-control" name="processing_time" 
+                                   value="{{ service.processing_time if service else '3-5 working days' }}" 
+                                   placeholder="e.g., 3-5 working days">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Display Order</label>
+                            <input type="number" class="form-control" name="order" 
+                                   value="{{ service.order if service else 0 }}" min="0">
+                            <div class="form-text">Lower numbers appear first.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Form Fields</label>
+                        <input type="text" class="form-control" name="fields" 
+                               value="{{ fields_str if fields_str else '' }}" 
+                               placeholder="e.g., student_name, college_name, course, academic_year">
+                        <div class="form-text">Comma-separated list of field names for the service form.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" 
+                                   {% if not service or service.is_active %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold" for="isActive">
+                                <i class="fas fa-check-circle text-success me-1"></i> Active
+                            </label>
+                            <div class="form-text">Inactive services won't appear on the website.</div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex gap-3 flex-wrap">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5">
+                            <i class="fas fa-{{ 'save' if service else 'plus-circle' }} me-2"></i> 
+                            {{ 'Update Service' if service else 'Create Service' }}
+                        </button>
+                        <a href="{{ url_for('admin_services') }}" class="btn btn-secondary btn-lg rounded-pill px-4">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-generate slug from name
+    document.getElementById('serviceName')?.addEventListener('input', function() {
+        const slugInput = document.getElementById('serviceSlug');
+        if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+            const slug = this.value.toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            slugInput.value = slug;
+            slugInput.dataset.autoGenerated = 'true';
+        }
+    });
+
+    document.getElementById('serviceSlug')?.addEventListener('input', function() {
+        this.dataset.autoGenerated = 'false';
+        this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    });
+
+    // Icon preview
+    function previewIcon() {
+        const iconInput = document.getElementById('iconInput');
+        const preview = document.getElementById('iconPreview');
+        if (iconInput && preview) {
+            preview.className = iconInput.value.trim() || 'fas fa-cog';
+        }
+    }
+
+    document.getElementById('iconInput')?.addEventListener('input', previewIcon);
+
+    // Form validation
+    document.getElementById('serviceForm')?.addEventListener('submit', function(e) {
+        const name = document.getElementById('serviceName')?.value.trim();
+        const slug = document.getElementById('serviceSlug')?.value.trim();
+        const category = document.getElementById('category')?.value;
+        
+        if (!name) {
+            e.preventDefault();
+            showToast('Please enter a service name', 'danger');
+            document.getElementById('serviceName')?.focus();
+            return;
+        }
+        
+        if (!slug) {
+            e.preventDefault();
+            showToast('Please enter a slug', 'danger');
+            document.getElementById('serviceSlug')?.focus();
+            return;
+        }
+        
+        if (!category) {
+            e.preventDefault();
+            showToast('Please select a category', 'danger');
+            document.getElementById('category')?.focus();
+            return;
+        }
+    });
+
+    // Common icon suggestions
+    const commonIcons = [
+        'fas fa-graduation-cap',
+        'fas fa-university',
+        'fas fa-file-alt',
+        'fas fa-briefcase',
+        'fas fa-lightbulb',
+        'fas fa-tint',
+        'fas fa-mobile-alt',
+        'fas fa-id-card',
+        'fas fa-passport',
+        'fas fa-file-invoice-dollar',
+        'fas fa-users',
+        'fas fa-print',
+        'fas fa-camera',
+        'fas fa-camera-retro',
+        'fas fa-laptop-code',
+        'fas fa-keyboard',
+        'fas fa-chart-bar',
+        'fas fa-plane',
+        'fas fa-file-invoice',
+        'fas fa-building',
+        'fas fa-paint-brush',
+        'fas fa-hashtag',
+        'fas fa-cog',
+        'fas fa-tools'
+    ];
+
+    // Add icon suggestions to the input
+    const iconInput = document.getElementById('iconInput');
+    if (iconInput) {
+        const datalist = document.createElement('datalist');
+        datalist.id = 'iconSuggestions';
+        commonIcons.forEach(icon => {
+            const option = document.createElement('option');
+            option.value = icon;
+            datalist.appendChild(option);
+        });
+        iconInput.setAttribute('list', 'iconSuggestions');
+        document.body.appendChild(datalist);
+    }
+
+    // Toast function
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const colors = {
+            success: '#22c55e',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#4f46e5'
+        };
+        const icons = {
+            success: 'check-circle',
+            danger: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+</script>
+{% endblock %}
