@@ -1,4 +1,4 @@
-# app.py - Updated version with fixed service initialization
+# app.py - COMPLETE FIXED VERSION FOR RENDER
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_pymongo import PyMongo
@@ -6,41 +6,22 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 from functools import wraps
-from io import BytesIO
 import os
 import json
 import random
 import re
-import csv
 import traceback
-import hashlib
-import secrets
 
 app = Flask(__name__)
 
 # ============== Configuration ==============
-class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-super-secret-key-2026')
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
-    
-    MONGO_URI = os.environ.get('MONGO_URI', "mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster")
-    
-    UPLOAD_FOLDER = 'uploads/'
-    DOCUMENT_FOLDER = 'uploads/documents/'
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024
-    ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'txt'}
-    
-    ADMIN_PHONE = '9999999999'
-    ADMIN_NAME = 'Administrator'
-    ADMIN_EMAIL = 'admin@digiserve.com'
-    ITEMS_PER_PAGE = 10
-    
-    COMPANY_NAME = 'DigiServe'
-    COMPANY_TAGLINE = 'Your Trusted Digital Service Partner'
-    CONTACT_PHONE = '9421456959'
-    CONTACT_EMAIL = 'support@digiserve.com'
-
-app.config.from_object(Config)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'digiserve-super-secret-key-2026')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+app.config['MONGO_URI'] = os.environ.get('MONGO_URI', "mongodb+srv://digiserve_admin:digiserve2324@digiserve-cluster.mrlhjs4.mongodb.net/digiserve?retryWrites=true&w=majority&appName=digiserve-cluster")
+app.config['UPLOAD_FOLDER'] = 'uploads/'
+app.config['DOCUMENT_FOLDER'] = 'uploads/documents/'
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'txt'}
 
 # Ensure upload directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -91,6 +72,54 @@ def generate_reference_number():
     random_part = random.randint(1000, 9999)
     return f'DS{timestamp}{random_part}'
 
+def format_time_ago(dt):
+    """Format time ago with proper timezone handling"""
+    if not dt:
+        return "Unknown"
+    try:
+        now = datetime.now(timezone.utc)
+        if dt.tzinfo is None:
+            # If naive, assume UTC
+            dt = dt.replace(tzinfo=timezone.utc)
+        diff = now - dt
+        if diff.days > 365:
+            return f"{diff.days // 365} year(s) ago"
+        elif diff.days > 30:
+            return f"{diff.days // 30} month(s) ago"
+        elif diff.days > 0:
+            return f"{diff.days} day(s) ago"
+        elif diff.seconds > 3600:
+            return f"{diff.seconds // 3600} hour(s) ago"
+        elif diff.seconds > 60:
+            return f"{diff.seconds // 60} minute(s) ago"
+        else:
+            return "Just now"
+    except:
+        return str(dt)
+
+def get_all_services():
+    """Get all active services"""
+    try:
+        services = list(db.services.find({'is_active': True}).sort('order', 1))
+        for service in services:
+            service['id'] = str(service['_id'])
+        return services
+    except Exception as e:
+        print(f"❌ Error getting services: {e}")
+        return []
+
+def get_service_by_slug(slug):
+    try:
+        return db.services.find_one({'slug': slug, 'is_active': True})
+    except:
+        return None
+
+def get_service_by_id(service_id):
+    try:
+        return db.services.find_one({'_id': ObjectId(service_id)})
+    except:
+        return None
+
 def create_notification(user_id, request_id, title, message, type='info'):
     try:
         notification = {
@@ -108,69 +137,60 @@ def create_notification(user_id, request_id, title, message, type='info'):
         print(f"Error creating notification: {e}")
         return None
 
-def get_all_services(limit=None):
+# ============== Database Initialization ==============
+
+def init_database():
+    """Initialize database with services and admin - CALLED AT STARTUP"""
+    print("📦 Initializing database...")
+    
+    # Check MongoDB connection
     try:
-        query = {'is_active': True}
-        services = list(db.services.find(query).sort('order', 1))
-        if limit:
-            services = services[:limit]
-        for service in services:
-            service['id'] = str(service['_id'])
-        return services
+        db.command('ping')
+        print("✅ MongoDB Atlas connected successfully!")
     except Exception as e:
-        print(f"Error getting services: {e}")
-        return []
-
-def get_service_by_slug(slug):
+        print(f"❌ MongoDB connection failed: {e}")
+        return False
+    
+    # Create indexes
     try:
-        return db.services.find_one({'slug': slug, 'is_active': True})
-    except:
-        return None
-
-def get_service_by_id(service_id):
+        db.users.create_index('phone', unique=True)
+        db.services.create_index('slug', unique=True)
+        db.service_requests.create_index('reference_number', unique=True)
+        print("✅ Indexes created")
+    except Exception as e:
+        print(f"⚠️ Index creation warning: {e}")
+    
+    # Create admin user
     try:
-        return db.services.find_one({'_id': ObjectId(service_id)})
-    except:
-        return None
-
-def auto_create_admin_user():
+        admin = db.users.find_one({'phone': '9999999999'})
+        if not admin:
+            admin_user = {
+                'name': 'Administrator',
+                'phone': '9999999999',
+                'email': 'admin@digiserve.com',
+                'role': 'admin',
+                'is_active': True,
+                'created_at': datetime.now(timezone.utc),
+                'last_login': datetime.now(timezone.utc)
+            }
+            db.users.insert_one(admin_user)
+            print("✅ Admin user created (Phone: 9999999999)")
+        else:
+            print("✅ Admin user already exists")
+    except Exception as e:
+        print(f"⚠️ Admin creation warning: {e}")
+    
+    # Create services
     try:
-        existing_admin = db.users.find_one({'phone': Config.ADMIN_PHONE})
-        if existing_admin:
-            return existing_admin
+        existing_count = db.services.count_documents({})
+        if existing_count > 0:
+            print(f"✅ Services already exist ({existing_count} services found)")
+            return True
         
-        admin_user = {
-            'name': Config.ADMIN_NAME,
-            'phone': Config.ADMIN_PHONE,
-            'email': Config.ADMIN_EMAIL,
-            'role': 'admin',
-            'is_active': True,
-            'created_at': datetime.now(timezone.utc),
-            'last_login': datetime.now(timezone.utc),
-            'address': 'Admin Office',
-            'city': 'Mumbai',
-            'state': 'Maharashtra',
-            'pincode': '400001'
-        }
-        result = db.users.insert_one(admin_user)
-        admin_user['_id'] = result.inserted_id
-        print(f"✅ Auto-created admin user: {Config.ADMIN_PHONE}")
-        return admin_user
-    except Exception as e:
-        print(f"Error auto-creating admin: {e}")
-        return None
-
-def init_services():
-    """Initialize services if they don't exist"""
-    print("📦 Initializing services...")
-    
-    if db.services.count_documents({}) > 0:
-        print(f"✅ Services already exist ({db.services.count_documents({})} services found)")
-        return True
-    
-    try:
+        print("📦 Creating 24 services...")
+        
         services_data = [
-            # Scholarship & Education
+            # 1. Scholarship & Education
             {
                 'category': 'scholarship',
                 'name': 'Scholarship Form Filling',
@@ -180,77 +200,65 @@ def init_services():
                 'service_charge': 0,
                 'is_active': True,
                 'order': 1,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['student_name', 'college_name', 'course', 'academic_year', 'income_certificate', 'aadhaar'],
-                'processing_time': '5-7 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'education',
                 'name': 'College Admission Forms',
                 'slug': 'college-admission-forms',
-                'description': 'Get help with college admission applications, form filling, and document submission for various institutions.',
+                'description': 'Get help with college admission applications, form filling, and document submission.',
                 'icon': 'fas fa-university',
                 'service_charge': 500,
                 'is_active': True,
                 'order': 2,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['student_name', 'college_name', 'course', 'academic_year', 'marksheet', 'admission_test_score'],
-                'processing_time': '3-5 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'education',
                 'name': 'Government Exam Forms',
                 'slug': 'government-exam-forms',
-                'description': 'Professional assistance for filling government exam applications like UPSC, SSC, Banking, and more.',
+                'description': 'Professional assistance for filling government exam applications like UPSC, SSC, Banking.',
                 'icon': 'fas fa-file-alt',
                 'service_charge': 800,
                 'is_active': True,
                 'order': 3,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['candidate_name', 'exam_name', 'registration_number', 'photo_upload', 'signature_upload'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Career Services
+            # 4-6. Career Services
             {
                 'category': 'career',
                 'name': 'Internship/Job Applications',
                 'slug': 'internship-job-applications',
-                'description': 'Professional assistance for internship and job applications, including form filling and document preparation.',
+                'description': 'Professional assistance for internship and job applications.',
                 'icon': 'fas fa-briefcase',
                 'service_charge': 300,
                 'is_active': True,
                 'order': 4,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['applicant_name', 'company_name', 'position', 'cover_letter', 'resume_upload'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'career',
                 'name': 'Resume Creation',
                 'slug': 'resume-creation',
-                'description': 'Professional resume writing and CV creation services with modern templates and ATS-friendly formats.',
+                'description': 'Professional resume writing with modern templates and ATS-friendly formats.',
                 'icon': 'fas fa-file-alt',
                 'service_charge': 200,
                 'is_active': True,
                 'order': 5,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['education', 'skills', 'experience', 'resume_template'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'career',
                 'name': 'LinkedIn Profile Setup',
                 'slug': 'linkedin-profile-setup',
-                'description': 'Complete LinkedIn profile optimization including professional summary, experience, and networking strategies.',
+                'description': 'Complete LinkedIn profile optimization and networking strategies.',
                 'icon': 'fab fa-linkedin',
                 'service_charge': 250,
                 'is_active': True,
                 'order': 6,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'headline', 'current_position', 'linkedin_url'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Bill Payments
+            # 7-9. Bill Payments
             {
                 'category': 'bill_payment',
                 'name': 'Electricity Bill Payment',
@@ -260,9 +268,7 @@ def init_services():
                 'service_charge': 0,
                 'is_active': True,
                 'order': 7,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['consumer_number', 'provider_name', 'bill_amount'],
-                'processing_time': 'Instant'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'bill_payment',
@@ -273,9 +279,7 @@ def init_services():
                 'service_charge': 0,
                 'is_active': True,
                 'order': 8,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['consumer_number', 'provider_name', 'bill_amount'],
-                'processing_time': 'Instant'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'bill_payment',
@@ -286,49 +290,41 @@ def init_services():
                 'service_charge': 0,
                 'is_active': True,
                 'order': 9,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['mobile_number', 'operator', 'recharge_amount', 'plan_type'],
-                'processing_time': 'Instant'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Document Services
+            # 10-13. Document Services
             {
                 'category': 'document',
                 'name': 'PAN Card Services',
                 'slug': 'pan-card-services',
-                'description': 'Apply for new PAN card, update details, or request for reprint of existing PAN card.',
+                'description': 'Apply for new PAN card, update details, or request for reprint.',
                 'icon': 'fas fa-id-card',
                 'service_charge': 150,
                 'is_active': True,
                 'order': 10,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'dob', 'father_name', 'pan_type', 'id_proof_upload'],
-                'processing_time': '7-10 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'document',
                 'name': 'Passport Services',
                 'slug': 'passport-services',
-                'description': 'Complete assistance for passport application, renewal, and document verification.',
+                'description': 'Complete assistance for passport application, renewal, and verification.',
                 'icon': 'fas fa-passport',
                 'service_charge': 350,
                 'is_active': True,
                 'order': 11,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'dob', 'address', 'id_proof_upload', 'passport_type'],
-                'processing_time': '10-15 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'document',
                 'name': 'Income Certificate',
                 'slug': 'income-certificate',
-                'description': 'Apply for income certificate for government schemes, scholarships, and financial assistance.',
+                'description': 'Apply for income certificate for government schemes and scholarships.',
                 'icon': 'fas fa-file-invoice-dollar',
                 'service_charge': 100,
                 'is_active': True,
                 'order': 12,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'dob', 'annual_income', 'occupation', 'address'],
-                'processing_time': '5-7 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'document',
@@ -339,11 +335,9 @@ def init_services():
                 'service_charge': 100,
                 'is_active': True,
                 'order': 13,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'dob', 'caste_category', 'address', 'id_proof_upload'],
-                'processing_time': '5-7 working days'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Printing & Design
+            # 14-16. Printing & Design
             {
                 'category': 'printing',
                 'name': 'Printing Services',
@@ -353,9 +347,7 @@ def init_services():
                 'service_charge': 50,
                 'is_active': True,
                 'order': 14,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['document_type', 'color_type', 'page_count', 'print_quantity'],
-                'processing_time': 'Same day'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'printing',
@@ -366,9 +358,7 @@ def init_services():
                 'service_charge': 20,
                 'is_active': True,
                 'order': 15,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['document_type', 'page_count', 'color_preference'],
-                'processing_time': 'Same day'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'printing',
@@ -379,23 +369,19 @@ def init_services():
                 'service_charge': 100,
                 'is_active': True,
                 'order': 16,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['full_name', 'photo_type', 'specification', 'quantity'],
-                'processing_time': 'Same day'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Digital Services
+            # 17-19. Digital Services
             {
                 'category': 'digital',
                 'name': 'Website Development',
                 'slug': 'website-development',
-                'description': 'Custom website development with modern design, responsive layout, and full functionality.',
+                'description': 'Custom website development with modern design and full functionality.',
                 'icon': 'fas fa-laptop-code',
                 'service_charge': 5000,
                 'is_active': True,
                 'order': 17,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['website_type', 'pages_count', 'features', 'domain_name'],
-                'processing_time': '10-15 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'digital',
@@ -406,24 +392,20 @@ def init_services():
                 'service_charge': 200,
                 'is_active': True,
                 'order': 18,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['data_type', 'entry_format', 'volume', 'deadline'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'digital',
                 'name': 'Excel/Data Analytics Service',
                 'slug': 'excel-data-analytics',
-                'description': 'Professional Excel and data analytics services including reports, dashboards, and data visualization.',
+                'description': 'Professional Excel and data analytics services including reports and dashboards.',
                 'icon': 'fas fa-chart-bar',
                 'service_charge': 350,
                 'is_active': True,
                 'order': 19,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['project_type', 'data_source', 'analysis_needed', 'output_format'],
-                'processing_time': '3-5 working days'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Business Services
+            # 20-22. Business Services
             {
                 'category': 'business',
                 'name': 'Travel Booking',
@@ -433,9 +415,7 @@ def init_services():
                 'service_charge': 200,
                 'is_active': True,
                 'order': 20,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['travel_type', 'destination', 'travel_date', 'passengers'],
-                'processing_time': '1-2 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'business',
@@ -446,24 +426,20 @@ def init_services():
                 'service_charge': 1500,
                 'is_active': True,
                 'order': 21,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['business_name', 'business_type', 'pan_number', 'address', 'annual_turnover'],
-                'processing_time': '5-7 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'business',
                 'name': 'Business Registration',
                 'slug': 'business-registration',
-                'description': 'Complete business registration services including sole proprietorship, partnership, and company registration.',
+                'description': 'Complete business registration services including sole proprietorship and partnership.',
                 'icon': 'fas fa-building',
                 'service_charge': 2000,
                 'is_active': True,
                 'order': 22,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['business_name', 'business_type', 'pan_number', 'address', 'partners_names'],
-                'processing_time': '7-10 working days'
+                'created_at': datetime.now(timezone.utc)
             },
-            # Design Services
+            # 23-24. Design Services
             {
                 'category': 'design',
                 'name': 'Logo Design',
@@ -473,9 +449,7 @@ def init_services():
                 'service_charge': 800,
                 'is_active': True,
                 'order': 23,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['business_name', 'industry', 'color_preference', 'design_style'],
-                'processing_time': '3-5 working days'
+                'created_at': datetime.now(timezone.utc)
             },
             {
                 'category': 'design',
@@ -486,66 +460,27 @@ def init_services():
                 'service_charge': 500,
                 'is_active': True,
                 'order': 24,
-                'created_at': datetime.now(timezone.utc),
-                'fields': ['platform', 'design_type', 'content', 'color_scheme'],
-                'processing_time': '2-3 working days'
+                'created_at': datetime.now(timezone.utc)
             }
         ]
         
         for service in services_data:
             db.services.insert_one(service)
-            print(f"✅ Added service: {service['name']}")
+            print(f"  ✅ Added: {service['name']}")
         
-        print(f"✅ Successfully initialized {len(services_data)} services")
-        return True
+        print(f"✅ Successfully created {len(services_data)} services!")
         
     except Exception as e:
-        print(f"❌ Error initializing services: {e}")
+        print(f"❌ Error creating services: {e}")
         traceback.print_exc()
         return False
-
-def init_db():
-    print("📦 Initializing database...")
     
-    try:
-        db.command('ping')
-        print("✅ MongoDB Atlas connected successfully!")
-    except Exception as e:
-        print(f"❌ MongoDB connection failed: {e}")
-        return False
-    
-    try:
-        # Create indexes
-        db.users.create_index('phone', unique=True)
-        db.users.create_index('email', sparse=True)
-        db.services.create_index('slug', unique=True)
-        db.services.create_index('category')
-        db.service_requests.create_index('reference_number', unique=True)
-        db.service_requests.create_index('user_id')
-        db.service_requests.create_index('status')
-        db.service_requests.create_index('submitted_at')
-        db.notifications.create_index('user_id')
-        db.notifications.create_index('created_at')
-        print("✅ Indexes created successfully")
-        
-        # Create admin user
-        auto_create_admin_user()
-        
-        # Initialize services
-        init_services()
-        
-        print("=" * 60)
-        print("🚀 DigiServe Portal is ready!")
-        print("📍 MongoDB Atlas: Connected")
-        print("👑 Admin Login: 9999999999")
-        print(f"📊 Services Available: {db.services.count_documents({'is_active': True})}")
-        print("=" * 60)
-        return True
-        
-    except Exception as e:
-        print(f"❌ Database initialization error: {e}")
-        traceback.print_exc()
-        return False
+    print("=" * 60)
+    print("🚀 DigiServe Portal is ready!")
+    print(f"📊 Total Services: {db.services.count_documents({})}")
+    print("👑 Admin Login: 9999999999")
+    print("=" * 60)
+    return True
 
 # ============== Routes ==============
 
@@ -553,27 +488,19 @@ def init_db():
 def index():
     try:
         services = get_all_services()
-        categories = {}
-        for service in services:
-            cat = service.get('category', 'other')
-            if cat not in categories:
-                categories[cat] = []
-            categories[cat].append(service)
+        print(f"📊 Rendering index with {len(services)} services")
         
-        total_users = db.users.count_documents({'role': 'user'})
-        total_applications = db.service_requests.count_documents({})
-        total_services = db.services.count_documents({'is_active': True})
+        total_users = db.users.count_documents({'role': 'user'}) if hasattr(db, 'users') else 0
+        total_applications = db.service_requests.count_documents({}) if hasattr(db, 'service_requests') else 0
         
         return render_template('index.html', 
                              services=services,
-                             categories=categories,
                              total_users=total_users,
-                             total_applications=total_applications,
-                             total_services=total_services)
+                             total_applications=total_applications)
     except Exception as e:
-        print(f"Error loading index: {e}")
+        print(f"❌ Error loading index: {e}")
         traceback.print_exc()
-        return render_template('index.html', services=[], categories={})
+        return render_template('index.html', services=[])
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -603,12 +530,7 @@ def login():
                 
                 if user.get('role') == 'admin':
                     return redirect(url_for('admin_panel'))
-                
-                redirect_service = session.pop('redirect_service', None)
-                if redirect_service:
-                    return redirect(url_for('service_detail', slug=redirect_service))
                 return redirect(url_for('index'))
-            
             else:
                 session['registration_phone'] = phone
                 flash('New user! Please complete registration.', 'info')
@@ -616,7 +538,6 @@ def login():
                 
         except Exception as e:
             print(f"Login error: {e}")
-            traceback.print_exc()
             flash('An error occurred. Please try again.', 'danger')
             return redirect(url_for('login'))
     
@@ -656,11 +577,7 @@ def register():
                 'role': 'user',
                 'is_active': True,
                 'created_at': datetime.now(timezone.utc),
-                'last_login': datetime.now(timezone.utc),
-                'address': request.form.get('address', '').strip() or None,
-                'city': request.form.get('city', '').strip() or None,
-                'state': request.form.get('state', '').strip() or None,
-                'pincode': request.form.get('pincode', '').strip() or None
+                'last_login': datetime.now(timezone.utc)
             }
             result = db.users.insert_one(new_user)
             
@@ -671,24 +588,11 @@ def register():
             session.permanent = True
             session.pop('registration_phone', None)
             
-            create_notification(
-                result.inserted_id,
-                None,
-                'Welcome to DigiServe! 🎉',
-                f'Welcome {name}! Start exploring our services.',
-                'success'
-            )
-            
             flash(f'Welcome to DigiServe, {name}!', 'success')
-            
-            redirect_service = session.pop('redirect_service', None)
-            if redirect_service:
-                return redirect(url_for('service_detail', slug=redirect_service))
             return redirect(url_for('index'))
             
         except Exception as e:
             print(f"Registration error: {e}")
-            traceback.print_exc()
             flash('An error occurred during registration. Please try again.', 'danger')
             return redirect(url_for('register'))
     
@@ -728,7 +632,6 @@ def submit_application():
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
-        # Get form data
         full_name = request.form.get('full_name', '').strip()
         phone = request.form.get('phone', '').strip()
         email = request.form.get('email', '').strip()
@@ -737,30 +640,9 @@ def submit_application():
         state = request.form.get('state', '').strip()
         pincode = request.form.get('pincode', '').strip()
         
-        # Service-specific fields
-        dynamic_fields = {}
-        service_fields = service.get('fields', [])
-        for field in service_fields:
-            dynamic_fields[field] = request.form.get(field, '').strip()
-        
         if not all([full_name, phone, address, city, state, pincode]):
             return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
         
-        details_json = {
-            'full_name': full_name,
-            'phone': phone,
-            'email': email,
-            'address': address,
-            'city': city,
-            'state': state,
-            'pincode': pincode,
-            'dynamic_fields': dynamic_fields,
-            'submitted_by': session['user_name'],
-            'submitted_phone': session['user_phone'],
-            'submitted_at': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-        }
-        
-        details = json.dumps(details_json, indent=2)
         ref_number = generate_reference_number()
         
         request_data = {
@@ -768,7 +650,6 @@ def submit_application():
             'service_id': ObjectId(service_id),
             'service_type': service['category'],
             'service_name': service['name'],
-            'details': details,
             'amount': service.get('service_charge', 0),
             'payment_status': 'pending' if service.get('service_charge', 0) > 0 else 'completed',
             'status': 'pending',
@@ -783,7 +664,6 @@ def submit_application():
             'applicant_city': city,
             'applicant_state': state,
             'applicant_pincode': pincode,
-            'dynamic_fields': dynamic_fields,
             'timeline': [
                 {
                     'title': 'Application Submitted',
@@ -795,55 +675,13 @@ def submit_application():
         }
         
         result = db.service_requests.insert_one(request_data)
-        request_id = result.inserted_id
-        
-        uploaded_docs = []
-        files = request.files.getlist('documents')
-        for file in files:
-            if file and file.filename and allowed_file(file.filename):
-                original_filename = secure_filename(file.filename)
-                file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'pdf'
-                stored_filename = f"{ref_number}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{random.randint(1000,9999)}.{file_ext}"
-                file_path = os.path.join(app.config['DOCUMENT_FOLDER'], stored_filename)
-                file.save(file_path)
-                
-                doc = {
-                    'request_id': request_id,
-                    'document_type': 'general',
-                    'original_filename': original_filename,
-                    'stored_filename': stored_filename,
-                    'file_path': file_path,
-                    'file_size': os.path.getsize(file_path),
-                    'uploaded_at': datetime.now(timezone.utc)
-                }
-                db.request_documents.insert_one(doc)
-                uploaded_docs.append(original_filename)
-        
-        create_notification(
-            ObjectId(session['user_id']),
-            str(request_id),
-            'Application Submitted ✅',
-            f'Your application for {service["name"]} has been submitted. Reference: {ref_number}',
-            'success'
-        )
-        
-        admins = list(db.users.find({'role': 'admin'}))
-        for admin in admins:
-            create_notification(
-                admin['_id'],
-                str(request_id),
-                'New Application Received 🆕',
-                f'New application from {full_name} for {service["name"]}. Ref: {ref_number}',
-                'info'
-            )
         
         return jsonify({
             'success': True,
             'message': 'Application submitted successfully',
             'reference_number': ref_number,
             'amount': service.get('service_charge', 0),
-            'requires_payment': service.get('service_charge', 0) > 0,
-            'documents_uploaded': len(uploaded_docs)
+            'requires_payment': service.get('service_charge', 0) > 0
         })
         
     except Exception as e:
@@ -869,17 +707,10 @@ def api_my_applications():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         status = request.args.get('status', 'all')
-        search = request.args.get('search', '').strip()
         
         query = {'user_id': ObjectId(session['user_id'])}
         if status != 'all':
             query['status'] = status
-        if search:
-            query['$or'] = [
-                {'reference_number': {'$regex': search, '$options': 'i'}},
-                {'service_name': {'$regex': search, '$options': 'i'}},
-                {'applicant_name': {'$regex': search, '$options': 'i'}}
-            ]
         
         total = db.service_requests.count_documents(query)
         skip = (page - 1) * per_page
@@ -913,61 +744,6 @@ def api_my_applications():
         print(f"Error fetching applications: {e}")
         return jsonify({'error': 'Unable to fetch applications'}), 500
 
-@app.route('/application-details/<request_id>')
-@login_required
-def application_details(request_id):
-    try:
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
-        if not service_request:
-            return jsonify({'error': 'Application not found'}), 404
-        
-        if str(service_request['user_id']) != session['user_id'] and session.get('user_role') != 'admin':
-            return jsonify({'error': 'Access denied'}), 403
-        
-        documents = list(db.request_documents.find({'request_id': ObjectId(request_id)}))
-        
-        for doc in documents:
-            doc['id'] = str(doc['_id'])
-            if isinstance(doc.get('uploaded_at'), datetime):
-                doc['uploaded_at'] = doc['uploaded_at'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        request_dict = {
-            'id': str(service_request['_id']),
-            'reference_number': service_request['reference_number'],
-            'service_name': service_request['service_name'],
-            'status': service_request['status'],
-            'payment_status': service_request['payment_status'],
-            'amount': service_request['amount'],
-            'submitted_at': service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(service_request['submitted_at'], datetime) else str(service_request['submitted_at']),
-            'processed_at': service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S') if service_request.get('processed_at') and isinstance(service_request['processed_at'], datetime) else None,
-            'admin_remarks': service_request.get('admin_remarks', ''),
-            'applicant_name': service_request.get('applicant_name', ''),
-            'applicant_phone': service_request.get('applicant_phone', ''),
-            'applicant_email': service_request.get('applicant_email', ''),
-            'applicant_address': service_request.get('applicant_address', ''),
-            'applicant_city': service_request.get('applicant_city', ''),
-            'applicant_state': service_request.get('applicant_state', ''),
-            'applicant_pincode': service_request.get('applicant_pincode', ''),
-            'additional_details': service_request.get('additional_details', ''),
-            'dynamic_fields': service_request.get('dynamic_fields', {}),
-            'timeline': service_request.get('timeline', [])
-        }
-        
-        if service_request.get('details'):
-            try:
-                details_data = json.loads(service_request['details'])
-                request_dict['details_data'] = details_data
-            except:
-                pass
-        
-        return jsonify({
-            'application': request_dict,
-            'documents': documents
-        })
-    except Exception as e:
-        print(f"Error fetching application details: {e}")
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/track-application', methods=['GET', 'POST'])
 def track_application():
     if request.method == 'POST':
@@ -984,7 +760,7 @@ def track_application():
                 flash('Application not found. Please check your reference number.', 'danger')
                 return redirect(url_for('track_application'))
             
-            if app_data.get('applicant_phone') != phone and str(app_data.get('user_id')) != session.get('user_id', ''):
+            if app_data.get('applicant_phone') != phone:
                 flash('Phone number does not match this application.', 'danger')
                 return redirect(url_for('track_application'))
             
@@ -996,33 +772,6 @@ def track_application():
             return redirect(url_for('track_application'))
     
     return render_template('track_application.html')
-
-@app.route('/check-status', methods=['POST'])
-def check_status():
-    try:
-        data = request.get_json()
-        reference = data.get('reference', '').strip().upper()
-        phone = data.get('phone', '').strip()
-        
-        if not reference or not phone:
-            return jsonify({'success': False, 'message': 'Please provide both reference number and phone'})
-        
-        app_data = db.service_requests.find_one({'reference_number': reference})
-        if not app_data:
-            return jsonify({'success': False, 'message': 'Application not found'})
-        
-        if app_data.get('applicant_phone') != phone:
-            return jsonify({'success': False, 'message': 'Phone number does not match'})
-        
-        return jsonify({
-            'success': True,
-            'status': app_data['status'],
-            'service_name': app_data['service_name'],
-            'reference': app_data['reference_number'],
-            'submitted_at': app_data['submitted_at'].strftime('%Y-%m-%d %H:%M') if isinstance(app_data['submitted_at'], datetime) else str(app_data['submitted_at'])
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/notifications', methods=['GET'])
 @login_required
@@ -1049,26 +798,6 @@ def get_notifications():
     except Exception as e:
         print(f"Error fetching notifications: {e}")
         return jsonify([])
-
-def format_time_ago(dt):
-    if not dt:
-        return "Unknown"
-    if isinstance(dt, datetime):
-        now = datetime.now(timezone.utc)
-        diff = now - dt
-        if diff.days > 365:
-            return f"{diff.days // 365} year(s) ago"
-        elif diff.days > 30:
-            return f"{diff.days // 30} month(s) ago"
-        elif diff.days > 0:
-            return f"{diff.days} day(s) ago"
-        elif diff.seconds > 3600:
-            return f"{diff.seconds // 3600} hour(s) ago"
-        elif diff.seconds > 60:
-            return f"{diff.seconds // 60} minute(s) ago"
-        else:
-            return "Just now"
-    return str(dt)
 
 @app.route('/notifications/mark-read/<notification_id>', methods=['POST'])
 @login_required
@@ -1099,91 +828,6 @@ def mark_all_notifications_read():
         print(f"Error marking all notifications: {e}")
         return jsonify({'error': 'Unable to mark notifications as read'}), 500
 
-@app.route('/unread-count', methods=['GET'])
-@login_required
-def get_unread_count():
-    try:
-        count = db.notifications.count_documents({
-            'user_id': ObjectId(session['user_id']),
-            'is_read': False
-        })
-        return jsonify({'count': count})
-    except:
-        return jsonify({'count': 0})
-
-@app.route('/user-profile', methods=['GET'])
-@login_required
-def get_user_profile():
-    try:
-        user = get_user_by_id(session['user_id'])
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        return jsonify({
-            'name': user['name'],
-            'phone': user['phone'],
-            'email': user.get('email', ''),
-            'address': user.get('address', ''),
-            'city': user.get('city', ''),
-            'state': user.get('state', ''),
-            'pincode': user.get('pincode', '')
-        })
-    except Exception as e:
-        return jsonify({'error': 'Unable to fetch profile'}), 500
-
-@app.route('/update-profile', methods=['POST'])
-@login_required
-def update_profile():
-    try:
-        data = request.get_json()
-        update_data = {}
-        
-        if 'email' in data:
-            if data['email'] and not validate_email(data['email']):
-                return jsonify({'success': False, 'message': 'Invalid email format'}), 400
-            update_data['email'] = data['email'] or None
-        if 'address' in data:
-            update_data['address'] = data['address'] or None
-        if 'city' in data:
-            update_data['city'] = data['city'] or None
-        if 'state' in data:
-            update_data['state'] = data['state'] or None
-        if 'pincode' in data:
-            update_data['pincode'] = data['pincode'] or None
-        
-        if update_data:
-            db.users.update_one(
-                {'_id': ObjectId(session['user_id'])},
-                {'$set': update_data}
-            )
-        
-        return jsonify({'success': True, 'message': 'Profile updated successfully'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': 'Unable to update profile'}), 500
-
-@app.route('/api/services')
-def api_services():
-    try:
-        category = request.args.get('category')
-        query = {'is_active': True}
-        if category:
-            query['category'] = category
-        services = list(db.services.find(query).sort('order', 1))
-        for s in services:
-            s['id'] = str(s['_id'])
-        return jsonify(services)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/categories')
-def api_categories():
-    try:
-        categories = db.services.distinct('category', {'is_active': True})
-        return jsonify(categories)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============== Admin Routes ==============
-
 @app.route('/admin')
 @login_required
 def admin_panel():
@@ -1195,18 +839,11 @@ def admin_panel():
     try:
         total_requests = db.service_requests.count_documents({})
         pending_requests = db.service_requests.count_documents({'status': 'pending'})
-        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
         completed_requests = db.service_requests.count_documents({'status': 'completed'})
-        rejected_requests = db.service_requests.count_documents({'status': 'rejected'})
-        
-        total_users = db.users.count_documents({'role': 'user'})
-        total_services = db.services.count_documents({'is_active': True})
         
         all_requests = list(db.service_requests.find().sort('submitted_at', -1))
         for req in all_requests:
             req['_id'] = str(req['_id'])
-            user_data = get_user_by_id(req['user_id'])
-            req['user'] = {'name': user_data['name'], 'phone': user_data['phone']} if user_data else None
         
         users = list(db.users.find())
         for u in users:
@@ -1219,32 +856,18 @@ def admin_panel():
         stats = {
             'total_requests': total_requests,
             'pending_requests': pending_requests,
-            'in_progress_requests': in_progress_requests,
             'completed_requests': completed_requests,
-            'rejected_requests': rejected_requests,
-            'total_users': total_users,
-            'total_services': total_services
+            'total_users': db.users.count_documents({'role': 'user'}),
+            'total_services': db.services.count_documents({'is_active': True})
         }
-        
-        notifications = list(db.notifications.find(
-            {'user_id': ObjectId(session['user_id'])}
-        ).sort('created_at', -1).limit(20))
-        
-        unread_count = db.notifications.count_documents({
-            'user_id': ObjectId(session['user_id']),
-            'is_read': False
-        })
         
         return render_template('admin.html',
                              requests=all_requests,
                              users=users,
                              services=services,
-                             stats=stats,
-                             notifications=notifications,
-                             unread_count=unread_count)
+                             stats=stats)
     except Exception as e:
         print(f"Error loading admin panel: {e}")
-        traceback.print_exc()
         flash('Unable to load admin panel.', 'danger')
         return redirect(url_for('index'))
 
@@ -1260,10 +883,6 @@ def update_status(request_id):
         status = data.get('status')
         remarks = data.get('remarks', '')
         
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
-        if not service_request:
-            return jsonify({'success': False, 'message': 'Request not found'}), 404
-        
         db.service_requests.update_one(
             {'_id': ObjectId(request_id)},
             {'$set': {
@@ -1273,46 +892,8 @@ def update_status(request_id):
             }}
         )
         
-        status_titles = {
-            'in_progress': 'Application Under Review',
-            'completed': 'Application Approved ✅',
-            'rejected': 'Application Update'
-        }
-        
-        status_messages = {
-            'in_progress': 'Your application has been received and is being processed.',
-            'completed': 'Your application has been approved and processed successfully!',
-            'rejected': 'Your application has been reviewed. Please check the remarks.'
-        }
-        
-        title = status_titles.get(status, f'Status Updated: {status}')
-        message = status_messages.get(status, f'Your application status has been updated to {status}')
-        if remarks:
-            message += f'\n\nRemarks: {remarks}'
-        
-        db.service_requests.update_one(
-            {'_id': ObjectId(request_id)},
-            {'$push': {
-                'timeline': {
-                    'title': title,
-                    'description': message,
-                    'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-                    'completed': status == 'completed'
-                }
-            }}
-        )
-        
-        create_notification(
-            service_request['user_id'],
-            request_id,
-            title,
-            message,
-            'success' if status == 'completed' else 'info'
-        )
-        
         return jsonify({'success': True})
     except Exception as e:
-        print(f"Error updating status: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/admin/application-details/<request_id>')
@@ -1330,8 +911,6 @@ def admin_application_details(request_id):
         documents = list(db.request_documents.find({'request_id': ObjectId(request_id)}))
         for doc in documents:
             doc['_id'] = str(doc['_id'])
-            if isinstance(doc.get('uploaded_at'), datetime):
-                doc['uploaded_at'] = doc['uploaded_at'].strftime('%Y-%m-%d %H:%M:%S')
         
         user_data = get_user_by_id(service_request['user_id'])
         
@@ -1353,17 +932,8 @@ def admin_application_details(request_id):
             'applicant_city': service_request.get('applicant_city', ''),
             'applicant_state': service_request.get('applicant_state', ''),
             'applicant_pincode': service_request.get('applicant_pincode', ''),
-            'additional_details': service_request.get('additional_details', ''),
-            'dynamic_fields': service_request.get('dynamic_fields', {}),
             'timeline': service_request.get('timeline', [])
         }
-        
-        if service_request.get('details'):
-            try:
-                details_data = json.loads(service_request['details'])
-                request_dict['details_data'] = details_data
-            except:
-                pass
         
         return jsonify({
             'application': request_dict,
@@ -1378,55 +948,6 @@ def admin_application_details(request_id):
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/download-document/<doc_id>')
-@login_required
-def download_document(doc_id):
-    user = get_user_by_id(session['user_id'])
-    if not user or user.get('role') != 'admin':
-        flash('Admin access required', 'danger')
-        return redirect(url_for('index'))
-    
-    try:
-        doc = db.request_documents.find_one({'_id': ObjectId(doc_id)})
-        if not doc:
-            flash('Document not found', 'danger')
-            return redirect(url_for('admin_panel'))
-        
-        file_path = doc['file_path']
-        if os.path.exists(file_path):
-            return send_file(file_path, as_attachment=True, download_name=doc['original_filename'])
-        else:
-            flash('File not found on server', 'danger')
-            return redirect(url_for('admin_panel'))
-    except Exception as e:
-        print(f"Error downloading document: {e}")
-        flash('Error downloading document', 'danger')
-        return redirect(url_for('admin_panel'))
-
-@app.route('/admin/service-stats')
-@login_required
-def service_stats():
-    user = get_user_by_id(session['user_id'])
-    if not user or user.get('role') != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    try:
-        pipeline = [
-            {'$group': {
-                '_id': '$service_name',
-                'count': {'$sum': 1},
-                'pending': {'$sum': {'$cond': [{'$eq': ['$status', 'pending']}, 1, 0]}},
-                'completed': {'$sum': {'$cond': [{'$eq': ['$status', 'completed']}, 1, 0]}}
-            }},
-            {'$sort': {'count': -1}}
-        ]
-        stats = list(db.service_requests.aggregate(pipeline))
-        return jsonify(stats)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============== Health Check ==============
-
 @app.route('/health')
 def health_check():
     try:
@@ -1438,10 +959,9 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'database': db_status,
+        'services_count': db.services.count_documents({}),
         'timestamp': datetime.now(timezone.utc).isoformat()
     })
-
-# ============== Error Handlers ==============
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -1451,17 +971,14 @@ def not_found_error(error):
 def internal_error(error):
     return render_template('errors/500.html', error_message=str(error)), 500
 
+# ============== INITIALIZE DATABASE AT STARTUP ==============
+# This runs when the app starts with gunicorn
+print("🚀 Running database initialization...")
+init_database()
+print("✅ Application ready!")
+
 # ============== Application Entry Point ==============
 
 if __name__ == '__main__':
-    print("\n" + "=" * 60)
-    print("DIGISERVE PORTAL")
-    print("=" * 60)
-    
-    init_db()
-    
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    print(f"\n✅ Application started on port {port}!")
-    print("=" * 60 + "\n")
-    app.run(debug=debug, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=port)
