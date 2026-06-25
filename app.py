@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
@@ -11,6 +12,8 @@ import random
 import re
 import csv
 import traceback
+import hashlib
+import secrets
 
 app = Flask(__name__)
 
@@ -183,93 +186,301 @@ def init_db():
         
         if db.services.count_documents({}) == 0:
             default_services = [
+                # Scholarship & Education
                 {
                     'category': 'scholarship',
-                    'name': 'PMSSS Scholarship',
-                    'slug': 'pmsss-scholarship',
-                    'description': "Prime Minister's Special Scholarship Scheme for Jammu & Kashmir students.",
+                    'name': 'Scholarship Form Filling',
+                    'slug': 'scholarship-form-filling',
+                    'description': 'Expert assistance for filling various scholarship application forms including PMSSS, Post Matric, and more.',
                     'icon': 'fas fa-graduation-cap',
                     'service_charge': 0,
                     'is_active': True,
                     'order': 1,
-                    'created_at': datetime.now(timezone.utc)
-                },
-                {
-                    'category': 'scholarship',
-                    'name': 'Post Matric Scholarship',
-                    'slug': 'post-matric-scholarship',
-                    'description': 'Post Matric Scholarship for SC/ST/OBC students.',
-                    'icon': 'fas fa-university',
-                    'service_charge': 0,
-                    'is_active': True,
-                    'order': 2,
-                    'created_at': datetime.now(timezone.utc)
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['student_name', 'college_name', 'course', 'academic_year', 'income_certificate', 'aadhaar']
                 },
                 {
                     'category': 'education',
-                    'name': 'MHT-CET Application',
-                    'slug': 'mht-cet-application',
-                    'description': 'Maharashtra Common Entrance Test form filling assistance.',
+                    'name': 'College Admission Forms',
+                    'slug': 'college-admission-forms',
+                    'description': 'Get help with college admission applications, form filling, and document submission for various institutions.',
+                    'icon': 'fas fa-university',
+                    'service_charge': 500,
+                    'is_active': True,
+                    'order': 2,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['student_name', 'college_name', 'course', 'academic_year', 'marksheet', 'admission_test_score']
+                },
+                {
+                    'category': 'education',
+                    'name': 'Government Exam Forms',
+                    'slug': 'government-exam-forms',
+                    'description': 'Professional assistance for filling government exam applications like UPSC, SSC, Banking, and more.',
                     'icon': 'fas fa-file-alt',
                     'service_charge': 800,
                     'is_active': True,
                     'order': 3,
-                    'created_at': datetime.now(timezone.utc)
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['candidate_name', 'exam_name', 'registration_number', 'photo_upload', 'signature_upload']
                 },
+                # Career Services
                 {
-                    'category': 'document',
-                    'name': 'PAN Card Application',
-                    'slug': 'pan-card-application',
-                    'description': 'Apply for new PAN card or request for reprint.',
-                    'icon': 'fas fa-id-card',
-                    'service_charge': 150,
+                    'category': 'career',
+                    'name': 'Internship/Job Applications',
+                    'slug': 'internship-job-applications',
+                    'description': 'Professional assistance for internship and job applications, including form filling and document preparation.',
+                    'icon': 'fas fa-briefcase',
+                    'service_charge': 300,
                     'is_active': True,
                     'order': 4,
-                    'created_at': datetime.now(timezone.utc)
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['applicant_name', 'company_name', 'position', 'cover_letter', 'resume_upload']
                 },
+                {
+                    'category': 'career',
+                    'name': 'Resume Creation',
+                    'slug': 'resume-creation',
+                    'description': 'Professional resume writing and CV creation services with modern templates and ATS-friendly formats.',
+                    'icon': 'fas fa-file-alt',
+                    'service_charge': 200,
+                    'is_active': True,
+                    'order': 5,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['education', 'skills', 'experience', 'resume_template']
+                },
+                {
+                    'category': 'career',
+                    'name': 'LinkedIn Profile Setup',
+                    'slug': 'linkedin-profile-setup',
+                    'description': 'Complete LinkedIn profile optimization including professional summary, experience, and networking strategies.',
+                    'icon': 'fab fa-linkedin',
+                    'service_charge': 250,
+                    'is_active': True,
+                    'order': 6,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'headline', 'current_position', 'linkedin_url']
+                },
+                # Bill Payments
                 {
                     'category': 'bill_payment',
                     'name': 'Electricity Bill Payment',
                     'slug': 'electricity-bill-payment',
-                    'description': 'Pay your electricity bill online instantly.',
+                    'description': 'Quick and secure online electricity bill payment for all major providers.',
                     'icon': 'fas fa-lightbulb',
                     'service_charge': 0,
                     'is_active': True,
-                    'order': 5,
-                    'created_at': datetime.now(timezone.utc)
-                },
-                {
-                    'category': 'exams',
-                    'name': 'UPSC Civil Services Form',
-                    'slug': 'upsc-civil-services',
-                    'description': 'UPSC Civil Services Examination form filling assistance.',
-                    'icon': 'fas fa-landmark',
-                    'service_charge': 500,
-                    'is_active': True,
-                    'order': 6,
-                    'created_at': datetime.now(timezone.utc)
-                },
-                {
-                    'category': 'eseva',
-                    'name': 'Birth Certificate',
-                    'slug': 'birth-certificate',
-                    'description': 'Apply for new birth certificate online.',
-                    'icon': 'fas fa-baby-carriage',
-                    'service_charge': 200,
-                    'is_active': True,
                     'order': 7,
-                    'created_at': datetime.now(timezone.utc)
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['consumer_number', 'provider_name', 'bill_amount']
                 },
                 {
-                    'category': 'eseva',
+                    'category': 'bill_payment',
+                    'name': 'Water Bill Payment',
+                    'slug': 'water-bill-payment',
+                    'description': 'Pay your water bills online instantly with our secure payment system.',
+                    'icon': 'fas fa-tint',
+                    'service_charge': 0,
+                    'is_active': True,
+                    'order': 8,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['consumer_number', 'provider_name', 'bill_amount']
+                },
+                {
+                    'category': 'bill_payment',
+                    'name': 'Mobile Recharge',
+                    'slug': 'mobile-recharge',
+                    'description': 'Instant mobile recharge for all prepaid and postpaid connections.',
+                    'icon': 'fas fa-mobile-alt',
+                    'service_charge': 0,
+                    'is_active': True,
+                    'order': 9,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['mobile_number', 'operator', 'recharge_amount', 'plan_type']
+                },
+                # Document Services
+                {
+                    'category': 'document',
+                    'name': 'PAN Card Services',
+                    'slug': 'pan-card-services',
+                    'description': 'Apply for new PAN card, update details, or request for reprint of existing PAN card.',
+                    'icon': 'fas fa-id-card',
+                    'service_charge': 150,
+                    'is_active': True,
+                    'order': 10,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'dob', 'father_name', 'pan_type', 'id_proof_upload']
+                },
+                {
+                    'category': 'document',
+                    'name': 'Passport Services',
+                    'slug': 'passport-services',
+                    'description': 'Complete assistance for passport application, renewal, and document verification.',
+                    'icon': 'fas fa-passport',
+                    'service_charge': 350,
+                    'is_active': True,
+                    'order': 11,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'dob', 'address', 'id_proof_upload', 'passport_type']
+                },
+                {
+                    'category': 'document',
                     'name': 'Income Certificate',
                     'slug': 'income-certificate',
-                    'description': 'Apply for income certificate for government schemes.',
+                    'description': 'Apply for income certificate for government schemes, scholarships, and financial assistance.',
                     'icon': 'fas fa-file-invoice-dollar',
                     'service_charge': 100,
                     'is_active': True,
-                    'order': 8,
-                    'created_at': datetime.now(timezone.utc)
+                    'order': 12,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'dob', 'annual_income', 'occupation', 'address']
+                },
+                {
+                    'category': 'document',
+                    'name': 'Caste Certificate',
+                    'slug': 'caste-certificate',
+                    'description': 'Apply for caste certificate (SC/ST/OBC) for educational and employment purposes.',
+                    'icon': 'fas fa-users',
+                    'service_charge': 100,
+                    'is_active': True,
+                    'order': 13,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'dob', 'caste_category', 'address', 'id_proof_upload']
+                },
+                # Printing & Design
+                {
+                    'category': 'printing',
+                    'name': 'Printing Services',
+                    'slug': 'printing-services',
+                    'description': 'High-quality printing services for documents, photos, flyers, and more.',
+                    'icon': 'fas fa-print',
+                    'service_charge': 50,
+                    'is_active': True,
+                    'order': 14,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['document_type', 'color_type', 'page_count', 'print_quantity']
+                },
+                {
+                    'category': 'printing',
+                    'name': 'Scanning Services',
+                    'slug': 'scanning-services',
+                    'description': 'Professional document scanning services with high-quality output.',
+                    'icon': 'fas fa-camera',
+                    'service_charge': 20,
+                    'is_active': True,
+                    'order': 15,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['document_type', 'page_count', 'color_preference']
+                },
+                {
+                    'category': 'printing',
+                    'name': 'Passport Photo Service',
+                    'slug': 'passport-photo-service',
+                    'description': 'Professional passport and visa photo services meeting all specification requirements.',
+                    'icon': 'fas fa-camera-retro',
+                    'service_charge': 100,
+                    'is_active': True,
+                    'order': 16,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['full_name', 'photo_type', 'specification', 'quantity']
+                },
+                # Digital Services
+                {
+                    'category': 'digital',
+                    'name': 'Website Development',
+                    'slug': 'website-development',
+                    'description': 'Custom website development with modern design, responsive layout, and full functionality.',
+                    'icon': 'fas fa-laptop-code',
+                    'service_charge': 5000,
+                    'is_active': True,
+                    'order': 17,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['website_type', 'pages_count', 'features', 'domain_name']
+                },
+                {
+                    'category': 'digital',
+                    'name': 'Data Entry',
+                    'slug': 'data-entry',
+                    'description': 'Professional data entry services with accuracy and confidentiality.',
+                    'icon': 'fas fa-keyboard',
+                    'service_charge': 200,
+                    'is_active': True,
+                    'order': 18,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['data_type', 'entry_format', 'volume', 'deadline']
+                },
+                {
+                    'category': 'digital',
+                    'name': 'Excel/Data Analytics Service',
+                    'slug': 'excel-data-analytics',
+                    'description': 'Professional Excel and data analytics services including reports, dashboards, and data visualization.',
+                    'icon': 'fas fa-chart-bar',
+                    'service_charge': 350,
+                    'is_active': True,
+                    'order': 19,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['project_type', 'data_source', 'analysis_needed', 'output_format']
+                },
+                # Business Services
+                {
+                    'category': 'business',
+                    'name': 'Travel Booking',
+                    'slug': 'travel-booking',
+                    'description': 'Complete travel booking services including flights, hotels, and tour packages.',
+                    'icon': 'fas fa-plane',
+                    'service_charge': 200,
+                    'is_active': True,
+                    'order': 20,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['travel_type', 'destination', 'travel_date', 'passengers']
+                },
+                {
+                    'category': 'business',
+                    'name': 'GST Registration',
+                    'slug': 'gst-registration',
+                    'description': 'Professional assistance for GST registration, filing, and compliance.',
+                    'icon': 'fas fa-file-invoice',
+                    'service_charge': 1500,
+                    'is_active': True,
+                    'order': 21,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['business_name', 'business_type', 'pan_number', 'address', 'annual_turnover']
+                },
+                {
+                    'category': 'business',
+                    'name': 'Business Registration',
+                    'slug': 'business-registration',
+                    'description': 'Complete business registration services including sole proprietorship, partnership, and company registration.',
+                    'icon': 'fas fa-building',
+                    'service_charge': 2000,
+                    'is_active': True,
+                    'order': 22,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['business_name', 'business_type', 'pan_number', 'address', 'partners_names']
+                },
+                # Design Services
+                {
+                    'category': 'design',
+                    'name': 'Logo Design',
+                    'slug': 'logo-design',
+                    'description': 'Professional logo design services with multiple concepts and unlimited revisions.',
+                    'icon': 'fas fa-paint-brush',
+                    'service_charge': 800,
+                    'is_active': True,
+                    'order': 23,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['business_name', 'industry', 'color_preference', 'design_style']
+                },
+                {
+                    'category': 'design',
+                    'name': 'Social Media Design',
+                    'slug': 'social-media-design',
+                    'description': 'Professional social media designs including posts, covers, and ad creatives.',
+                    'icon': 'fas fa-hashtag',
+                    'service_charge': 500,
+                    'is_active': True,
+                    'order': 24,
+                    'created_at': datetime.now(timezone.utc),
+                    'fields': ['platform', 'design_type', 'content', 'color_scheme']
                 }
             ]
             
@@ -295,21 +506,26 @@ def init_db():
 def index():
     try:
         services = get_all_services()
-        featured_services = services[:6] if services else []
+        categories = {}
+        for service in services:
+            cat = service.get('category', 'other')
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(service)
         
         total_users = db.users.count_documents({'role': 'user'})
         total_applications = db.service_requests.count_documents({})
         total_services = db.services.count_documents({'is_active': True})
         
         return render_template('index.html', 
-                             services=featured_services,
-                             all_services=services,
+                             services=services,
+                             categories=categories,
                              total_users=total_users,
                              total_applications=total_applications,
                              total_services=total_services)
     except Exception as e:
         print(f"Error loading index: {e}")
-        return render_template('index.html', services=[], all_services=[])
+        return render_template('index.html', services=[], categories={})
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -464,6 +680,7 @@ def submit_application():
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
+        # Get form data
         full_name = request.form.get('full_name', '').strip()
         phone = request.form.get('phone', '').strip()
         email = request.form.get('email', '').strip()
@@ -471,10 +688,12 @@ def submit_application():
         city = request.form.get('city', '').strip()
         state = request.form.get('state', '').strip()
         pincode = request.form.get('pincode', '').strip()
-        dob = request.form.get('dob', '')
-        gender = request.form.get('gender', '')
-        category = request.form.get('category', '')
-        additional_details = request.form.get('additional_details', '').strip()
+        
+        # Service-specific fields
+        dynamic_fields = {}
+        service_fields = service.get('fields', [])
+        for field in service_fields:
+            dynamic_fields[field] = request.form.get(field, '').strip()
         
         if not all([full_name, phone, address, city, state, pincode]):
             return jsonify({'success': False, 'message': 'Please fill all required fields'}), 400
@@ -487,10 +706,7 @@ def submit_application():
             'city': city,
             'state': state,
             'pincode': pincode,
-            'dob': dob,
-            'gender': gender,
-            'category': category,
-            'additional_details': additional_details,
+            'dynamic_fields': dynamic_fields,
             'submitted_by': session['user_name'],
             'submitted_phone': session['user_phone'],
             'submitted_at': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
@@ -519,7 +735,7 @@ def submit_application():
             'applicant_city': city,
             'applicant_state': state,
             'applicant_pincode': pincode,
-            'additional_details': additional_details,
+            'dynamic_fields': dynamic_fields,
             'timeline': [
                 {
                     'title': 'Application Submitted',
@@ -685,6 +901,7 @@ def application_details(request_id):
             'applicant_state': service_request.get('applicant_state', ''),
             'applicant_pincode': service_request.get('applicant_pincode', ''),
             'additional_details': service_request.get('additional_details', ''),
+            'dynamic_fields': service_request.get('dynamic_fields', {}),
             'timeline': service_request.get('timeline', [])
         }
         
@@ -895,6 +1112,28 @@ def update_profile():
     except Exception as e:
         return jsonify({'success': False, 'message': 'Unable to update profile'}), 500
 
+@app.route('/api/services')
+def api_services():
+    try:
+        category = request.args.get('category')
+        query = {'is_active': True}
+        if category:
+            query['category'] = category
+        services = list(db.services.find(query).sort('order', 1))
+        for s in services:
+            s['id'] = str(s['_id'])
+        return jsonify(services)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories')
+def api_categories():
+    try:
+        categories = db.services.distinct('category', {'is_active': True})
+        return jsonify(categories)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ============== Admin Routes ==============
 
 @app.route('/admin')
@@ -1067,6 +1306,7 @@ def admin_application_details(request_id):
             'applicant_state': service_request.get('applicant_state', ''),
             'applicant_pincode': service_request.get('applicant_pincode', ''),
             'additional_details': service_request.get('additional_details', ''),
+            'dynamic_fields': service_request.get('dynamic_fields', {}),
             'timeline': service_request.get('timeline', [])
         }
         
@@ -1088,6 +1328,53 @@ def admin_application_details(request_id):
         })
     except Exception as e:
         print(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/download-document/<doc_id>')
+@login_required
+def download_document(doc_id):
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        flash('Admin access required', 'danger')
+        return redirect(url_for('index'))
+    
+    try:
+        doc = db.request_documents.find_one({'_id': ObjectId(doc_id)})
+        if not doc:
+            flash('Document not found', 'danger')
+            return redirect(url_for('admin_panel'))
+        
+        file_path = doc['file_path']
+        if os.path.exists(file_path):
+            return send_file(file_path, as_attachment=True, download_name=doc['original_filename'])
+        else:
+            flash('File not found on server', 'danger')
+            return redirect(url_for('admin_panel'))
+    except Exception as e:
+        print(f"Error downloading document: {e}")
+        flash('Error downloading document', 'danger')
+        return redirect(url_for('admin_panel'))
+
+@app.route('/admin/service-stats')
+@login_required
+def service_stats():
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        pipeline = [
+            {'$group': {
+                '_id': '$service_name',
+                'count': {'$sum': 1},
+                'pending': {'$sum': {'$cond': [{'$eq': ['$status', 'pending']}, 1, 0]}},
+                'completed': {'$sum': {'$cond': [{'$eq': ['$status', 'completed']}, 1, 0]}}
+            }},
+            {'$sort': {'count': -1}}
+        ]
+        stats = list(db.service_requests.aggregate(pipeline))
+        return jsonify(stats)
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # ============== Health Check ==============
