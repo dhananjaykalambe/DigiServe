@@ -5,28 +5,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-secret-key-2026-mongo')
+    """Base configuration"""
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'digiserve-secret-key-2026')
     
     # MongoDB Configuration
-    MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
-    MONGO_DB = os.environ.get('MONGO_DB', 'digiserve')
+    MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/digiserve')
     
     # File Upload Configuration
     UPLOAD_FOLDER = 'uploads/'
     DOCUMENT_FOLDER = 'uploads/documents/'
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+    ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'txt'}
     
     # Session Configuration
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
     # Admin Configuration
-    ADMIN_PHONE = '9999999999'
-    ADMIN_NAME = 'Admin User'
+    ADMIN_PHONE = os.environ.get('ADMIN_PHONE', '9999999999')
+    ADMIN_NAME = 'Administrator'
     ADMIN_EMAIL = 'admin@digiserve.com'
     
-    # Contact Information
-    CONTACT_PHONE = '9421456959'
-    CONTACT_EMAIL = 'support@digiserve.com'
+    # Pagination
+    ITEMS_PER_PAGE = 10
     
     # Company Info
     COMPANY_NAME = 'DigiSoft'
@@ -40,7 +40,6 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-    # In production, use environment variables for MongoDB URI
 
 config = {
     'development': DevelopmentConfig,
