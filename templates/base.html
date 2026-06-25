@@ -1,6 +1,6 @@
 <!-- templates/base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,97 +19,153 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            transition: transform 0.3s ease;
+            width: 240px;
+            background: var(--bg-secondary);
+        }
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin: 0.1rem 0.5rem;
+            transition: all 0.2s;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .sidebar .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding-top: 60px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-handshake me-2"></i>DigiServe
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center gap-1">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('track_application') }}">
-                            <i class="fas fa-search"></i> Track
-                        </a>
-                    </li>
-                    {% if 'user_id' in session %}
-                        {% if session.user_role == 'admin' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('admin_panel') }}">
-                                    <i class="fas fa-user-shield"></i> Admin
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('my_applications') }}">
-                                    <i class="fas fa-file-alt"></i> My Apps
-                                </a>
-                            </li>
-                        {% endif %}
-                        
-                        <!-- Notifications -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" data-bs-toggle="dropdown">
-                                <i class="fas fa-bell"></i>
-                                <span class="badge bg-danger notification-badge" id="notificationBadge" style="display:none;">0</span>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-sticky">
+            <div class="px-3 mb-3">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="fas fa-handshake me-2"></i>DigiServe
+                </a>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+                {% if 'user_id' in session %}
+                    {% if session.user_role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'admin_panel' %}active{% endif %}" href="{{ url_for('admin_panel') }}">
+                                <i class="fas fa-user-shield"></i> Admin Panel
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg" aria-labelledby="notificationDropdown">
-                                <div class="dropdown-header bg-primary text-white rounded-top py-2 px-3">
-                                    <strong><i class="fas fa-bell me-2"></i> Notifications</strong>
-                                    <button class="btn btn-sm btn-link text-white p-0 float-end" onclick="markAllNotificationsRead()">
-                                        Mark all read
-                                    </button>
-                                </div>
-                                <div id="notificationList" class="notification-list" style="max-height: 350px; overflow-y: auto;">
-                                    <div class="text-center py-4">
-                                        <div class="spinner-border spinner-border-sm text-primary"></div>
-                                        <p class="mt-2 text-muted small">Loading...</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                        
-                        <!-- User Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle fa-lg"></i>
-                                <span>{{ session.user_name.split()[0] }}</span>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0">
-                                <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
-                                    <i class="fas fa-id-card me-2"></i> My Profile
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger py-2" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                </a>
-                            </div>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn btn-light rounded-pill px-4" href="{{ url_for('login') }}">
-                                <i class="fas fa-mobile-alt me-2"></i> Login
+                            <a class="nav-link {% if request.endpoint == 'my_applications' %}active{% endif %}" href="{{ url_for('my_applications') }}">
+                                <i class="fas fa-file-alt"></i> My Applications
                             </a>
                         </li>
                     {% endif %}
-                </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'login' %}active{% endif %}" href="{{ url_for('login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'track_application' %}active{% endif %}" href="{{ url_for('track_application') }}">
+                            <i class="fas fa-search"></i> Track
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            <hr>
+            <div class="px-3">
+                <div class="small text-muted">
+                    <i class="fas fa-phone me-1"></i> {{ config.CONTACT_PHONE }}
+                </div>
+                <div class="small text-muted">
+                    <i class="fas fa-envelope me-1"></i> {{ config.CONTACT_EMAIL }}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Toggle -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top d-md-none">
+        <div class="container-fluid">
+            <button class="btn btn-link text-white" type="button" onclick="toggleSidebar()">
+                <i class="fas fa-bars fs-4"></i>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-handshake me-2"></i>DigiServe
+            </a>
+            <div class="d-flex">
+                {% if 'user_id' in session %}
+                    <button class="btn btn-link text-white position-relative me-2" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell fs-5"></i>
+                        <span class="badge bg-danger notification-badge" id="notificationBadgeMobile" style="display:none;">0</span>
+                    </button>
+                {% endif %}
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow-1">
+    <main class="main-content">
         <div class="container py-4">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -127,62 +183,6 @@
             {% block content %}{% endblock %}
         </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="mt-auto">
-        <div class="container py-4">
-            <div class="row">
-                <div class="col-md-4 mb-3 text-center text-md-start">
-                    <h5><i class="fas fa-handshake me-2"></i> DigiServe</h5>
-                    <p class="small text-white-50">Your Trusted Digital Service Partner. We provide seamless online services for all your needs.</p>
-                    <div class="mt-2">
-                        <a href="#" class="text-white-50 me-3"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-white-50 me-3"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white-50 me-3"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-white-50"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-3 text-center text-md-start">
-                    <h6>Quick Links</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-1"><a href="{{ url_for('index') }}" class="text-white-50 text-decoration-none">Home</a></li>
-                        <li class="mb-1"><a href="{{ url_for('track_application') }}" class="text-white-50 text-decoration-none">Track Application</a></li>
-                        {% if 'user_id' in session %}
-                            <li class="mb-1"><a href="{{ url_for('my_applications') }}" class="text-white-50 text-decoration-none">My Applications</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-                <div class="col-md-3 mb-3 text-center text-md-start">
-                    <h6>Services</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Scholarship</a></li>
-                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Exam Forms</a></li>
-                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Bill Payments</a></li>
-                        <li class="mb-1"><a href="#" class="text-white-50 text-decoration-none">Documents</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3 mb-3 text-center text-md-start">
-                    <h6>Contact</h6>
-                    <p class="small mb-1 text-white-50">
-                        <i class="fas fa-phone-alt me-2"></i>
-                        <a href="tel:9421456959" class="text-white-50 text-decoration-none">+91 94214 56959</a>
-                    </p>
-                    <p class="small mb-1 text-white-50">
-                        <i class="fab fa-whatsapp me-2"></i>
-                        <a href="https://wa.me/919421456959" target="_blank" class="text-white-50 text-decoration-none">WhatsApp</a>
-                    </p>
-                    <p class="small mb-1 text-white-50">
-                        <i class="fas fa-envelope me-2"></i>
-                        <a href="mailto:support@digiserve.com" class="text-white-50 text-decoration-none">support@digiserve.com</a>
-                    </p>
-                </div>
-            </div>
-            <hr class="bg-white-50">
-            <div class="text-center small text-white-50">
-                &copy; 2026 DigiServe. All Rights Reserved.
-            </div>
-        </div>
-    </footer>
 
     <!-- Profile Modal -->
     <div class="modal fade" id="profileModal" tabindex="-1">
@@ -217,6 +217,20 @@
         // Initialize AOS
         AOS.init({ duration: 600, once: true, offset: 50 });
         
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+        
+        // Close sidebar on click outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('[onclick="toggleSidebar()"]');
+            if (window.innerWidth <= 768 && sidebar.classList.contains('show') && 
+                !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('show');
+            }
+        });
+        
         // Load notifications if logged in
         {% if 'user_id' in session %}
             loadNotifications();
@@ -228,74 +242,26 @@
         
         // Notification Functions
         async function loadNotifications() {
-            const list = document.getElementById('notificationList');
-            if (!list) return;
-            
             try {
                 const response = await fetch('/notifications');
                 const notifications = await response.json();
-                
-                if (notifications.length === 0) {
-                    list.innerHTML = `
-                        <div class="text-center py-5">
-                            <i class="fas fa-bell-slash fa-3x text-muted"></i>
-                            <p class="mt-2 text-muted">No notifications</p>
-                        </div>
-                    `;
-                    updateBadge(0);
-                    return;
-                }
-                
                 const unreadCount = notifications.filter(n => !n.is_read).length;
                 updateBadge(unreadCount);
-                
-                list.innerHTML = notifications.slice(0, 20).map(notif => `
-                    <div class="notification-item ${!notif.is_read ? 'unread' : ''}" onclick="handleNotificationClick('${notif.id}', '${notif.request_id || ''}')">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="flex-shrink-0">
-                                ${notif.type === 'success' ? '<i class="fas fa-check-circle text-success fs-5"></i>' : 
-                                  notif.type === 'info' ? '<i class="fas fa-info-circle text-info fs-5"></i>' :
-                                  notif.type === 'warning' ? '<i class="fas fa-exclamation-triangle text-warning fs-5"></i>' :
-                                  '<i class="fas fa-bell text-primary fs-5"></i>'}
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold small">${escapeHtml(notif.title)}</div>
-                                <div class="small text-muted">${escapeHtml(notif.message.substring(0, 80))}${notif.message.length > 80 ? '...' : ''}</div>
-                                <div class="small text-muted mt-1"><i class="far fa-clock me-1"></i> ${notif.time_ago}</div>
-                            </div>
-                            ${!notif.is_read ? '<span class="badge bg-primary rounded-pill">New</span>' : ''}
-                        </div>
-                    </div>
-                `).join('');
             } catch (error) {
                 console.error('Error loading notifications:', error);
             }
         }
         
         function updateBadge(count) {
-            const badge = document.getElementById('notificationBadge');
-            if (badge) {
+            const badges = document.querySelectorAll('.notification-badge');
+            badges.forEach(badge => {
                 if (count > 0) {
                     badge.textContent = count > 99 ? '99+' : count;
                     badge.style.display = 'inline-block';
                 } else {
                     badge.style.display = 'none';
                 }
-            }
-        }
-        
-        async function handleNotificationClick(id, requestId) {
-            await fetch(`/notifications/mark-read/${id}`, { method: 'POST' });
-            if (requestId) {
-                window.location.href = '/my-applications';
-            }
-            loadNotifications();
-        }
-        
-        async function markAllNotificationsRead() {
-            await fetch('/notifications/mark-all-read', { method: 'POST' });
-            loadNotifications();
-            showToast('All notifications marked as read', 'success');
+            });
         }
         
         // Profile Functions
@@ -410,6 +376,23 @@
             return div.innerHTML;
         }
         
+        // Service Search
+        function searchServices() {
+            const input = document.getElementById('serviceSearch');
+            const filter = input.value.toLowerCase();
+            const cards = document.querySelectorAll('.service-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h5')?.textContent?.toLowerCase() || '';
+                const desc = card.querySelector('p')?.textContent?.toLowerCase() || '';
+                if (title.includes(filter) || desc.includes(filter)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
         // Track Status Function
         async function checkApplicationStatus() {
             const reference = document.getElementById('trackReference')?.value.trim().toUpperCase();
@@ -442,15 +425,18 @@
                         'rejected': 'Rejected'
                     };
                     
-                    document.getElementById('statusResult').innerHTML = `
-                        <div class="alert alert-${statusColors[data.status] || 'secondary'} rounded-3 mt-3">
-                            <h5 class="mb-2"><i class="fas fa-check-circle me-2"></i> Application Found</h5>
-                            <p class="mb-1"><strong>Service:</strong> ${escapeHtml(data.service_name)}</p>
-                            <p class="mb-1"><strong>Reference:</strong> ${escapeHtml(data.reference)}</p>
-                            <p class="mb-1"><strong>Status:</strong> <span class="badge bg-${statusColors[data.status] || 'secondary'}">${statusLabels[data.status] || data.status}</span></p>
-                            <p class="mb-0"><strong>Submitted:</strong> ${escapeHtml(data.submitted_at)}</p>
-                        </div>
-                    `;
+                    const resultDiv = document.getElementById('statusResult');
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-${statusColors[data.status] || 'secondary'} rounded-3 mt-3">
+                                <h5 class="mb-2"><i class="fas fa-check-circle me-2"></i> Application Found</h5>
+                                <p class="mb-1"><strong>Service:</strong> ${escapeHtml(data.service_name)}</p>
+                                <p class="mb-1"><strong>Reference:</strong> ${escapeHtml(data.reference)}</p>
+                                <p class="mb-1"><strong>Status:</strong> <span class="badge bg-${statusColors[data.status] || 'secondary'}">${statusLabels[data.status] || data.status}</span></p>
+                                <p class="mb-0"><strong>Submitted:</strong> ${escapeHtml(data.submitted_at)}</p>
+                            </div>
+                        `;
+                    }
                 } else {
                     showToast(data.message || 'Application not found', 'danger');
                 }
@@ -458,6 +444,21 @@
                 console.error('Error checking status:', error);
                 showToast('Error checking status. Please try again.', 'danger');
             }
+        }
+        
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
         }
     </script>
     

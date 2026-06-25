@@ -5,7 +5,7 @@
 
 {% block content %}
 <!-- Hero Section -->
-<div class="hero-section text-center py-5 rounded-4 mb-5" data-aos="fade-up">
+<div class="hero-section text-center py-5 rounded-4 mb-4" data-aos="fade-up">
     <div class="row align-items-center">
         <div class="col-lg-8 mx-auto">
             <h1 class="display-4 fw-bold mb-3">Welcome to <span class="text-gradient">DigiServe</span></h1>
@@ -27,6 +27,22 @@
                     </a>
                 {% endif %}
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="row mb-4" data-aos="fade-up">
+    <div class="col-md-8 mx-auto">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white border-0">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control form-control-lg" id="serviceSearch" 
+                   placeholder="Search services..." onkeyup="searchServices()">
+            <button class="btn btn-outline-secondary" onclick="document.getElementById('serviceSearch').value='';searchServices();">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -69,24 +85,24 @@
     <p class="text-muted">Choose from a wide range of digital services tailored to your needs</p>
 </div>
 
-<div class="row g-4">
+<div class="row g-4" id="servicesGrid">
     {% if services %}
         {% for service in services %}
-        <div class="col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
+        <div class="col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
             <div class="service-card text-center p-4 h-100 rounded-4" onclick="redirectToService('{{ service.slug }}')">
                 <div class="icon-wrapper rounded-circle d-inline-flex p-3 mb-3" 
                      style="background: {% if loop.index % 2 == 0 %}rgba(79, 70, 229, 0.1){% else %}rgba(34, 197, 94, 0.1){% endif %};">
                     <i class="{{ service.icon }} fa-3x" style="color: {% if loop.index % 2 == 0 %}#4f46e5{% else %}#22c55e{% endif %};"></i>
                 </div>
-                <h5>{{ service.name }}</h5>
-                <p class="small text-muted">{{ service.description[:80] }}{% if service.description|length > 80 %}...{% endif %}</p>
+                <h5 class="fs-6">{{ service.name }}</h5>
+                <p class="small text-muted">{{ service.description[:60] }}{% if service.description|length > 60 %}...{% endif %}</p>
                 <div class="mt-2">
                     {% if service.service_charge > 0 %}
                         <span class="badge bg-info rounded-pill">₹{{ "%.2f"|format(service.service_charge) }}</span>
                     {% else %}
                         <span class="badge bg-success rounded-pill">Free</span>
                     {% endif %}
-                    <span class="badge bg-primary rounded-pill ms-1">Apply Now →</span>
+                    <span class="badge bg-primary rounded-pill ms-1">Apply →</span>
                 </div>
             </div>
         </div>
@@ -167,8 +183,8 @@
     }
     
     .icon-wrapper {
-        width: 80px;
-        height: 80px;
+        width: 70px;
+        height: 70px;
         display: inline-flex;
         align-items: center;
         justify-content: center;

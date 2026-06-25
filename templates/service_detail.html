@@ -11,7 +11,7 @@
 </div>
 
 <div class="row">
-    <div class="col-lg-8">
+    <div class="col-lg-7">
         <div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up">
             <div class="card-header bg-primary text-white rounded-top-4 border-0 py-3">
                 <h3 class="mb-0 fs-4"><i class="{{ service.icon }} me-2"></i> {{ service.name }}</h3>
@@ -42,11 +42,22 @@
                         </div>
                     </div>
                 </div>
+                
+                {% if service.fields %}
+                <div class="mt-3">
+                    <h6 class="fw-semibold"><i class="fas fa-list me-2"></i> Required Information</h6>
+                    <ul class="list-unstyled">
+                        {% for field in service.fields %}
+                        <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i> {{ field|replace('_', ' ')|title }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
     
-    <div class="col-lg-4">
+    <div class="col-lg-5">
         <div class="card shadow-sm rounded-4 mb-4" data-aos="fade-up" data-aos-delay="100">
             <div class="card-header bg-success text-white rounded-top-4 border-0 py-3">
                 <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i> Apply Now</h5>
@@ -95,36 +106,90 @@
                                maxlength="6" required>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Date of Birth</label>
-                            <input type="date" class="form-control" name="dob" id="dob">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Gender</label>
-                            <select class="form-select" name="gender" id="gender">
-                                <option value="">Select</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
+                    <!-- Dynamic Fields -->
+                    {% if service.fields %}
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-plus-circle me-2"></i> Additional Details</h6>
+                    
+                    {% for field in service.fields %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field|replace('_', ' ')|title }}</label>
+                        {% if field in ['income_certificate', 'aadhaar', 'photo_upload', 'signature_upload', 'resume_upload', 'id_proof_upload'] %}
+                            <input type="file" class="form-control" name="{{ field }}" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">Upload file (PDF, JPG, PNG)</small>
+                        {% elif field == 'resume_template' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="">Select Template</option>
+                                <option value="modern">Modern</option>
+                                <option value="classic">Classic</option>
+                                <option value="creative">Creative</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        {% elif field == 'plan_type' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="prepaid">Prepaid</option>
+                                <option value="postpaid">Postpaid</option>
+                            </select>
+                        {% elif field == 'pan_type' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="new">New PAN Card</option>
+                                <option value="reprint">Reprint</option>
+                                <option value="update">Update Details</option>
+                            </select>
+                        {% elif field == 'passport_type' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="new">New Passport</option>
+                                <option value="renewal">Renewal</option>
+                            </select>
+                        {% elif field == 'caste_category' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="">Select Category</option>
+                                <option value="sc">SC</option>
+                                <option value="st">ST</option>
+                                <option value="obc">OBC</option>
+                            </select>
+                        {% elif field in ['annual_income', 'bill_amount', 'recharge_amount', 'page_count', 'print_quantity', 'quantity'] %}
+                            <input type="number" class="form-control" name="{{ field }}" placeholder="Enter amount" step="0.01">
+                        {% elif field in ['mobile_number', 'consumer_number'] %}
+                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter number">
+                        {% elif field == 'business_type' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="">Select Type</option>
+                                <option value="sole_proprietorship">Sole Proprietorship</option>
+                                <option value="partnership">Partnership</option>
+                                <option value="llp">LLP</option>
+                                <option value="private_limited">Private Limited</option>
+                            </select>
+                        {% elif field == 'industry' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="">Select Industry</option>
+                                <option value="technology">Technology</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="education">Education</option>
+                                <option value="finance">Finance</option>
+                                <option value="retail">Retail</option>
                                 <option value="other">Other</option>
                             </select>
-                        </div>
+                        {% elif field == 'platform' %}
+                            <select class="form-select" name="{{ field }}">
+                                <option value="facebook">Facebook</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="twitter">Twitter</option>
+                                <option value="linkedin">LinkedIn</option>
+                            </select>
+                        {% elif field in ['exam_name', 'course'] %}
+                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter name">
+                        {% elif field in ['education', 'skills', 'experience', 'features', 'design_style', 'color_preference'] %}
+                            <textarea class="form-control" name="{{ field }}" rows="3" placeholder="Enter details"></textarea>
+                        {% else %}
+                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter {{ field|replace('_', ' ') }}">
+                        {% endif %}
                     </div>
+                    {% endfor %}
+                    {% endif %}
                     
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Category</label>
-                        <select class="form-select" name="category" id="category">
-                            <option value="">Select</option>
-                            <option value="general">General</option>
-                            <option value="obc">OBC</option>
-                            <option value="sc">SC</option>
-                            <option value="st">ST</option>
-                            <option value="ews">EWS</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Additional Details</label>
+                        <label class="form-label fw-semibold">Additional Notes</label>
                         <textarea class="form-control" name="additional_details" rows="3" 
                                   placeholder="Any additional information..."></textarea>
                     </div>
