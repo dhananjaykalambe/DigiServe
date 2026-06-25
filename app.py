@@ -871,6 +871,258 @@ def admin_panel():
         flash('Unable to load admin panel.', 'danger')
         return redirect(url_for('index'))
 
+# ============== Admin - Service Management Routes ==============
+
+@app.route('/admin/services')
+@login_required
+def admin_services():
+    """Admin page for managing services"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        flash('Admin access required', 'danger')
+        return redirect(url_for('index'))
+    
+    try:
+        services = list(db.services.find().sort('order', 1))
+        for s in services:
+            s['id'] = str(s['_id'])
+        
+        return render_template('admin_services.html', services=services)
+    except Exception as e:
+        print(f"Error loading admin services: {e}")
+        flash('Unable to load services.', 'danger')
+        return redirect(url_for('admin_panel'))
+
+@app.route('/admin/service/create', methods=['GET', 'POST'])
+@login_required
+def admin_create_service():
+    """Create a new service"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        flash('Admin access required', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            name = request.form.get('name', '').strip()
+            slug = request.form.get('slug', '').strip()
+            category = request.form.get('category', '').strip()
+            description = request.form.get('description', '').strip()
+            service_charge = float(request.form.get('service_charge', 0))
+            processing_time = request.form.get('processing_time', '').strip()
+            icon = request.form.get('icon', 'fas fa-cog').strip()
+            is_active = request.form.get('is_active') == 'on'
+            
+            # Validate
+            if not name or not slug or not category:
+                flash('Please fill in all required fields', 'danger')
+                return redirect(url_for('admin_create_service'))
+            
+            # Check if slug exists
+            existing = db.services.find_one({'slug': slug})
+            if existing:
+                flash('Service with this slug already exists. Please use a different slug.', 'danger')
+                return redirect(url_for('admin_create_service'))
+            
+            # Get fields from form (comma separated)
+            fields_str = request.form.get('fields', '').strip()
+            fields = [f.strip() for f in fields_str.split(',') if f.strip()]
+            
+            # Get max order
+            max_order = db.services.count_documents({})
+            
+            service_data = {
+                'name': name,
+                'slug': slug,
+                'category': category,
+                'description': description,
+                'service_charge': service_charge,
+                'processing_time': processing_time or '3-5 working days',
+                'icon': icon,
+                'is_active': is_active,
+                'order': max_order + 1,
+                'fields': fields,
+                'created_at': datetime.now(timezone.utc),
+                'updated_at': datetime.now(timezone.utc)
+            }
+            
+            db.services.insert_one(service_data)
+            flash(f'Service "{name}" created successfully!', 'success')
+            return redirect(url_for('admin_services'))
+            
+        except Exception as e:
+            print(f"Error creating service: {e}")
+            flash(f'Error creating service: {str(e)}', 'danger')
+            return redirect(url_for('admin_create_service'))
+    
+    # GET - Show create form
+    categories = db.services.distinct('category')
+    return render_template('admin_service_form.html', 
+                         service=None, 
+                         categories=categories,
+                         form_title='Create New Service',
+                         form_action='/admin/service/create')
+
+@app.route('/admin/service/edit/<service_id>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_service(service_id):
+    """Edit an existing service"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        flash('Admin access required', 'danger')
+        return redirect(url_for('index'))
+    
+    try:
+        service = db.services.find_one({'_id': ObjectId(service_id)})
+        if not service:
+            flash('Service not found', 'danger')
+            return redirect(url_for('admin_services'))
+        
+        if request.method == 'POST':
+            # Get form data
+            name = request.form.get('name', '').strip()
+            slug = request.form.get('slug', '').strip()
+            category = request.form.get('category', '').strip()
+            description = request.form.get('description', '').strip()
+            service_charge = float(request.form.get('service_charge', 0))
+            processing_time = request.form.get('processing_time', '').strip()
+            icon = request.form.get('icon', 'fas fa-cog').strip()
+            is_active = request.form.get('is_active') == 'on'
+            order = int(request.form.get('order', 0))
+            
+            # Validate
+            if not name or not slug or not category:
+                flash('Please fill in all required fields', 'danger')
+                return redirect(url_for('admin_edit_service', service_id=service_id))
+            
+            # Check if slug exists (excluding current service)
+            existing = db.services.find_one({'slug': slug, '_id': {'$ne': ObjectId(service_id)}})
+            if existing:
+                flash('Service with this slug already exists. Please use a different slug.', 'danger')
+                return redirect(url_for('admin_edit_service', service_id=service_id))
+            
+            # Get fields from form (comma separated)
+            fields_str = request.form.get('fields', '').strip()
+            fields = [f.strip() for f in fields_str.split(',') if f.strip()]
+            
+            update_data = {
+                'name': name,
+                'slug': slug,
+                'category': category,
+                'description': description,
+                'service_charge': service_charge,
+                'processing_time': processing_time or '3-5 working days',
+                'icon': icon,
+                'is_active': is_active,
+                'order': order,
+                'fields': fields,
+                'updated_at': datetime.now(timezone.utc)
+            }
+            
+            db.services.update_one(
+                {'_id': ObjectId(service_id)},
+                {'$set': update_data}
+            )
+            
+            flash(f'Service "{name}" updated successfully!', 'success')
+            return redirect(url_for('admin_services'))
+        
+        # GET - Show edit form
+        service['id'] = str(service['_id'])
+        categories = db.services.distinct('category')
+        fields_str = ', '.join(service.get('fields', []))
+        
+        return render_template('admin_service_form.html', 
+                             service=service,
+                             fields_str=fields_str,
+                             categories=categories,
+                             form_title='Edit Service',
+                             form_action=f'/admin/service/edit/{service_id}')
+                             
+    except Exception as e:
+        print(f"Error editing service: {e}")
+        flash(f'Error editing service: {str(e)}', 'danger')
+        return redirect(url_for('admin_services'))
+
+@app.route('/admin/service/delete/<service_id>', methods=['POST'])
+@login_required
+def admin_delete_service(service_id):
+    """Delete a service"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    try:
+        service = db.services.find_one({'_id': ObjectId(service_id)})
+        if not service:
+            return jsonify({'success': False, 'message': 'Service not found'}), 404
+        
+        # Check if service has applications
+        app_count = db.service_requests.count_documents({'service_id': ObjectId(service_id)})
+        if app_count > 0:
+            return jsonify({'success': False, 'message': f'Cannot delete service with {app_count} applications. Archive it instead.'}), 400
+        
+        db.services.delete_one({'_id': ObjectId(service_id)})
+        return jsonify({'success': True, 'message': 'Service deleted successfully'})
+        
+    except Exception as e:
+        print(f"Error deleting service: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/service/toggle-status/<service_id>', methods=['POST'])
+@login_required
+def admin_toggle_service_status(service_id):
+    """Toggle service active/inactive status"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    try:
+        service = db.services.find_one({'_id': ObjectId(service_id)})
+        if not service:
+            return jsonify({'success': False, 'message': 'Service not found'}), 404
+        
+        new_status = not service.get('is_active', True)
+        db.services.update_one(
+            {'_id': ObjectId(service_id)},
+            {'$set': {'is_active': new_status, 'updated_at': datetime.now(timezone.utc)}}
+        )
+        
+        return jsonify({
+            'success': True, 
+            'is_active': new_status,
+            'message': f'Service {"activated" if new_status else "deactivated"} successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error toggling service status: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/service/reorder', methods=['POST'])
+@login_required
+def admin_reorder_services():
+    """Reorder services"""
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    try:
+        data = request.get_json()
+        service_ids = data.get('service_ids', [])
+        
+        for index, service_id in enumerate(service_ids, 1):
+            db.services.update_one(
+                {'_id': ObjectId(service_id)},
+                {'$set': {'order': index, 'updated_at': datetime.now(timezone.utc)}}
+            )
+        
+        return jsonify({'success': True, 'message': 'Services reordered successfully'})
+        
+    except Exception as e:
+        print(f"Error reordering services: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
 @app.route('/admin/update-status/<request_id>', methods=['POST'])
 @login_required
 def update_status(request_id):
