@@ -1,4 +1,4 @@
-# app.py - COMPLETE UPGRADED VERSION
+# app.py - COMPLETE UPGRADED VERSION WITH ALL ROUTES
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_pymongo import PyMongo
@@ -777,7 +777,7 @@ def login():
                 flash(f'Welcome back, {user["name"]}!', 'success')
                 
                 if user.get('role') == 'admin':
-                    return redirect(url_for('admin_panel'))
+                    return redirect(url_for('admin_dashboard'))
                 return redirect(url_for('index'))
             else:
                 session['registration_phone'] = phone
@@ -863,8 +863,6 @@ def service_detail(slug):
         
         service['id'] = str(service['_id'])
         user = get_user_by_id(session['user_id'])
-        
-        # Get form fields from service
         form_fields = service.get('form_fields', [])
         
         return render_template('service_detail.html', service=service, user=user, form_fields=form_fields)
@@ -883,7 +881,6 @@ def submit_application():
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
-        # Get common fields
         full_name = request.form.get('full_name', '').strip()
         phone = request.form.get('phone', '').strip()
         email = request.form.get('email', '').strip()
@@ -895,7 +892,6 @@ def submit_application():
         if not all([full_name, phone, address, city, state, pincode]):
             return jsonify({'success': False, 'message': 'Please fill all required common fields'}), 400
         
-        # Get dynamic form fields
         dynamic_fields = {}
         form_fields = service.get('form_fields', [])
         for field in form_fields:
@@ -906,7 +902,6 @@ def submit_application():
             if field_value:
                 dynamic_fields[field_name] = field_value
         
-        # Handle document uploads
         uploaded_files = []
         if 'documents' in request.files:
             files = request.files.getlist('documents')
@@ -917,10 +912,7 @@ def submit_application():
                     unique_filename = f"{timestamp}_{filename}"
                     filepath = os.path.join(app.config['DOCUMENT_FOLDER'], unique_filename)
                     file.save(filepath)
-                    
-                    # Get file size
                     file_size = os.path.getsize(filepath)
-                    
                     uploaded_files.append({
                         'filename': unique_filename,
                         'original_filename': filename,
@@ -963,7 +955,6 @@ def submit_application():
         
         result = db.service_requests.insert_one(request_data)
         
-        # Create notification
         create_notification(
             session['user_id'],
             str(result.inserted_id),
@@ -1077,6 +1068,158 @@ def track_application():
     
     return render_template('track_application.html')
 
+# ============== User Profile Routes ==============
+
+@app.route('/user-profile')
+@login_required
+def user_profile():
+    try:
+        user = get_user_by_id(session['user_id'])
+        if user:
+            return jsonify({
+                'name': user.get('name', ''),
+                'phone': user.get('phone', ''),
+                'email': user.get('email', ''),
+                'address': user.get('address', ''),
+                'city': user.get('city', ''),
+                'state': user.get('state', ''),
+                'pincode': user.get('pincode', '')
+            })
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        print(f"Error fetching user profile: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/update-profile', methods=['POST'])
+@login_required
+def update_profile():
+    try:
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        update_data = {}
+        if 'email' in data:
+            update_data['email'] = data['email']
+        if 'address' in data:
+            update_data['address'] = data['address']
+        if 'city' in data:
+            update_data['city'] = data['city']
+        if 'state' in data:
+            update_data['state'] = data['state']
+        if 'pincode' in data:
+            update_data['pincode'] = data['pincode']
+        
+        if update_data:
+            update_data['updated_at'] = datetime.now(timezone.utc)
+            db.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': update_data}
+            )
+            return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        return jsonify({'success': False, 'message': 'No data to update'}), 400
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/check-status', methods=['POST'])
+def check_status():
+    try:
+        data = request.get_json()
+        reference = data.get('reference', '').strip().upper()
+        phone = data.get('phone', '').strip()
+        
+        if not reference or not phone:
+            return jsonify({'success': False, 'message': 'Reference and phone number required'}), 400
+        
+        app_data = db.service_requests.find_one({'reference_number': reference})
+        if not app_data:
+            return jsonify({'success': False, 'message': 'Application not found'}), 404
+        
+        if app_data.get('applicant_phone') != phone:
+            return jsonify({'success': False, 'message': 'Phone number does not match'}), 403
+        
+        return jsonify({
+            'success': True,
+            'status': app_data.get('status', 'pending'),
+            'service_name': app_data.get('service_name', ''),
+            'reference': app_data.get('reference_number', ''),
+            'submitted_at': app_data.get('submitted_at', '').strftime('%Y-%m-%d %H:%M') if app_data.get('submitted_at') else ''
+        })
+    except Exception as e:
+        print(f"Error checking status: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/initiate-payment/<reference_number>', methods=['POST'])
+@login_required
+def initiate_payment(reference_number):
+    try:
+        app_data = db.service_requests.find_one({'reference_number': reference_number})
+        if not app_data:
+            return jsonify({'success': False, 'message': 'Application not found'}), 404
+        
+        db.service_requests.update_one(
+            {'reference_number': reference_number},
+            {'$set': {
+                'payment_status': 'completed',
+                'payment_date': datetime.now(timezone.utc),
+                'transaction_id': f'TXN{datetime.now().strftime("%Y%m%d%H%M%S")}{random.randint(1000, 9999)}'
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Payment successful',
+            'transaction_id': f'TXN{datetime.now().strftime("%Y%m%d%H%M%S")}{random.randint(1000, 9999)}'
+        })
+    except Exception as e:
+        print(f"Error processing payment: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/application-details/<request_id>')
+@login_required
+def application_details(request_id):
+    try:
+        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
+        if not service_request:
+            return jsonify({'error': 'Application not found'}), 404
+        
+        if str(service_request['user_id']) != session['user_id']:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        documents = service_request.get('documents', [])
+        
+        request_dict = {
+            'id': str(service_request['_id']),
+            'reference_number': service_request['reference_number'],
+            'service_name': service_request['service_name'],
+            'service_type': service_request['service_type'],
+            'status': service_request['status'],
+            'payment_status': service_request['payment_status'],
+            'amount': service_request['amount'],
+            'submitted_at': service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(service_request['submitted_at'], datetime) else str(service_request['submitted_at']),
+            'processed_at': service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S') if service_request.get('processed_at') and isinstance(service_request['processed_at'], datetime) else None,
+            'admin_remarks': service_request.get('admin_remarks', ''),
+            'applicant_name': service_request.get('applicant_name', ''),
+            'applicant_phone': service_request.get('applicant_phone', ''),
+            'applicant_email': service_request.get('applicant_email', ''),
+            'applicant_address': service_request.get('applicant_address', ''),
+            'applicant_city': service_request.get('applicant_city', ''),
+            'applicant_state': service_request.get('applicant_state', ''),
+            'applicant_pincode': service_request.get('applicant_pincode', ''),
+            'dynamic_fields': service_request.get('dynamic_fields', {}),
+            'timeline': service_request.get('timeline', [])
+        }
+        
+        return jsonify({
+            'application': request_dict,
+            'documents': documents
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============== Notification Routes ==============
+
 @app.route('/notifications', methods=['GET'])
 @login_required
 def get_notifications():
@@ -1134,10 +1277,6 @@ def mark_all_notifications_read():
 
 # ============== Admin Routes ==============
 
-# app.py - Add these routes to your existing app.py
-
-# ============== Admin Dashboard Routes ==============
-
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
@@ -1148,7 +1287,6 @@ def admin_dashboard():
         return redirect(url_for('index'))
     
     try:
-        # Get statistics
         total_services = db.services.count_documents({})
         active_services = db.services.count_documents({'is_active': True})
         total_requests = db.service_requests.count_documents({})
@@ -1156,17 +1294,14 @@ def admin_dashboard():
         completed_requests = db.service_requests.count_documents({'status': 'completed'})
         total_users = db.users.count_documents({'role': 'user'})
         
-        # Recent applications
         recent_applications = list(db.service_requests.find()
                                    .sort('submitted_at', -1)
                                    .limit(5))
         
-        # Recent users
         recent_users = list(db.users.find()
                            .sort('created_at', -1)
                            .limit(5))
         
-        # Service-wise application count
         service_stats = []
         pipeline = [
             {'$group': {'_id': '$service_name', 'count': {'$sum': 1}}},
@@ -1175,7 +1310,6 @@ def admin_dashboard():
         ]
         service_stats = list(db.service_requests.aggregate(pipeline))
         
-        # Monthly applications
         monthly_stats = []
         pipeline = [
             {
@@ -1212,6 +1346,55 @@ def admin_dashboard():
         flash('Unable to load dashboard.', 'danger')
         return redirect(url_for('index'))
 
+@app.route('/admin')
+@login_required
+def admin_panel():
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        flash('Admin access required', 'danger')
+        return redirect(url_for('index'))
+    
+    try:
+        total_requests = db.service_requests.count_documents({})
+        pending_requests = db.service_requests.count_documents({'status': 'pending'})
+        completed_requests = db.service_requests.count_documents({'status': 'completed'})
+        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
+        
+        all_requests = list(db.service_requests.find().sort('submitted_at', -1))
+        for req in all_requests:
+            req['id'] = str(req['_id'])
+            if 'user_id' in req:
+                user_data = get_user_by_id(req['user_id'])
+                req['user'] = {'name': user_data['name'] if user_data else 'N/A', 
+                              'phone': user_data['phone'] if user_data else 'N/A'}
+        
+        users = list(db.users.find())
+        for u in users:
+            u['id'] = str(u['_id'])
+        
+        services = list(db.services.find())
+        for s in services:
+            s['id'] = str(s['_id'])
+        
+        stats = {
+            'total_requests': total_requests,
+            'pending_requests': pending_requests,
+            'completed_requests': completed_requests,
+            'in_progress_requests': in_progress_requests,
+            'total_users': db.users.count_documents({'role': 'user'}),
+            'total_services': db.services.count_documents({'is_active': True})
+        }
+        
+        return render_template('admin.html',
+                             requests=all_requests,
+                             users=users,
+                             services=services,
+                             stats=stats)
+    except Exception as e:
+        print(f"Error loading admin panel: {e}")
+        flash('Unable to load admin panel.', 'danger')
+        return redirect(url_for('index'))
+
 @app.route('/admin/services')
 @login_required
 def admin_services():
@@ -1243,7 +1426,6 @@ def admin_create_service():
     
     if request.method == 'POST':
         try:
-            # Get basic service data
             name = request.form.get('name', '').strip()
             slug = request.form.get('slug', '').strip()
             category = request.form.get('category', '').strip()
@@ -1253,25 +1435,21 @@ def admin_create_service():
             icon = request.form.get('icon', 'fas fa-cog').strip()
             is_active = request.form.get('is_active') == 'on'
             
-            # Validate required fields
             if not name or not slug or not category:
                 flash('Please fill in all required fields', 'danger')
                 return redirect(url_for('admin_create_service'))
             
-            # Check if slug exists
             existing = db.services.find_one({'slug': slug})
             if existing:
                 flash('Service with this slug already exists. Please use a different slug.', 'danger')
                 return redirect(url_for('admin_create_service'))
             
-            # Get custom form fields from JSON
             form_fields_json = request.form.get('form_fields_json', '[]')
             try:
                 form_fields = json.loads(form_fields_json)
             except:
                 form_fields = []
             
-            # Get max order
             max_order = db.services.count_documents({})
             
             service_data = {
@@ -1291,7 +1469,6 @@ def admin_create_service():
             
             result = db.services.insert_one(service_data)
             
-            # Create notification for admin
             create_notification(
                 session['user_id'],
                 str(result.inserted_id),
@@ -1308,7 +1485,6 @@ def admin_create_service():
             flash(f'Error creating service: {str(e)}', 'danger')
             return redirect(url_for('admin_create_service'))
     
-    # GET - Show create form
     categories = db.services.distinct('category')
     return render_template('admin_service_form.html', 
                          service=None, 
@@ -1332,7 +1508,6 @@ def admin_edit_service(service_id):
             return redirect(url_for('admin_services'))
         
         if request.method == 'POST':
-            # Get basic service data
             name = request.form.get('name', '').strip()
             slug = request.form.get('slug', '').strip()
             category = request.form.get('category', '').strip()
@@ -1343,18 +1518,15 @@ def admin_edit_service(service_id):
             is_active = request.form.get('is_active') == 'on'
             order = int(request.form.get('order', 0))
             
-            # Validate required fields
             if not name or not slug or not category:
                 flash('Please fill in all required fields', 'danger')
                 return redirect(url_for('admin_edit_service', service_id=service_id))
             
-            # Check if slug exists (excluding current service)
             existing = db.services.find_one({'slug': slug, '_id': {'$ne': ObjectId(service_id)}})
             if existing:
                 flash('Service with this slug already exists. Please use a different slug.', 'danger')
                 return redirect(url_for('admin_edit_service', service_id=service_id))
             
-            # Get custom form fields from JSON
             form_fields_json = request.form.get('form_fields_json', '[]')
             try:
                 form_fields = json.loads(form_fields_json)
@@ -1383,7 +1555,6 @@ def admin_edit_service(service_id):
             flash(f'Service "{name}" updated successfully!', 'success')
             return redirect(url_for('admin_services'))
         
-        # GET - Show edit form
         service['id'] = str(service['_id'])
         categories = db.services.distinct('category')
         form_fields_json = json.dumps(service.get('form_fields', []))
@@ -1413,7 +1584,6 @@ def admin_delete_service(service_id):
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
-        # Check if service has applications
         app_count = db.service_requests.count_documents({'service_id': ObjectId(service_id)})
         if app_count > 0:
             return jsonify({
@@ -1500,7 +1670,111 @@ def admin_get_service_fields(service_id):
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/update-status/<request_id>', methods=['POST'])
+@login_required
+def update_status(request_id):
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
+    try:
+        data = request.get_json()
+        status = data.get('status')
+        remarks = data.get('remarks', '')
+        
+        db.service_requests.update_one(
+            {'_id': ObjectId(request_id)},
+            {'$set': {
+                'status': status,
+                'admin_remarks': remarks,
+                'processed_at': datetime.now(timezone.utc)
+            }}
+        )
+        
+        req = db.service_requests.find_one({'_id': ObjectId(request_id)})
+        if req:
+            status_labels = {
+                'pending': 'Pending',
+                'in_progress': 'In Progress',
+                'completed': 'Completed',
+                'rejected': 'Rejected'
+            }
+            timeline_entry = {
+                'title': f'Status Updated to {status_labels.get(status, status)}',
+                'description': remarks or f'Application status updated to {status_labels.get(status, status)}',
+                'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                'completed': status == 'completed'
+            }
+            db.service_requests.update_one(
+                {'_id': ObjectId(request_id)},
+                {'$push': {'timeline': timeline_entry}}
+            )
+            
+            create_notification(
+                req['user_id'],
+                request_id,
+                'Application Status Updated',
+                f'Your application "{req["service_name"]}" is now {status_labels.get(status, status)}. {remarks or ""}',
+                'info' if status == 'pending' else 'success' if status == 'completed' else 'warning'
+            )
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/application-details/<request_id>')
+@login_required
+def admin_application_details(request_id):
+    user = get_user_by_id(session['user_id'])
+    if not user or user.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
+        if not service_request:
+            return jsonify({'error': 'Application not found'}), 404
+        
+        documents = service_request.get('documents', [])
+        user_data = get_user_by_id(service_request['user_id'])
+        
+        request_dict = {
+            'id': str(service_request['_id']),
+            'reference_number': service_request['reference_number'],
+            'service_name': service_request['service_name'],
+            'service_type': service_request['service_type'],
+            'status': service_request['status'],
+            'payment_status': service_request['payment_status'],
+            'amount': service_request['amount'],
+            'submitted_at': service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(service_request['submitted_at'], datetime) else str(service_request['submitted_at']),
+            'processed_at': service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S') if service_request.get('processed_at') and isinstance(service_request['processed_at'], datetime) else None,
+            'admin_remarks': service_request.get('admin_remarks', ''),
+            'applicant_name': service_request.get('applicant_name', ''),
+            'applicant_phone': service_request.get('applicant_phone', ''),
+            'applicant_email': service_request.get('applicant_email', ''),
+            'applicant_address': service_request.get('applicant_address', ''),
+            'applicant_city': service_request.get('applicant_city', ''),
+            'applicant_state': service_request.get('applicant_state', ''),
+            'applicant_pincode': service_request.get('applicant_pincode', ''),
+            'dynamic_fields': service_request.get('dynamic_fields', {}),
+            'timeline': service_request.get('timeline', [])
+        }
+        
+        return jsonify({
+            'application': request_dict,
+            'documents': documents,
+            'user': {
+                'name': user_data['name'] if user_data else 'N/A',
+                'phone': user_data['phone'] if user_data else 'N/A',
+                'email': user_data.get('email', 'N/A') if user_data else 'N/A'
+            }
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============== Health Check ==============
+
 @app.route('/health')
 def health_check():
     try:
@@ -1515,6 +1789,8 @@ def health_check():
         'services_count': db.services.count_documents({}),
         'timestamp': datetime.now(timezone.utc).isoformat()
     })
+
+# ============== Error Handlers ==============
 
 @app.errorhandler(404)
 def not_found_error(error):
