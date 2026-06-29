@@ -1134,61 +1134,88 @@ def mark_all_notifications_read():
 
 # ============== Admin Routes ==============
 
-@app.route('/admin')
+# app.py - Add these routes to your existing app.py
+
+# ============== Admin Dashboard Routes ==============
+
+@app.route('/admin/dashboard')
 @login_required
-def admin_panel():
+def admin_dashboard():
+    """Main admin dashboard with statistics"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         flash('Admin access required', 'danger')
         return redirect(url_for('index'))
     
     try:
+        # Get statistics
+        total_services = db.services.count_documents({})
+        active_services = db.services.count_documents({'is_active': True})
         total_requests = db.service_requests.count_documents({})
         pending_requests = db.service_requests.count_documents({'status': 'pending'})
         completed_requests = db.service_requests.count_documents({'status': 'completed'})
-        in_progress_requests = db.service_requests.count_documents({'status': 'in_progress'})
+        total_users = db.users.count_documents({'role': 'user'})
         
-        all_requests = list(db.service_requests.find().sort('submitted_at', -1))
-        for req in all_requests:
-            req['id'] = str(req['_id'])
-            # Get user info if available
-            if 'user_id' in req:
-                user_data = get_user_by_id(req['user_id'])
-                req['user'] = {'name': user_data['name'] if user_data else 'N/A', 
-                              'phone': user_data['phone'] if user_data else 'N/A'}
+        # Recent applications
+        recent_applications = list(db.service_requests.find()
+                                   .sort('submitted_at', -1)
+                                   .limit(5))
         
-        users = list(db.users.find())
-        for u in users:
-            u['id'] = str(u['_id'])
+        # Recent users
+        recent_users = list(db.users.find()
+                           .sort('created_at', -1)
+                           .limit(5))
         
-        services = list(db.services.find())
-        for s in services:
-            s['id'] = str(s['_id'])
+        # Service-wise application count
+        service_stats = []
+        pipeline = [
+            {'$group': {'_id': '$service_name', 'count': {'$sum': 1}}},
+            {'$sort': {'count': -1}},
+            {'$limit': 10}
+        ]
+        service_stats = list(db.service_requests.aggregate(pipeline))
+        
+        # Monthly applications
+        monthly_stats = []
+        pipeline = [
+            {
+                '$group': {
+                    '_id': {
+                        'year': {'$year': '$submitted_at'},
+                        'month': {'$month': '$submitted_at'}
+                    },
+                    'count': {'$sum': 1}
+                }
+            },
+            {'$sort': {'_id.year': -1, '_id.month': -1}},
+            {'$limit': 6}
+        ]
+        monthly_stats = list(db.service_requests.aggregate(pipeline))
         
         stats = {
+            'total_services': total_services,
+            'active_services': active_services,
             'total_requests': total_requests,
             'pending_requests': pending_requests,
             'completed_requests': completed_requests,
-            'in_progress_requests': in_progress_requests,
-            'total_users': db.users.count_documents({'role': 'user'}),
-            'total_services': db.services.count_documents({'is_active': True})
+            'total_users': total_users
         }
         
-        return render_template('admin.html',
-                             requests=all_requests,
-                             users=users,
-                             services=services,
-                             stats=stats)
+        return render_template('admin_dashboard.html',
+                             stats=stats,
+                             recent_applications=recent_applications,
+                             recent_users=recent_users,
+                             service_stats=service_stats,
+                             monthly_stats=monthly_stats)
     except Exception as e:
-        print(f"Error loading admin panel: {e}")
-        flash('Unable to load admin panel.', 'danger')
+        print(f"Error loading admin dashboard: {e}")
+        flash('Unable to load dashboard.', 'danger')
         return redirect(url_for('index'))
-
-# ============== Admin - Service Management Routes ==============
 
 @app.route('/admin/services')
 @login_required
 def admin_services():
+    """Admin page for managing services"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         flash('Admin access required', 'danger')
@@ -1203,11 +1230,12 @@ def admin_services():
     except Exception as e:
         print(f"Error loading admin services: {e}")
         flash('Unable to load services.', 'danger')
-        return redirect(url_for('admin_panel'))
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/service/create', methods=['GET', 'POST'])
 @login_required
 def admin_create_service():
+    """Create a new service with custom fields"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         flash('Admin access required', 'danger')
@@ -1215,7 +1243,7 @@ def admin_create_service():
     
     if request.method == 'POST':
         try:
-            # Get form data
+            # Get basic service data
             name = request.form.get('name', '').strip()
             slug = request.form.get('slug', '').strip()
             category = request.form.get('category', '').strip()
@@ -1225,16 +1253,18 @@ def admin_create_service():
             icon = request.form.get('icon', 'fas fa-cog').strip()
             is_active = request.form.get('is_active') == 'on'
             
+            # Validate required fields
             if not name or not slug or not category:
                 flash('Please fill in all required fields', 'danger')
                 return redirect(url_for('admin_create_service'))
             
+            # Check if slug exists
             existing = db.services.find_one({'slug': slug})
             if existing:
                 flash('Service with this slug already exists. Please use a different slug.', 'danger')
                 return redirect(url_for('admin_create_service'))
             
-            # Get form fields from JSON
+            # Get custom form fields from JSON
             form_fields_json = request.form.get('form_fields_json', '[]')
             try:
                 form_fields = json.loads(form_fields_json)
@@ -1259,7 +1289,17 @@ def admin_create_service():
                 'updated_at': datetime.now(timezone.utc)
             }
             
-            db.services.insert_one(service_data)
+            result = db.services.insert_one(service_data)
+            
+            # Create notification for admin
+            create_notification(
+                session['user_id'],
+                str(result.inserted_id),
+                'Service Created',
+                f'Service "{name}" has been created successfully.',
+                'success'
+            )
+            
             flash(f'Service "{name}" created successfully!', 'success')
             return redirect(url_for('admin_services'))
             
@@ -1268,6 +1308,7 @@ def admin_create_service():
             flash(f'Error creating service: {str(e)}', 'danger')
             return redirect(url_for('admin_create_service'))
     
+    # GET - Show create form
     categories = db.services.distinct('category')
     return render_template('admin_service_form.html', 
                          service=None, 
@@ -1278,6 +1319,7 @@ def admin_create_service():
 @app.route('/admin/service/edit/<service_id>', methods=['GET', 'POST'])
 @login_required
 def admin_edit_service(service_id):
+    """Edit an existing service with custom fields"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         flash('Admin access required', 'danger')
@@ -1290,6 +1332,7 @@ def admin_edit_service(service_id):
             return redirect(url_for('admin_services'))
         
         if request.method == 'POST':
+            # Get basic service data
             name = request.form.get('name', '').strip()
             slug = request.form.get('slug', '').strip()
             category = request.form.get('category', '').strip()
@@ -1300,15 +1343,18 @@ def admin_edit_service(service_id):
             is_active = request.form.get('is_active') == 'on'
             order = int(request.form.get('order', 0))
             
+            # Validate required fields
             if not name or not slug or not category:
                 flash('Please fill in all required fields', 'danger')
                 return redirect(url_for('admin_edit_service', service_id=service_id))
             
+            # Check if slug exists (excluding current service)
             existing = db.services.find_one({'slug': slug, '_id': {'$ne': ObjectId(service_id)}})
             if existing:
                 flash('Service with this slug already exists. Please use a different slug.', 'danger')
                 return redirect(url_for('admin_edit_service', service_id=service_id))
             
+            # Get custom form fields from JSON
             form_fields_json = request.form.get('form_fields_json', '[]')
             try:
                 form_fields = json.loads(form_fields_json)
@@ -1337,6 +1383,7 @@ def admin_edit_service(service_id):
             flash(f'Service "{name}" updated successfully!', 'success')
             return redirect(url_for('admin_services'))
         
+        # GET - Show edit form
         service['id'] = str(service['_id'])
         categories = db.services.distinct('category')
         form_fields_json = json.dumps(service.get('form_fields', []))
@@ -1356,6 +1403,7 @@ def admin_edit_service(service_id):
 @app.route('/admin/service/delete/<service_id>', methods=['POST'])
 @login_required
 def admin_delete_service(service_id):
+    """Delete a service"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
@@ -1365,9 +1413,13 @@ def admin_delete_service(service_id):
         if not service:
             return jsonify({'success': False, 'message': 'Service not found'}), 404
         
+        # Check if service has applications
         app_count = db.service_requests.count_documents({'service_id': ObjectId(service_id)})
         if app_count > 0:
-            return jsonify({'success': False, 'message': f'Cannot delete service with {app_count} applications. Archive it instead.'}), 400
+            return jsonify({
+                'success': False, 
+                'message': f'Cannot delete service with {app_count} applications. Archive it instead.'
+            }), 400
         
         db.services.delete_one({'_id': ObjectId(service_id)})
         return jsonify({'success': True, 'message': 'Service deleted successfully'})
@@ -1379,6 +1431,7 @@ def admin_delete_service(service_id):
 @app.route('/admin/service/toggle-status/<service_id>', methods=['POST'])
 @login_required
 def admin_toggle_service_status(service_id):
+    """Toggle service active/inactive status"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
@@ -1407,6 +1460,7 @@ def admin_toggle_service_status(service_id):
 @app.route('/admin/service/reorder', methods=['POST'])
 @login_required
 def admin_reorder_services():
+    """Reorder services"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
@@ -1427,111 +1481,26 @@ def admin_reorder_services():
         print(f"Error reordering services: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/admin/update-status/<request_id>', methods=['POST'])
+@app.route('/admin/service/fields/<service_id>', methods=['GET'])
 @login_required
-def update_status(request_id):
-    user = get_user_by_id(session['user_id'])
-    if not user or user.get('role') != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
-    
-    try:
-        data = request.get_json()
-        status = data.get('status')
-        remarks = data.get('remarks', '')
-        
-        # Update request
-        db.service_requests.update_one(
-            {'_id': ObjectId(request_id)},
-            {'$set': {
-                'status': status,
-                'admin_remarks': remarks,
-                'processed_at': datetime.now(timezone.utc)
-            }}
-        )
-        
-        # Add to timeline
-        req = db.service_requests.find_one({'_id': ObjectId(request_id)})
-        if req:
-            status_labels = {
-                'pending': 'Pending',
-                'in_progress': 'In Progress',
-                'completed': 'Completed',
-                'rejected': 'Rejected'
-            }
-            timeline_entry = {
-                'title': f'Status Updated to {status_labels.get(status, status)}',
-                'description': remarks or f'Application status updated to {status_labels.get(status, status)}',
-                'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-                'completed': status == 'completed'
-            }
-            db.service_requests.update_one(
-                {'_id': ObjectId(request_id)},
-                {'$push': {'timeline': timeline_entry}}
-            )
-            
-            # Create notification for user
-            create_notification(
-                req['user_id'],
-                request_id,
-                f'Application Status Updated',
-                f'Your application "{req["service_name"]}" is now {status_labels.get(status, status)}. {remarks or ""}',
-                'info' if status == 'pending' else 'success' if status == 'completed' else 'warning'
-            )
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/admin/application-details/<request_id>')
-@login_required
-def admin_application_details(request_id):
+def admin_get_service_fields(service_id):
+    """Get service fields for AJAX"""
     user = get_user_by_id(session['user_id'])
     if not user or user.get('role') != 'admin':
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
-        service_request = db.service_requests.find_one({'_id': ObjectId(request_id)})
-        if not service_request:
-            return jsonify({'error': 'Application not found'}), 404
-        
-        documents = service_request.get('documents', [])
-        user_data = get_user_by_id(service_request['user_id'])
-        
-        request_dict = {
-            'id': str(service_request['_id']),
-            'reference_number': service_request['reference_number'],
-            'service_name': service_request['service_name'],
-            'service_type': service_request['service_type'],
-            'status': service_request['status'],
-            'payment_status': service_request['payment_status'],
-            'amount': service_request['amount'],
-            'submitted_at': service_request['submitted_at'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(service_request['submitted_at'], datetime) else str(service_request['submitted_at']),
-            'processed_at': service_request['processed_at'].strftime('%Y-%m-%d %H:%M:%S') if service_request.get('processed_at') and isinstance(service_request['processed_at'], datetime) else None,
-            'admin_remarks': service_request.get('admin_remarks', ''),
-            'applicant_name': service_request.get('applicant_name', ''),
-            'applicant_phone': service_request.get('applicant_phone', ''),
-            'applicant_email': service_request.get('applicant_email', ''),
-            'applicant_address': service_request.get('applicant_address', ''),
-            'applicant_city': service_request.get('applicant_city', ''),
-            'applicant_state': service_request.get('applicant_state', ''),
-            'applicant_pincode': service_request.get('applicant_pincode', ''),
-            'dynamic_fields': service_request.get('dynamic_fields', {}),
-            'timeline': service_request.get('timeline', [])
-        }
+        service = db.services.find_one({'_id': ObjectId(service_id)})
+        if not service:
+            return jsonify({'error': 'Service not found'}), 404
         
         return jsonify({
-            'application': request_dict,
-            'documents': documents,
-            'user': {
-                'name': user_data['name'] if user_data else 'N/A',
-                'phone': user_data['phone'] if user_data else 'N/A',
-                'email': user_data.get('email', 'N/A') if user_data else 'N/A'
-            }
+            'success': True,
+            'fields': service.get('form_fields', [])
         })
     except Exception as e:
-        print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/health')
 def health_check():
     try:
