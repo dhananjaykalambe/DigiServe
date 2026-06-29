@@ -1,0 +1,306 @@
+<!-- templates/admin_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - DigiServe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-stat {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .dashboard-stat:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .activity-item {
+        border-left: 3px solid var(--primary);
+        padding-left: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    .activity-item:last-child {
+        margin-bottom: 0;
+    }
+    .chart-container {
+        height: 250px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up">
+    <div>
+        <h2 class="fw-bold"><i class="fas fa-chart-pie text-primary me-2"></i> Admin Dashboard</h2>
+        <p class="text-muted mb-0">Overview of your platform's performance and statistics</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin_services') }}" class="btn btn-primary rounded-pill px-4">
+            <i class="fas fa-cogs me-2"></i> Manage Services
+        </a>
+        <a href="{{ url_for('admin_create_service') }}" class="btn btn-success rounded-pill px-4">
+            <i class="fas fa-plus me-2"></i> Add New Service
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4" data-aos="fade-up">
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary mx-auto mb-2">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.total_services }}</h3>
+                <p class="text-muted small mb-0">Total Services</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-2">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.active_services }}</h3>
+                <p class="text-muted small mb-0">Active Services</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-info bg-opacity-10 text-info mx-auto mb-2">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.total_requests }}</h3>
+                <p class="text-muted small mb-0">Applications</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning mx-auto mb-2">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.pending_requests }}</h3>
+                <p class="text-muted small mb-0">Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-2">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.completed_requests }}</h3>
+                <p class="text-muted small mb-0">Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card dashboard-stat border-0 shadow-sm rounded-4">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-secondary bg-opacity-10 text-secondary mx-auto mb-2">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="fw-bold mb-0">{{ stats.total_users }}</h3>
+                <p class="text-muted small mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Popular Services Chart -->
+    <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-chart-bar text-primary me-2"></i> Popular Services</h5>
+            </div>
+            <div class="card-body">
+                {% if service_stats %}
+                    {% for stat in service_stats %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>{{ stat._id }}</span>
+                            <span class="fw-semibold">{{ stat.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" 
+                                 style="width: {{ (stat.count / service_stats[0].count * 100)|round if service_stats else 0 }}%; 
+                                        border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4">No service data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-clock text-primary me-2"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="small text-muted fw-bold text-uppercase mb-3">Latest Applications</h6>
+                {% if recent_applications %}
+                    {% for app in recent_applications %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold small">{{ app.service_name }}</div>
+                                <div class="text-muted small">{{ app.applicant_name or 'N/A' }}</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge {% if app.status == 'pending' %}bg-warning{% elif app.status == 'completed' %}bg-success{% elif app.status == 'in_progress' %}bg-info{% else %}bg-danger{% endif %} rounded-pill">
+                                    {{ app.status }}
+                                </span>
+                                <div class="text-muted small">{{ app.submitted_at.strftime('%H:%M %d-%m-%Y') if app.submitted_at else 'N/A' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4">No recent applications.</p>
+                {% endif %}
+
+                <hr>
+
+                <h6 class="small text-muted fw-bold text-uppercase mb-3">New Users</h6>
+                {% if recent_users %}
+                    {% for user in recent_users %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold small">{{ user.name }}</div>
+                                <div class="text-muted small">{{ user.phone }}</div>
+                            </div>
+                            <div class="text-muted small">{{ user.created_at.strftime('%H:%M %d-%m-%Y') if user.created_at else 'N/A' }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4">No new users.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-12" data-aos="fade-up" data-aos-delay="300">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-bolt text-warning me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('admin_create_service') }}" class="text-decoration-none">
+                            <div class="p-3 bg-light rounded-4 text-center hover-lift">
+                                <i class="fas fa-plus-circle fa-2x text-primary mb-2"></i>
+                                <p class="small fw-semibold mb-0">Add Service</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('admin_services') }}" class="text-decoration-none">
+                            <div class="p-3 bg-light rounded-4 text-center hover-lift">
+                                <i class="fas fa-cogs fa-2x text-info mb-2"></i>
+                                <p class="small fw-semibold mb-0">Manage Services</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" class="text-decoration-none" onclick="refreshDashboard()">
+                            <div class="p-3 bg-light rounded-4 text-center hover-lift">
+                                <i class="fas fa-sync-alt fa-2x text-success mb-2"></i>
+                                <p class="small fw-semibold mb-0">Refresh Stats</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" class="text-decoration-none" onclick="exportData()">
+                            <div class="p-3 bg-light rounded-4 text-center hover-lift">
+                                <i class="fas fa-download fa-2x text-warning mb-2"></i>
+                                <p class="small fw-semibold mb-0">Export Data</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .hover-lift:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+</style>
+
+<script>
+    function refreshDashboard() {
+        showToast('Refreshing dashboard data...', 'info');
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+    
+    function exportData() {
+        showToast('Exporting data... This feature will be available soon.', 'info');
+    }
+    
+    // Toast function
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const colors = {
+            success: '#22c55e',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#4f46e5'
+        };
+        const icons = {
+            success: 'check-circle',
+            danger: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+</script>
+{% endblock %}

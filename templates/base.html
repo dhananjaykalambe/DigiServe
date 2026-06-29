@@ -29,7 +29,7 @@
             padding: 48px 0 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             transition: transform 0.3s ease;
-            width: 240px;
+            width: 260px;
             background: var(--bg-secondary);
         }
         .sidebar-sticky {
@@ -43,10 +43,13 @@
         .sidebar .nav-link {
             font-weight: 500;
             color: var(--text-secondary);
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1.25rem;
             border-radius: 0.5rem;
             margin: 0.1rem 0.5rem;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
         .sidebar .nav-link:hover {
             background: var(--primary-light);
@@ -57,17 +60,49 @@
             color: white;
         }
         .sidebar .nav-link i {
-            margin-right: 0.75rem;
             width: 20px;
             text-align: center;
+            font-size: 1.1rem;
+        }
+        .sidebar .nav-section-title {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .sidebar .nav-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 1rem;
+        }
+        .sidebar .user-info {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0.5rem;
+        }
+        .sidebar .user-info .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .sidebar .user-info .user-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .sidebar .user-info .user-phone {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
         }
         .main-content {
-            margin-left: 240px;
+            margin-left: 260px;
             padding-top: 60px;
         }
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                width: 280px;
             }
             .sidebar.show {
                 transform: translateX(0);
@@ -84,31 +119,80 @@
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-sticky">
+            <!-- Brand -->
             <div class="px-3 mb-3">
                 <a class="navbar-brand" href="{{ url_for('index') }}">
                     <i class="fas fa-handshake me-2"></i>DigiServe
                 </a>
             </div>
+            
+            <!-- User Info -->
+            {% if 'user_id' in session %}
+            <div class="user-info">
+                <div class="user-name">{{ session.user_name }}</div>
+                <div class="user-phone"><i class="fas fa-phone me-1"></i> {{ session.user_phone }}</div>
+                <div class="user-role">
+                    <span class="badge {% if session.user_role == 'admin' %}bg-danger{% else %}bg-primary{% endif %} rounded-pill">
+                        {{ session.user_role|upper }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Navigation -->
             <ul class="nav flex-column">
+                <!-- Public Links -->
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
                         <i class="fas fa-home"></i> Dashboard
                     </a>
                 </li>
+                
+                <!-- Track Application - Always Visible -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'track_application' %}active{% endif %}" href="{{ url_for('track_application') }}">
+                        <i class="fas fa-search"></i> Track Application
+                    </a>
+                </li>
+                
+                <!-- ============================================ -->
+                <!-- ADMIN SECTION - Only visible to admin users -->
+                <!-- ============================================ -->
+                {% if 'user_id' in session and session.user_role == 'admin' %}
+                <li class="nav-section-title"><i class="fas fa-crown me-1"></i> Administration</li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+                        <i class="fas fa-chart-pie"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin_services' %}active{% endif %}" href="{{ url_for('admin_services') }}">
+                        <i class="fas fa-cogs"></i> Manage Services
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin_panel' %}active{% endif %}" href="{{ url_for('admin_panel') }}">
+                        <i class="fas fa-user-shield"></i> Applications
+                    </a>
+                </li>
+                <div class="nav-divider"></div>
+                {% endif %}
+                
+                <!-- ============================================ -->
+                <!-- USER SECTION - Only visible to logged in users -->
+                <!-- ============================================ -->
                 {% if 'user_id' in session %}
-                    {% if session.user_role == 'admin' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'admin_panel' %}active{% endif %}" href="{{ url_for('admin_panel') }}">
-                                <i class="fas fa-user-shield"></i> Admin Panel
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'my_applications' %}active{% endif %}" href="{{ url_for('my_applications') }}">
-                                <i class="fas fa-file-alt"></i> My Applications
-                            </a>
-                        </li>
+                    {% if session.user_role != 'admin' %}
+                    <li class="nav-section-title"><i class="fas fa-user me-1"></i> My Account</li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'my_applications' %}active{% endif %}" href="{{ url_for('my_applications') }}">
+                            <i class="fas fa-file-alt"></i> My Applications
+                        </a>
+                    </li>
                     {% endif %}
+                    
+                    <!-- Common User Links -->
                     <li class="nav-item">
                         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
                             <i class="fas fa-user"></i> Profile
@@ -120,25 +204,34 @@
                         </a>
                     </li>
                 {% else %}
+                    <!-- ============================================ -->
+                    <!-- PUBLIC SECTION - Visible to non-logged in users -->
+                    <!-- ============================================ -->
+                    <li class="nav-section-title"><i class="fas fa-lock me-1"></i> Account</li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'login' %}active{% endif %}" href="{{ url_for('login') }}">
                             <i class="fas fa-sign-in-alt"></i> Login
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'track_application' %}active{% endif %}" href="{{ url_for('track_application') }}">
-                            <i class="fas fa-search"></i> Track
+                        <a class="nav-link {% if request.endpoint == 'register' %}active{% endif %}" href="{{ url_for('register') }}">
+                            <i class="fas fa-user-plus"></i> Register
                         </a>
                     </li>
                 {% endif %}
             </ul>
+            
+            <!-- Footer -->
             <hr>
             <div class="px-3">
                 <div class="small text-muted">
-                    <i class="fas fa-phone me-1"></i> {{ config.CONTACT_PHONE }}
+                    <i class="fas fa-phone me-1"></i> +91 9999999999
                 </div>
                 <div class="small text-muted">
-                    <i class="fas fa-envelope me-1"></i> {{ config.CONTACT_EMAIL }}
+                    <i class="fas fa-envelope me-1"></i> info@digiserve.com
+                </div>
+                <div class="small text-muted mt-2">
+                    <i class="fas fa-copyright me-1"></i> 2026 DigiServe
                 </div>
             </div>
         </div>

@@ -8,8 +8,8 @@
     .field-builder-item {
         background: var(--bg-secondary);
         border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-        padding: 1rem;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
         margin-bottom: 0.75rem;
         transition: all 0.3s ease;
         display: flex;
@@ -21,46 +21,84 @@
         border-color: var(--primary);
         box-shadow: var(--shadow-sm);
     }
+    .field-builder-item.dragging {
+        opacity: 0.5;
+        border-style: dashed;
+    }
     .field-builder-item .drag-handle {
         color: var(--text-muted);
         cursor: grab;
         font-size: 1.25rem;
+        padding: 0 0.5rem;
     }
     .field-builder-item .field-info {
         flex: 1;
+        min-width: 0;
     }
     .field-builder-item .field-info .field-label {
         font-weight: 600;
+        font-size: 0.95rem;
     }
     .field-builder-item .field-info .field-detail {
         font-size: 0.8125rem;
-        color: var(--text-muted);
+        color: var(--text-secondary);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
     }
     .field-builder-item .field-required-badge {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.6rem;
         border-radius: 9999px;
         background: #dcfce7;
         color: #065f46;
     }
+    .field-builder-item .field-optional-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.6rem;
+        border-radius: 9999px;
+        background: #f1f5f9;
+        color: #475569;
+    }
     .field-builder-item .field-actions {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.35rem;
+        flex-shrink: 0;
     }
     .field-builder-empty {
         text-align: center;
-        padding: 2rem;
+        padding: 2.5rem 1rem;
         color: var(--text-muted);
         border: 2px dashed var(--border-color);
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
+        background: var(--bg-secondary);
     }
-    .dragging {
-        opacity: 0.5;
-        border-style: dashed;
+    .field-builder-empty i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
     }
-    .drag-over {
-        border-color: var(--primary);
-        background: var(--primary-light);
+    .tab-pill {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+    }
+    .tab-pill-required {
+        background: #dcfce7;
+        color: #065f46;
+    }
+    .tab-pill-optional {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .tab-pill-type {
+        background: #dbeafe;
+        color: #1e40af;
     }
 </style>
 {% endblock %}
@@ -80,6 +118,7 @@
             </div>
             <div class="card-body p-4 p-lg-5">
                 <form method="POST" action="{{ form_action }}" id="serviceForm">
+                    <!-- Basic Service Information -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Service Name <span class="text-danger">*</span></label>
@@ -148,6 +187,7 @@
                             <input type="text" class="form-control" name="processing_time" 
                                    value="{{ service.processing_time if service else '3-5 working days' }}" 
                                    placeholder="e.g., 3-5 working days">
+                            <div class="form-text">Estimated duration to complete the service.</div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-semibold">Display Order</label>
@@ -157,12 +197,15 @@
                         </div>
                     </div>
 
-                    <!-- Form Fields Builder -->
-                    <hr>
+                    <!-- Form Fields Builder - "Add Tab" Feature -->
+                    <hr class="my-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-semibold mb-0"><i class="fas fa-list me-2"></i> Form Fields</h5>
-                        <button type="button" class="btn btn-primary btn-sm rounded-pill" onclick="addField()">
-                            <i class="fas fa-plus me-1"></i> Add Field
+                        <div>
+                            <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i> Custom Form Fields</h5>
+                            <p class="text-muted small mb-0">Add custom tabs/fields that will appear in the service application form</p>
+                        </div>
+                        <button type="button" class="btn btn-primary rounded-pill" onclick="openAddFieldModal()">
+                            <i class="fas fa-plus me-1"></i> Add Tab
                         </button>
                     </div>
                     
@@ -172,7 +215,7 @@
                     
                     <input type="hidden" name="form_fields_json" id="formFieldsJson" value='{{ form_fields_json or "[]" }}'>
 
-                    <div class="mb-3">
+                    <div class="mb-3 mt-4">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="is_active" id="isActive" 
                                    {% if not service or service.is_active %}checked{% endif %}>
@@ -200,30 +243,168 @@
     </div>
     
     <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-        <div class="card shadow-sm rounded-4">
+        <div class="card shadow-sm rounded-4 sticky-top" style="top: 90px;">
             <div class="card-header bg-info text-white rounded-top-4 border-0 py-3">
                 <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Field Types Guide</h5>
             </div>
             <div class="card-body p-4">
                 <div class="small">
-                    <div class="mb-2"><span class="badge bg-primary">text</span> Single line text input</div>
-                    <div class="mb-2"><span class="badge bg-primary">textarea</span> Multi-line text input</div>
-                    <div class="mb-2"><span class="badge bg-primary">number</span> Numeric input</div>
-                    <div class="mb-2"><span class="badge bg-primary">date</span> Date picker</div>
-                    <div class="mb-2"><span class="badge bg-primary">select</span> Dropdown selection</div>
-                    <div class="mb-2"><span class="badge bg-primary">url</span> URL input</div>
-                    <div class="mb-2"><span class="badge bg-primary">email</span> Email input</div>
-                    <div class="mb-2"><span class="badge bg-primary">tel</span> Phone number input</div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">text</span>
+                        <span>Single line text input</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">textarea</span>
+                        <span>Multi-line text input</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">number</span>
+                        <span>Numeric input</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">date</span>
+                        <span>Date picker</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">select</span>
+                        <span>Dropdown selection</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">email</span>
+                        <span>Email input</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">tel</span>
+                        <span>Phone number input</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded-3">
+                        <span class="badge bg-primary">url</span>
+                        <span>URL input</span>
+                    </div>
                 </div>
                 <hr>
                 <div class="small text-muted">
                     <i class="fas fa-info-circle me-1"></i>
-                    Fields marked as <span class="text-danger">*</span> are required.
+                    <strong>Pro Tip:</strong> Drag fields to reorder them. Use descriptive labels for better user experience.
                 </div>
                 <div class="small text-muted mt-2">
                     <i class="fas fa-info-circle me-1"></i>
-                    Drag fields to reorder them.
+                    Fields marked with <span class="text-danger">*</span> are required.
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Field Modal -->
+<div class="modal fade" id="addFieldModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4 border-0">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Add Custom Field</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addFieldForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Field Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="fieldLabel" 
+                               placeholder="e.g., Consumer Number, Date of Birth, Address" required>
+                        <div class="form-text">This will be displayed as the field label in the form.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Field Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="fieldType" required>
+                            <option value="text">Text Input</option>
+                            <option value="textarea">Text Area</option>
+                            <option value="number">Number Input</option>
+                            <option value="date">Date Picker</option>
+                            <option value="select">Dropdown Select</option>
+                            <option value="email">Email Input</option>
+                            <option value="tel">Phone Input</option>
+                            <option value="url">URL Input</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="optionsContainer" style="display: none;">
+                        <label class="form-label fw-semibold">Options <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="fieldOptions" 
+                               placeholder="Option 1, Option 2, Option 3">
+                        <div class="form-text">Comma separated list of options for dropdown.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="fieldRequired" checked>
+                            <label class="form-check-label fw-semibold" for="fieldRequired">
+                                <i class="fas fa-asterisk text-danger me-1"></i> Required Field
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill" onclick="addFieldFromModal()">
+                    <i class="fas fa-plus me-1"></i> Add Field
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Field Modal -->
+<div class="modal fade" id="editFieldModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header bg-warning text-dark rounded-top-4 border-0">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Edit Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editFieldForm">
+                    <input type="hidden" id="editFieldIndex">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Field Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editFieldLabel" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Field Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="editFieldType" required>
+                            <option value="text">Text Input</option>
+                            <option value="textarea">Text Area</option>
+                            <option value="number">Number Input</option>
+                            <option value="date">Date Picker</option>
+                            <option value="select">Dropdown Select</option>
+                            <option value="email">Email Input</option>
+                            <option value="tel">Phone Input</option>
+                            <option value="url">URL Input</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="editOptionsContainer" style="display: none;">
+                        <label class="form-label fw-semibold">Options <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editFieldOptions" 
+                               placeholder="Option 1, Option 2, Option 3">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="editFieldRequired">
+                            <label class="form-check-label fw-semibold" for="editFieldRequired">
+                                <i class="fas fa-asterisk text-danger me-1"></i> Required Field
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning rounded-pill" onclick="saveFieldEdit()">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
             </div>
         </div>
     </div>
@@ -232,6 +413,7 @@
 <script>
     // ========== Field Builder ==========
     let fields = [];
+    let editingIndex = -1;
     
     // Load existing fields
     const fieldsJsonInput = document.getElementById('formFieldsJson');
@@ -250,8 +432,9 @@
         if (fields.length === 0) {
             container.innerHTML = `
                 <div class="field-builder-empty">
-                    <i class="fas fa-plus-circle fa-2x mb-2"></i>
-                    <p>No fields added yet. Click "Add Field" to create form fields.</p>
+                    <i class="fas fa-plus-circle text-primary"></i>
+                    <p class="mb-1"><strong>No custom fields added yet</strong></p>
+                    <p class="small">Click the <span class="badge bg-primary">Add Tab</span> button to create custom form fields for this service.</p>
                 </div>
             `;
             return;
@@ -259,9 +442,13 @@
         
         let html = '';
         fields.forEach((field, index) => {
-            const optionsHtml = field.options ? field.options.map(opt => 
-                `<option value="${escapeHtml(opt)}" ${opt === field.options?.[0] ? 'selected' : ''}>${escapeHtml(opt)}</option>`
-            ).join('') : '';
+            const typeLabel = field.type.charAt(0).toUpperCase() + field.type.slice(1);
+            const requiredBadge = field.required ? 
+                '<span class="field-required-badge">Required</span>' : 
+                '<span class="field-optional-badge">Optional</span>';
+            
+            const optionsInfo = field.options && field.options.length > 0 ? 
+                `<span class="tab-pill tab-pill-type">${field.options.length} options</span>` : '';
             
             html += `
                 <div class="field-builder-item" data-index="${index}" draggable="true">
@@ -269,15 +456,18 @@
                         <i class="fas fa-grip-vertical"></i>
                     </div>
                     <div class="field-info">
-                        <div class="field-label">${escapeHtml(field.label)}</div>
+                        <div class="field-label">
+                            ${escapeHtml(field.label)}
+                            ${field.required ? '<span class="text-danger ms-1">*</span>' : ''}
+                        </div>
                         <div class="field-detail">
-                            <span class="badge bg-secondary">${escapeHtml(field.type)}</span>
-                            <span class="field-required-badge">${field.required ? 'Required' : 'Optional'}</span>
-                            ${field.options ? `<span class="text-muted">(${field.options.length} options)</span>` : ''}
+                            <span class="tab-pill tab-pill-type">${escapeHtml(typeLabel)}</span>
+                            ${requiredBadge}
+                            ${optionsInfo}
                         </div>
                     </div>
                     <div class="field-actions">
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="editField(${index})">
+                        <button type="button" class="btn btn-sm btn-outline-warning rounded-pill" onclick="openEditFieldModal(${index})">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removeField(${index})">
@@ -289,10 +479,16 @@
         });
         
         container.innerHTML = html;
+        setupDragAndDrop();
+        updateFieldsJson();
+    }
+    
+    function setupDragAndDrop() {
+        const container = document.getElementById('fieldBuilderContainer');
+        if (!container) return;
         
-        // Add drag and drop support
-        const items = container.querySelectorAll('.field-builder-item');
         let draggedItem = null;
+        const items = container.querySelectorAll('.field-builder-item');
         
         items.forEach(item => {
             item.addEventListener('dragstart', function(e) {
@@ -335,97 +531,133 @@
                 }
             });
         });
-        
-        // Update hidden input
-        updateFieldsJson();
     }
     
-    function addField() {
-        const fieldTypes = [
-            { value: 'text', label: 'Text Input' },
-            { value: 'textarea', label: 'Text Area' },
-            { value: 'number', label: 'Number Input' },
-            { value: 'date', label: 'Date Picker' },
-            { value: 'select', label: 'Dropdown Select' },
-            { value: 'url', label: 'URL Input' },
-            { value: 'email', label: 'Email Input' },
-            { value: 'tel', label: 'Phone Input' }
-        ];
+    // ========== Add Field Modal ==========
+    function openAddFieldModal() {
+        document.getElementById('fieldLabel').value = '';
+        document.getElementById('fieldType').value = 'text';
+        document.getElementById('fieldOptions').value = '';
+        document.getElementById('fieldRequired').checked = true;
+        document.getElementById('optionsContainer').style.display = 'none';
         
-        // Simple prompt for basic field creation
-        const fieldType = prompt('Enter field type (text, textarea, number, date, select, url, email, tel):', 'text');
-        if (!fieldType) return;
+        const modal = new bootstrap.Modal(document.getElementById('addFieldModal'));
+        modal.show();
         
-        const fieldLabel = prompt('Enter field label (e.g., "Applicant Name"):', '');
-        if (!fieldLabel) return;
+        // Focus on first input
+        setTimeout(() => document.getElementById('fieldLabel').focus(), 300);
+    }
+    
+    function addFieldFromModal() {
+        const label = document.getElementById('fieldLabel').value.trim();
+        const type = document.getElementById('fieldType').value;
+        const optionsStr = document.getElementById('fieldOptions').value.trim();
+        const required = document.getElementById('fieldRequired').checked;
         
-        const fieldName = fieldLabel.toLowerCase()
+        if (!label) {
+            showToast('Please enter a field label.', 'danger');
+            document.getElementById('fieldLabel').focus();
+            return;
+        }
+        
+        if (type === 'select' && !optionsStr) {
+            showToast('Please enter options for the dropdown.', 'danger');
+            document.getElementById('fieldOptions').focus();
+            return;
+        }
+        
+        // Generate field name from label
+        const fieldName = label.toLowerCase()
             .replace(/[^a-z0-9\s]/g, '')
             .replace(/\s+/g, '_');
         
-        const isRequired = confirm('Is this field required?');
-        
         let newField = {
             name: fieldName,
-            label: fieldLabel,
-            type: fieldType,
-            required: isRequired
+            label: label,
+            type: type,
+            required: required
         };
         
-        // If select, ask for options
-        if (fieldType === 'select') {
-            const optionsStr = prompt('Enter options (comma separated):', 'Option 1, Option 2, Option 3');
-            if (optionsStr) {
-                newField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
-            }
+        if (type === 'select' && optionsStr) {
+            newField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
         }
         
         fields.push(newField);
         renderFields();
-        updateFieldsJson();
+        bootstrap.Modal.getInstance(document.getElementById('addFieldModal')).hide();
+        showToast(`Field "${label}" added successfully!`, 'success');
     }
     
-    function editField(index) {
+    // ========== Edit Field Modal ==========
+    function openEditFieldModal(index) {
         const field = fields[index];
         if (!field) return;
         
-        const newLabel = prompt('Enter field label:', field.label);
-        if (!newLabel) return;
+        editingIndex = index;
+        document.getElementById('editFieldIndex').value = index;
+        document.getElementById('editFieldLabel').value = field.label;
+        document.getElementById('editFieldType').value = field.type;
+        document.getElementById('editFieldRequired').checked = field.required;
         
-        const fieldName = newLabel.toLowerCase()
+        if (field.options && field.options.length > 0) {
+            document.getElementById('editFieldOptions').value = field.options.join(', ');
+            document.getElementById('editOptionsContainer').style.display = 'block';
+        } else {
+            document.getElementById('editFieldOptions').value = '';
+            document.getElementById('editOptionsContainer').style.display = 'none';
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('editFieldModal'));
+        modal.show();
+    }
+    
+    function saveFieldEdit() {
+        const index = parseInt(document.getElementById('editFieldIndex').value);
+        const label = document.getElementById('editFieldLabel').value.trim();
+        const type = document.getElementById('editFieldType').value;
+        const optionsStr = document.getElementById('editFieldOptions').value.trim();
+        const required = document.getElementById('editFieldRequired').checked;
+        
+        if (!label) {
+            showToast('Please enter a field label.', 'danger');
+            document.getElementById('editFieldLabel').focus();
+            return;
+        }
+        
+        if (type === 'select' && !optionsStr) {
+            showToast('Please enter options for the dropdown.', 'danger');
+            document.getElementById('editFieldOptions').focus();
+            return;
+        }
+        
+        const fieldName = label.toLowerCase()
             .replace(/[^a-z0-9\s]/g, '')
             .replace(/\s+/g, '_');
         
-        const fieldType = prompt('Enter field type (text, textarea, number, date, select, url, email, tel):', field.type);
-        if (!fieldType) return;
-        
-        const isRequired = confirm('Is this field required?');
-        
         let updatedField = {
             name: fieldName,
-            label: newLabel,
-            type: fieldType,
-            required: isRequired
+            label: label,
+            type: type,
+            required: required
         };
         
-        if (fieldType === 'select') {
-            const currentOptions = field.options ? field.options.join(', ') : '';
-            const optionsStr = prompt('Enter options (comma separated):', currentOptions);
-            if (optionsStr) {
-                updatedField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
-            }
+        if (type === 'select' && optionsStr) {
+            updatedField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
         }
         
         fields[index] = updatedField;
         renderFields();
-        updateFieldsJson();
+        bootstrap.Modal.getInstance(document.getElementById('editFieldModal')).hide();
+        showToast(`Field "${label}" updated successfully!`, 'success');
     }
     
     function removeField(index) {
-        if (confirm('Remove this field?')) {
+        const field = fields[index];
+        if (!field) return;
+        if (confirm(`Are you sure you want to remove the field "${field.label}"?`)) {
             fields.splice(index, 1);
             renderFields();
-            updateFieldsJson();
+            showToast(`Field "${field.label}" removed.`, 'info');
         }
     }
     
@@ -442,6 +674,25 @@
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // ========== Field Type Change Handlers ==========
+    document.getElementById('fieldType')?.addEventListener('change', function() {
+        const optionsContainer = document.getElementById('optionsContainer');
+        if (this.value === 'select') {
+            optionsContainer.style.display = 'block';
+        } else {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('editFieldType')?.addEventListener('change', function() {
+        const optionsContainer = document.getElementById('editOptionsContainer');
+        if (this.value === 'select') {
+            optionsContainer.style.display = 'block';
+        } else {
+            optionsContainer.style.display = 'none';
+        }
+    });
     
     // ========== Icon Preview ==========
     function previewIcon() {
@@ -470,6 +721,34 @@
     document.getElementById('serviceSlug')?.addEventListener('input', function() {
         this.dataset.autoGenerated = 'false';
         this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    });
+    
+    // ========== Form Validation ==========
+    document.getElementById('serviceForm')?.addEventListener('submit', function(e) {
+        const name = document.getElementById('serviceName')?.value.trim();
+        const slug = document.getElementById('serviceSlug')?.value.trim();
+        const category = document.getElementById('category')?.value;
+        
+        if (!name) {
+            e.preventDefault();
+            showToast('Please enter a service name.', 'danger');
+            document.getElementById('serviceName').focus();
+            return;
+        }
+        
+        if (!slug) {
+            e.preventDefault();
+            showToast('Please enter a slug.', 'danger');
+            document.getElementById('serviceSlug').focus();
+            return;
+        }
+        
+        if (!category) {
+            e.preventDefault();
+            showToast('Please select a category.', 'danger');
+            document.getElementById('category').focus();
+            return;
+        }
     });
     
     // ========== Initialize ==========
