@@ -3,6 +3,68 @@
 
 {% block title %}{{ form_title }} - Admin Panel{% endblock %}
 
+{% block extra_css %}
+<style>
+    .field-builder-item {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: grab;
+    }
+    .field-builder-item:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+    .field-builder-item .drag-handle {
+        color: var(--text-muted);
+        cursor: grab;
+        font-size: 1.25rem;
+    }
+    .field-builder-item .field-info {
+        flex: 1;
+    }
+    .field-builder-item .field-info .field-label {
+        font-weight: 600;
+    }
+    .field-builder-item .field-info .field-detail {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+    }
+    .field-builder-item .field-required-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+        background: #dcfce7;
+        color: #065f46;
+    }
+    .field-builder-item .field-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+    .field-builder-empty {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+        border: 2px dashed var(--border-color);
+        border-radius: 0.5rem;
+    }
+    .dragging {
+        opacity: 0.5;
+        border-style: dashed;
+    }
+    .drag-over {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-4">
     <a href="{{ url_for('admin_services') }}" class="btn btn-outline-secondary rounded-pill">
@@ -10,8 +72,8 @@
     </a>
 </div>
 
-<div class="row justify-content-center" data-aos="fade-up">
-    <div class="col-lg-10 col-xl-8">
+<div class="row">
+    <div class="col-lg-8" data-aos="fade-up">
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
             <div class="card-header bg-primary text-white py-3 border-0">
                 <h4 class="mb-0"><i class="fas fa-{{ 'plus-circle' if not service else 'edit' }} me-2"></i> {{ form_title }}</h4>
@@ -95,13 +157,20 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Form Fields</label>
-                        <input type="text" class="form-control" name="fields" 
-                               value="{{ fields_str if fields_str else '' }}" 
-                               placeholder="e.g., student_name, college_name, course, academic_year">
-                        <div class="form-text">Comma-separated list of field names for the service form.</div>
+                    <!-- Form Fields Builder -->
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-semibold mb-0"><i class="fas fa-list me-2"></i> Form Fields</h5>
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill" onclick="addField()">
+                            <i class="fas fa-plus me-1"></i> Add Field
+                        </button>
                     </div>
+                    
+                    <div id="fieldBuilderContainer" class="mb-3">
+                        <!-- Fields will be rendered here -->
+                    </div>
+                    
+                    <input type="hidden" name="form_fields_json" id="formFieldsJson" value='{{ form_fields_json or "[]" }}'>
 
                     <div class="mb-3">
                         <div class="form-check form-switch">
@@ -129,10 +198,263 @@
             </div>
         </div>
     </div>
+    
+    <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-info text-white rounded-top-4 border-0 py-3">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Field Types Guide</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="small">
+                    <div class="mb-2"><span class="badge bg-primary">text</span> Single line text input</div>
+                    <div class="mb-2"><span class="badge bg-primary">textarea</span> Multi-line text input</div>
+                    <div class="mb-2"><span class="badge bg-primary">number</span> Numeric input</div>
+                    <div class="mb-2"><span class="badge bg-primary">date</span> Date picker</div>
+                    <div class="mb-2"><span class="badge bg-primary">select</span> Dropdown selection</div>
+                    <div class="mb-2"><span class="badge bg-primary">url</span> URL input</div>
+                    <div class="mb-2"><span class="badge bg-primary">email</span> Email input</div>
+                    <div class="mb-2"><span class="badge bg-primary">tel</span> Phone number input</div>
+                </div>
+                <hr>
+                <div class="small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Fields marked as <span class="text-danger">*</span> are required.
+                </div>
+                <div class="small text-muted mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Drag fields to reorder them.
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Auto-generate slug from name
+    // ========== Field Builder ==========
+    let fields = [];
+    
+    // Load existing fields
+    const fieldsJsonInput = document.getElementById('formFieldsJson');
+    if (fieldsJsonInput && fieldsJsonInput.value) {
+        try {
+            fields = JSON.parse(fieldsJsonInput.value);
+        } catch (e) {
+            fields = [];
+        }
+    }
+    
+    function renderFields() {
+        const container = document.getElementById('fieldBuilderContainer');
+        if (!container) return;
+        
+        if (fields.length === 0) {
+            container.innerHTML = `
+                <div class="field-builder-empty">
+                    <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                    <p>No fields added yet. Click "Add Field" to create form fields.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        fields.forEach((field, index) => {
+            const optionsHtml = field.options ? field.options.map(opt => 
+                `<option value="${escapeHtml(opt)}" ${opt === field.options?.[0] ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+            ).join('') : '';
+            
+            html += `
+                <div class="field-builder-item" data-index="${index}" draggable="true">
+                    <div class="drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div class="field-info">
+                        <div class="field-label">${escapeHtml(field.label)}</div>
+                        <div class="field-detail">
+                            <span class="badge bg-secondary">${escapeHtml(field.type)}</span>
+                            <span class="field-required-badge">${field.required ? 'Required' : 'Optional'}</span>
+                            ${field.options ? `<span class="text-muted">(${field.options.length} options)</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="field-actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="editField(${index})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removeField(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        // Add drag and drop support
+        const items = container.querySelectorAll('.field-builder-item');
+        let draggedItem = null;
+        
+        items.forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedItem = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.field-builder-item').forEach(el => el.classList.remove('drag-over'));
+            });
+            
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                if (draggedItem && draggedItem !== this) {
+                    document.querySelectorAll('.field-builder-item').forEach(el => el.classList.remove('drag-over'));
+                    this.classList.add('drag-over');
+                }
+            });
+            
+            item.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (draggedItem && draggedItem !== this) {
+                    const fromIndex = parseInt(draggedItem.dataset.index);
+                    const toIndex = parseInt(this.dataset.index);
+                    
+                    if (fromIndex < toIndex) {
+                        fields.splice(toIndex, 0, fields.splice(fromIndex, 1)[0]);
+                    } else {
+                        fields.splice(toIndex, 0, fields.splice(fromIndex, 1)[0]);
+                    }
+                    updateFieldsJson();
+                    renderFields();
+                }
+            });
+        });
+        
+        // Update hidden input
+        updateFieldsJson();
+    }
+    
+    function addField() {
+        const fieldTypes = [
+            { value: 'text', label: 'Text Input' },
+            { value: 'textarea', label: 'Text Area' },
+            { value: 'number', label: 'Number Input' },
+            { value: 'date', label: 'Date Picker' },
+            { value: 'select', label: 'Dropdown Select' },
+            { value: 'url', label: 'URL Input' },
+            { value: 'email', label: 'Email Input' },
+            { value: 'tel', label: 'Phone Input' }
+        ];
+        
+        // Simple prompt for basic field creation
+        const fieldType = prompt('Enter field type (text, textarea, number, date, select, url, email, tel):', 'text');
+        if (!fieldType) return;
+        
+        const fieldLabel = prompt('Enter field label (e.g., "Applicant Name"):', '');
+        if (!fieldLabel) return;
+        
+        const fieldName = fieldLabel.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '_');
+        
+        const isRequired = confirm('Is this field required?');
+        
+        let newField = {
+            name: fieldName,
+            label: fieldLabel,
+            type: fieldType,
+            required: isRequired
+        };
+        
+        // If select, ask for options
+        if (fieldType === 'select') {
+            const optionsStr = prompt('Enter options (comma separated):', 'Option 1, Option 2, Option 3');
+            if (optionsStr) {
+                newField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
+            }
+        }
+        
+        fields.push(newField);
+        renderFields();
+        updateFieldsJson();
+    }
+    
+    function editField(index) {
+        const field = fields[index];
+        if (!field) return;
+        
+        const newLabel = prompt('Enter field label:', field.label);
+        if (!newLabel) return;
+        
+        const fieldName = newLabel.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '_');
+        
+        const fieldType = prompt('Enter field type (text, textarea, number, date, select, url, email, tel):', field.type);
+        if (!fieldType) return;
+        
+        const isRequired = confirm('Is this field required?');
+        
+        let updatedField = {
+            name: fieldName,
+            label: newLabel,
+            type: fieldType,
+            required: isRequired
+        };
+        
+        if (fieldType === 'select') {
+            const currentOptions = field.options ? field.options.join(', ') : '';
+            const optionsStr = prompt('Enter options (comma separated):', currentOptions);
+            if (optionsStr) {
+                updatedField.options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
+            }
+        }
+        
+        fields[index] = updatedField;
+        renderFields();
+        updateFieldsJson();
+    }
+    
+    function removeField(index) {
+        if (confirm('Remove this field?')) {
+            fields.splice(index, 1);
+            renderFields();
+            updateFieldsJson();
+        }
+    }
+    
+    function updateFieldsJson() {
+        const input = document.getElementById('formFieldsJson');
+        if (input) {
+            input.value = JSON.stringify(fields);
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // ========== Icon Preview ==========
+    function previewIcon() {
+        const iconInput = document.getElementById('iconInput');
+        const preview = document.getElementById('iconPreview');
+        if (iconInput && preview) {
+            preview.className = iconInput.value.trim() || 'fas fa-cog';
+        }
+    }
+    
+    document.getElementById('iconInput')?.addEventListener('input', previewIcon);
+    
+    // ========== Slug Auto-generation ==========
     document.getElementById('serviceName')?.addEventListener('input', function() {
         const slugInput = document.getElementById('serviceSlug');
         if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
@@ -144,94 +466,16 @@
             slugInput.dataset.autoGenerated = 'true';
         }
     });
-
+    
     document.getElementById('serviceSlug')?.addEventListener('input', function() {
         this.dataset.autoGenerated = 'false';
         this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     });
-
-    // Icon preview
-    function previewIcon() {
-        const iconInput = document.getElementById('iconInput');
-        const preview = document.getElementById('iconPreview');
-        if (iconInput && preview) {
-            preview.className = iconInput.value.trim() || 'fas fa-cog';
-        }
-    }
-
-    document.getElementById('iconInput')?.addEventListener('input', previewIcon);
-
-    // Form validation
-    document.getElementById('serviceForm')?.addEventListener('submit', function(e) {
-        const name = document.getElementById('serviceName')?.value.trim();
-        const slug = document.getElementById('serviceSlug')?.value.trim();
-        const category = document.getElementById('category')?.value;
-        
-        if (!name) {
-            e.preventDefault();
-            showToast('Please enter a service name', 'danger');
-            document.getElementById('serviceName')?.focus();
-            return;
-        }
-        
-        if (!slug) {
-            e.preventDefault();
-            showToast('Please enter a slug', 'danger');
-            document.getElementById('serviceSlug')?.focus();
-            return;
-        }
-        
-        if (!category) {
-            e.preventDefault();
-            showToast('Please select a category', 'danger');
-            document.getElementById('category')?.focus();
-            return;
-        }
-    });
-
-    // Common icon suggestions
-    const commonIcons = [
-        'fas fa-graduation-cap',
-        'fas fa-university',
-        'fas fa-file-alt',
-        'fas fa-briefcase',
-        'fas fa-lightbulb',
-        'fas fa-tint',
-        'fas fa-mobile-alt',
-        'fas fa-id-card',
-        'fas fa-passport',
-        'fas fa-file-invoice-dollar',
-        'fas fa-users',
-        'fas fa-print',
-        'fas fa-camera',
-        'fas fa-camera-retro',
-        'fas fa-laptop-code',
-        'fas fa-keyboard',
-        'fas fa-chart-bar',
-        'fas fa-plane',
-        'fas fa-file-invoice',
-        'fas fa-building',
-        'fas fa-paint-brush',
-        'fas fa-hashtag',
-        'fas fa-cog',
-        'fas fa-tools'
-    ];
-
-    // Add icon suggestions to the input
-    const iconInput = document.getElementById('iconInput');
-    if (iconInput) {
-        const datalist = document.createElement('datalist');
-        datalist.id = 'iconSuggestions';
-        commonIcons.forEach(icon => {
-            const option = document.createElement('option');
-            option.value = icon;
-            datalist.appendChild(option);
-        });
-        iconInput.setAttribute('list', 'iconSuggestions');
-        document.body.appendChild(datalist);
-    }
-
-    // Toast function
+    
+    // ========== Initialize ==========
+    renderFields();
+    
+    // ========== Toast Function ==========
     function showToast(message, type) {
         const container = document.getElementById('toastContainer');
         if (!container) return;

@@ -3,6 +3,66 @@
 
 {% block title %}{{ service.name }} - DigiServe{% endblock %}
 
+{% block extra_css %}
+<style>
+    .field-required::after {
+        content: ' *';
+        color: #ef4444;
+    }
+    .document-item {
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
+    }
+    .document-item .doc-name {
+        flex: 1;
+        margin: 0 1rem;
+        word-break: break-all;
+    }
+    .document-item .doc-size {
+        color: var(--text-muted);
+        font-size: 0.8125rem;
+        margin-right: 0.5rem;
+    }
+    .document-item .doc-index {
+        font-weight: 600;
+        color: var(--text-secondary);
+        min-width: 28px;
+    }
+    .drop-zone {
+        border: 2px dashed var(--border-color);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--bg-secondary);
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    .drop-zone i {
+        font-size: 2.5rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+    .drop-zone p {
+        margin: 0;
+        color: var(--text-secondary);
+    }
+    .drop-zone .small-text {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-4">
     <a href="{{ url_for('index') }}#services" class="btn btn-outline-secondary rounded-pill">
@@ -42,17 +102,6 @@
                         </div>
                     </div>
                 </div>
-                
-                {% if service.fields %}
-                <div class="mt-3">
-                    <h6 class="fw-semibold"><i class="fas fa-list me-2"></i> Required Information</h6>
-                    <ul class="list-unstyled">
-                        {% for field in service.fields %}
-                        <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i> {{ field|replace('_', ' ')|title }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -66,14 +115,15 @@
                 <form id="applicationForm" enctype="multipart/form-data" method="POST" action="{{ url_for('submit_application') }}">
                     <input type="hidden" name="service_id" value="{{ service.id }}">
                     
+                    <!-- Common Fields -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold field-required">Full Name</label>
                         <input type="text" class="form-control" name="full_name" id="fullName" 
                                value="{{ user.name if user else '' }}" required>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold field-required">Phone Number</label>
                         <input type="tel" class="form-control" name="phone" id="phone" 
                                value="{{ user.phone if user else '' }}" required maxlength="10">
                     </div>
@@ -85,123 +135,97 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Address <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="address" id="address" rows="2" required></textarea>
+                        <label class="form-label fw-semibold field-required">Address</label>
+                        <textarea class="form-control" name="address" id="address" rows="2" required>{{ user.address if user else '' }}</textarea>
                     </div>
                     
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="city" id="city" required>
+                            <label class="form-label fw-semibold field-required">City</label>
+                            <input type="text" class="form-control" name="city" id="city" value="{{ user.city if user else '' }}" required>
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">State <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="state" id="state" required>
+                            <label class="form-label fw-semibold field-required">State</label>
+                            <input type="text" class="form-control" name="state" id="state" value="{{ user.state if user else '' }}" required>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Pincode <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold field-required">Pincode</label>
                         <input type="text" class="form-control" name="pincode" id="pincode" 
-                               maxlength="6" required>
+                               value="{{ user.pincode if user else '' }}" maxlength="6" required>
                     </div>
                     
-                    <!-- Dynamic Fields -->
-                    {% if service.fields %}
+                    <!-- Service-Specific Dynamic Fields -->
+                    {% if form_fields %}
                     <hr>
-                    <h6 class="fw-semibold mb-3"><i class="fas fa-plus-circle me-2"></i> Additional Details</h6>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-plus-circle me-2"></i> Service Details</h6>
                     
-                    {% for field in service.fields %}
+                    {% for field in form_fields %}
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ field|replace('_', ' ')|title }}</label>
-                        {% if field in ['income_certificate', 'aadhaar', 'photo_upload', 'signature_upload', 'resume_upload', 'id_proof_upload'] %}
-                            <input type="file" class="form-control" name="{{ field }}" accept=".pdf,.jpg,.jpeg,.png">
-                            <small class="text-muted">Upload file (PDF, JPG, PNG)</small>
-                        {% elif field == 'resume_template' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="">Select Template</option>
-                                <option value="modern">Modern</option>
-                                <option value="classic">Classic</option>
-                                <option value="creative">Creative</option>
-                                <option value="minimal">Minimal</option>
+                        <label class="form-label fw-semibold {% if field.required %}field-required{% endif %}">
+                            {{ field.label }}
+                        </label>
+                        {% if field.type == 'text' %}
+                            <input type="text" class="form-control" name="{{ field.name }}" 
+                                   placeholder="Enter {{ field.label }}" {% if field.required %}required{% endif %}>
+                        {% elif field.type == 'textarea' %}
+                            <textarea class="form-control" name="{{ field.name }}" rows="3" 
+                                      placeholder="Enter {{ field.label }}" {% if field.required %}required{% endif %}></textarea>
+                        {% elif field.type == 'number' %}
+                            <input type="number" class="form-control" name="{{ field.name }}" 
+                                   placeholder="Enter {{ field.label }}" step="0.01" {% if field.required %}required{% endif %}>
+                        {% elif field.type == 'date' %}
+                            <input type="date" class="form-control" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                        {% elif field.type == 'select' %}
+                            <select class="form-select" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                <option value="">Select {{ field.label }}</option>
+                                {% for option in field.options %}
+                                <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
                             </select>
-                        {% elif field == 'plan_type' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="prepaid">Prepaid</option>
-                                <option value="postpaid">Postpaid</option>
-                            </select>
-                        {% elif field == 'pan_type' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="new">New PAN Card</option>
-                                <option value="reprint">Reprint</option>
-                                <option value="update">Update Details</option>
-                            </select>
-                        {% elif field == 'passport_type' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="new">New Passport</option>
-                                <option value="renewal">Renewal</option>
-                            </select>
-                        {% elif field == 'caste_category' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="">Select Category</option>
-                                <option value="sc">SC</option>
-                                <option value="st">ST</option>
-                                <option value="obc">OBC</option>
-                            </select>
-                        {% elif field in ['annual_income', 'bill_amount', 'recharge_amount', 'page_count', 'print_quantity', 'quantity'] %}
-                            <input type="number" class="form-control" name="{{ field }}" placeholder="Enter amount" step="0.01">
-                        {% elif field in ['mobile_number', 'consumer_number'] %}
-                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter number">
-                        {% elif field == 'business_type' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="">Select Type</option>
-                                <option value="sole_proprietorship">Sole Proprietorship</option>
-                                <option value="partnership">Partnership</option>
-                                <option value="llp">LLP</option>
-                                <option value="private_limited">Private Limited</option>
-                            </select>
-                        {% elif field == 'industry' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="">Select Industry</option>
-                                <option value="technology">Technology</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="education">Education</option>
-                                <option value="finance">Finance</option>
-                                <option value="retail">Retail</option>
-                                <option value="other">Other</option>
-                            </select>
-                        {% elif field == 'platform' %}
-                            <select class="form-select" name="{{ field }}">
-                                <option value="facebook">Facebook</option>
-                                <option value="instagram">Instagram</option>
-                                <option value="twitter">Twitter</option>
-                                <option value="linkedin">LinkedIn</option>
-                            </select>
-                        {% elif field in ['exam_name', 'course'] %}
-                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter name">
-                        {% elif field in ['education', 'skills', 'experience', 'features', 'design_style', 'color_preference'] %}
-                            <textarea class="form-control" name="{{ field }}" rows="3" placeholder="Enter details"></textarea>
+                        {% elif field.type == 'url' %}
+                            <input type="url" class="form-control" name="{{ field.name }}" 
+                                   placeholder="Enter URL" {% if field.required %}required{% endif %}>
                         {% else %}
-                            <input type="text" class="form-control" name="{{ field }}" placeholder="Enter {{ field|replace('_', ' ') }}">
+                            <input type="text" class="form-control" name="{{ field.name }}" 
+                                   placeholder="Enter {{ field.label }}" {% if field.required %}required{% endif %}>
                         {% endif %}
+                        <div class="form-text">{{ field.help_text if field.help_text else '' }}</div>
                     </div>
                     {% endfor %}
                     {% endif %}
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Additional Notes</label>
-                        <textarea class="form-control" name="additional_details" rows="3" 
-                                  placeholder="Any additional information..."></textarea>
+                    <!-- Multiple Document Upload -->
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-paperclip me-2"></i> Upload Documents</h6>
+                    
+                    <div id="documentsContainer">
+                        <div class="document-item" id="docTemplate" style="display: none;">
+                            <span class="doc-index">#1</span>
+                            <span class="doc-name">document.pdf</span>
+                            <span class="doc-size">0 KB</span>
+                            <button type="button" class="btn btn-sm btn-danger rounded-pill remove-doc">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="documentList">
+                            <!-- Documents will be added here -->
+                        </div>
+                        
+                        <div class="drop-zone" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <p class="small-text">PDF, JPG, PNG, DOC, DOCX (Max 10MB each)</p>
+                            <input type="file" id="fileInput" name="documents" multiple 
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" style="display: none;">
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Upload Documents <span class="text-muted">(Optional)</span></label>
-                        <input type="file" class="form-control" name="documents" multiple 
-                               accept=".pdf,.jpg,.jpeg,.png">
-                        <small class="text-muted">PDF, JPG, PNG files (Max 10MB each)</small>
-                    </div>
+                    <div id="uploadedFilesInfo" class="mt-2"></div>
                     
-                    <div class="alert alert-warning small rounded-3">
+                    <div class="alert alert-warning small rounded-3 mt-3">
                         <i class="fas fa-shield-alt me-2"></i> 
                         By submitting, you confirm all information is accurate.
                     </div>
@@ -217,6 +241,163 @@
 </div>
 
 <script>
+    // ========== Document Upload Handling ==========
+    let uploadedFiles = [];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 
+                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.txt'];
+    
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const documentList = document.getElementById('documentList');
+    const uploadedFilesInfo = document.getElementById('uploadedFilesInfo');
+    
+    // Click to upload
+    dropZone.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(this.files);
+        this.value = '';
+    });
+    
+    // Drag and drop
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    function handleFiles(files) {
+        let validFiles = [];
+        let errors = [];
+        
+        for (let file of files) {
+            // Check file size
+            if (file.size > maxSize) {
+                errors.push(`${file.name} exceeds 10MB limit`);
+                continue;
+            }
+            
+            // Check file type
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(ext)) {
+                errors.push(`${file.name} is not an allowed file type`);
+                continue;
+            }
+            
+            validFiles.push(file);
+        }
+        
+        if (errors.length > 0) {
+            showToast(errors.join('<br>'), 'danger');
+        }
+        
+        if (validFiles.length > 0) {
+            // Check total files limit (10 max)
+            if (uploadedFiles.length + validFiles.length > 10) {
+                showToast('Maximum 10 documents allowed', 'warning');
+                return;
+            }
+            
+            validFiles.forEach(file => {
+                uploadedFiles.push(file);
+                addDocumentToList(file);
+            });
+            
+            updateFileInfo();
+        }
+    }
+    
+    function addDocumentToList(file) {
+        const docItem = document.createElement('div');
+        docItem.className = 'document-item';
+        docItem.dataset.filename = file.name;
+        
+        const index = uploadedFiles.length;
+        const sizeKB = (file.size / 1024).toFixed(2);
+        const sizeDisplay = file.size > 1024 * 1024 ? 
+            (file.size / (1024 * 1024)).toFixed(2) + ' MB' : 
+            sizeKB + ' KB';
+        
+        docItem.innerHTML = `
+            <span class="doc-index">#${index}</span>
+            <span class="doc-name"><i class="fas fa-file-alt me-2 text-primary"></i> ${escapeHtml(file.name)}</span>
+            <span class="doc-size">${sizeDisplay}</span>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill remove-doc">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        const removeBtn = docItem.querySelector('.remove-doc');
+        removeBtn.addEventListener('click', function() {
+            const filename = docItem.dataset.filename;
+            uploadedFiles = uploadedFiles.filter(f => f.name !== filename);
+            docItem.remove();
+            updateFileInfo();
+            reindexDocuments();
+        });
+        
+        documentList.appendChild(docItem);
+    }
+    
+    function reindexDocuments() {
+        const items = documentList.querySelectorAll('.document-item');
+        items.forEach((item, index) => {
+            const indexSpan = item.querySelector('.doc-index');
+            if (indexSpan) {
+                indexSpan.textContent = `#${index + 1}`;
+            }
+        });
+    }
+    
+    function updateFileInfo() {
+        const count = uploadedFiles.length;
+        if (count === 0) {
+            uploadedFilesInfo.innerHTML = '';
+        } else {
+            uploadedFilesInfo.innerHTML = `
+                <div class="alert alert-success small rounded-3">
+                    <i class="fas fa-check-circle me-2"></i> 
+                    ${count} document${count > 1 ? 's' : ''} selected for upload
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearAllDocuments()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    function clearAllDocuments() {
+        if (uploadedFiles.length === 0) return;
+        if (confirm('Remove all selected documents?')) {
+            uploadedFiles = [];
+            documentList.innerHTML = '';
+            updateFileInfo();
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // ========== Form Submission ==========
     document.getElementById('applicationForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -226,6 +407,11 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Submitting...';
         
         const formData = new FormData(e.target);
+        
+        // Add uploaded files to form data
+        uploadedFiles.forEach(file => {
+            formData.append('documents', file);
+        });
         
         try {
             const response = await fetch('/submit-application', { 
@@ -262,6 +448,9 @@
                     </div>
                 `;
                 e.target.reset();
+                uploadedFiles = [];
+                documentList.innerHTML = '';
+                updateFileInfo();
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
             } else {
                 document.getElementById('result').innerHTML = `
@@ -305,5 +494,37 @@
     document.getElementById('pincode')?.addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
     });
+    
+    // Toast function
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const colors = {
+            success: '#22c55e',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#4f46e5'
+        };
+        const icons = {
+            success: 'check-circle',
+            danger: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
 </script>
 {% endblock %}

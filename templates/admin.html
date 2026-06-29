@@ -4,29 +4,6 @@
 {% block title %}Admin Panel - DigiServe{% endblock %}
 
 {% block content %}
-<!-- Add this card to the admin dashboard stats or as a quick action -->
-<div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="300">
-    <a href="{{ url_for('admin_services') }}" class="text-decoration-none">
-        <div class="stat-card bg-info text-white rounded-4 p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="opacity-75">Manage Services</small>
-                    <h2 class="mb-0 fw-bold">{{ stats.total_services }}</h2>
-                </div>
-                <i class="fas fa-cogs fa-3x opacity-50"></i>
-            </div>
-        </div>
-    </a>
-</div>
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up">
-    <h2 class="fw-bold"><i class="fas fa-user-shield text-primary me-2"></i> Admin Dashboard</h2>
-    <div class="d-flex gap-2 flex-wrap">
-        <span class="badge bg-primary rounded-pill px-3 py-2">Users: {{ stats.total_users }}</span>
-        <span class="badge bg-success rounded-pill px-3 py-2">Applications: {{ stats.total_requests }}</span>
-        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Pending: {{ stats.pending_requests }}</span>
-    </div>
-</div>
-
 <!-- Stats Cards -->
 <div class="row g-4 mb-4">
     <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="100">
@@ -75,6 +52,23 @@
     </div>
 </div>
 
+<!-- Quick Action Card - Manage Services -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="300">
+        <a href="{{ url_for('admin_services') }}" class="text-decoration-none">
+            <div class="stat-card bg-secondary text-white rounded-4 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="opacity-75">Manage Services</small>
+                        <h2 class="mb-0 fw-bold">{{ stats.total_services }}</h2>
+                    </div>
+                    <i class="fas fa-cogs fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
     <li class="nav-item">
@@ -98,7 +92,9 @@
 </ul>
 
 <div class="tab-content">
-    <!-- Applications Tab -->
+    <!-- ============================================ -->
+    <!-- APPLICATIONS TAB - UPDATED WITH DOCS COUNT    -->
+    <!-- ============================================ -->
     <div class="tab-pane fade show active" id="applications">
         <div class="card shadow-sm rounded-4">
             <div class="card-body p-0">
@@ -111,6 +107,7 @@
                                 <th>Applicant</th>
                                 <th>Service</th>
                                 <th>Amount</th>
+                                <th>Docs</th>
                                 <th>Status</th>
                                 <th>Submitted</th>
                                 <th>Action</th>
@@ -124,6 +121,11 @@
                                 <td>{{ req.applicant_name or req.user.name if req.user else 'N/A' }}</td>
                                 <td>{{ req.service_name[:30] }}{% if req.service_name|length > 30 %}...{% endif %}</td>
                                 <td>₹{{ "%.2f"|format(req.amount) }}</td>
+                                <td>
+                                    <span class="badge bg-info rounded-pill">
+                                        <i class="fas fa-file me-1"></i> {{ req.documents|length if req.documents else 0 }}
+                                    </span>
+                                </td>
                                 <td>
                                     <select class="form-select form-select-sm status-select" data-id="{{ req.id }}" style="width: 120px;">
                                         <option value="pending" {% if req.status == 'pending' %}selected{% endif %}>Pending</option>
@@ -141,7 +143,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                     <p>No applications found</p>
                                 </td>
@@ -204,6 +206,7 @@
                                 <th>Service Name</th>
                                 <th>Category</th>
                                 <th>Charge</th>
+                                <th>Fields</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -214,6 +217,7 @@
                                 <td>{{ service.name }}</td>
                                 <td>{{ service.category|replace('_', ' ')|title }}</td>
                                 <td>{% if service.service_charge > 0 %}₹{{ "%.2f"|format(service.service_charge) }}{% else %}Free{% endif %}</td>
+                                <td><span class="badge bg-secondary">{{ service.form_fields|length if service.form_fields else 0 }}</span></td>
                                 <td>
                                     <span class="badge {% if service.is_active %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
                                         {{ 'Active' if service.is_active else 'Inactive' }}
@@ -262,6 +266,21 @@
     .status-select {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
+    }
+    .detail-item {
+        background: var(--bg-secondary);
+        padding: 10px 14px;
+        border-radius: 8px;
+    }
+    .detail-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 3px;
+    }
+    .detail-value {
+        font-size: 14px;
+        font-weight: 500;
     }
 </style>
 
@@ -341,13 +360,28 @@
                     if (value) {
                         dynamicFieldsHtml += `
                             <div class="d-flex justify-content-between p-2 bg-light rounded-3 mb-1">
-                                <span class="text-muted">${key|replace('_', ' ')|title}:</span>
+                                <span class="text-muted">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</span>
                                 <span class="fw-semibold">${escapeHtml(value)}</span>
                             </div>
                         `;
                     }
                 }
                 dynamicFieldsHtml += '</div>';
+            }
+            
+            let documentsHtml = '';
+            if (documents.length > 0) {
+                documentsHtml = `
+                    <div class="mt-3">
+                        <h6 class="fw-bold"><i class="fas fa-paperclip me-2"></i> Documents (${documents.length})</h6>
+                        ${documents.map(doc => `
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded-3 mb-1">
+                                <span><i class="fas fa-file-alt me-2"></i> ${escapeHtml(doc.original_filename || doc.filename || 'Document')}</span>
+                                <span class="text-muted small">${doc.file_size ? (doc.file_size/1024).toFixed(2) + ' KB' : ''}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
             }
             
             modalBody.innerHTML = `
@@ -388,23 +422,7 @@
                 
                 ${dynamicFieldsHtml}
                 ${timelineHtml}
-                
-                ${documents.length > 0 ? `
-                <div class="mt-3">
-                    <h6 class="fw-bold"><i class="fas fa-paperclip me-2"></i> Documents</h6>
-                    ${documents.map(doc => `
-                        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded-3 mb-1">
-                            <span><i class="fas fa-file-alt me-2"></i> ${escapeHtml(doc.original_filename)}</span>
-                            <span>
-                                <span class="text-muted small me-2">${(doc.file_size/1024).toFixed(2)} KB</span>
-                                <a href="/admin/download-document/${doc._id}" class="btn btn-sm btn-primary rounded-pill">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </span>
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
+                ${documentsHtml}
                 
                 ${app.admin_remarks ? `
                 <div class="alert alert-info mt-3 rounded-3">
@@ -428,6 +446,38 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // Toast function
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const colors = {
+            success: '#22c55e',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#4f46e5'
+        };
+        const icons = {
+            success: 'check-circle',
+            danger: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification p-3 rounded-3 shadow-lg mb-2';
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-${icons[type] || icons.info} fs-5" style="color: ${colors[type] || colors.info}"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
     }
 </script>
 {% endblock %}
